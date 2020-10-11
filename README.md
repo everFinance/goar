@@ -74,3 +74,11 @@ func main() {
 	fmt.Println(id, stat, err) // {{id}}, Pending, nil
 }
 ```
+
+### Development
+
+#### Test
+
+```
+make test
+```

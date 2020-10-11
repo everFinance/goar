@@ -2,9 +2,10 @@ package utils
 
 import (
 	"crypto/sha256"
-	"github.com/shopspring/decimal"
 	"math"
 	"math/big"
+
+	"github.com/shopspring/decimal"
 )
 
 const (

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,11 @@ import (
 func TestGenerateChunks(t *testing.T) {
 	data, _ := Base64Decode("NzcyNg")
 	assert.Equal(t, "z3rQGxyiqdQuOh2dxDst176oOKmW3S9MwQNTEh4DK1U", Base64Encode(GenerateChunks(data).DataRoot))
+
+	data, err := ioutil.ReadFile("./testfile/1mb.bin")
+	assert.NoError(t, err)
+	chunks := GenerateChunks(data)
+	assert.Equal(t, "o1tTTjbC7hIZN6KbUUYjlkQoDl2k8VXNuBDcGIs52Hc", Base64Encode(chunks.DataRoot))
 }
 
 func TestChunkData(t *testing.T) {
