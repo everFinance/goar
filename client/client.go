@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 
 	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
 )
 
 type Client struct {
@@ -52,7 +54,14 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 }
 
 func (c *Client) GetTransactionField(id string, field string) (f string, err error) {
-	// TODO
+	url := fmt.Sprintf("tx/%v/%v", id, field)
+
+	body, statusCode, err := c.httpGet(url)
+	if statusCode != 200 {
+		err = fmt.Errorf("not found data")
+	}
+
+	f = string(body)
 	return
 }
 
@@ -112,8 +121,20 @@ func (c *Client) Arql(arql string) (ids []string, err error) {
 }
 
 // Wallet
-func (c *Client) GetWalletBalance(address string) (amount string, err error) {
-	// TODO
+func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err error) {
+	body, _, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
+	if err != nil {
+		return
+	}
+
+	winstomStr := string(body)
+	winstom, ok := new(big.Int).SetString(winstomStr, 10)
+	if !ok {
+		err = fmt.Errorf("invalid balance: %v", winstomStr)
+		return
+	}
+
+	arAmount = utils.WinstonToAR(winstom)
 	return
 }
 

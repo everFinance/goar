@@ -62,3 +62,10 @@ package client
 // 		`),
 // 	)
 // }
+
+// func TestGetWalletBalance(t *testing.T) {
+// 	client := New("https://arweave.net")
+// 	fmt.Println(
+// 		client.GetWalletBalance("dQzTM9hXV5MD1fRniOKI3MvPF_-8b2XDLmpfcMN9hi8"),
+// 	)
+// }
