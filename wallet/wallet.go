@@ -20,16 +20,16 @@ type Wallet struct {
 	Address string
 }
 
-func NewFromPath(path string) (*Wallet, error) {
+func NewFromPath(path string, clientUrl string) (*Wallet, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return New(b)
+	return New(b, clientUrl)
 }
 
-func New(b []byte) (w *Wallet, err error) {
+func New(b []byte, clientUrl string) (w *Wallet, err error) {
 	key, err := gojwk.Unmarshal(b)
 	if err != nil {
 		return
@@ -56,7 +56,7 @@ func New(b []byte) (w *Wallet, err error) {
 
 	addr := sha256.Sum256(pub.N.Bytes())
 	w = &Wallet{
-		Client:  client.New("https://arweave.net"),
+		Client:  client.New(clientUrl),
 		PubKey:  pub,
 		PrvKey:  prv,
 		Address: utils.Base64Encode(addr[:]),
