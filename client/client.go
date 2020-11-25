@@ -65,12 +65,11 @@ func (c *Client) GetTransactionField(id string, field string) (f string, err err
 	return
 }
 
-func (c *Client) GetTransactionData(id string, extension string) (body []byte, err error) {
+func (c *Client) GetTransactionData(id string, extension ...string) (body []byte, err error) {
 	url := fmt.Sprintf("tx/%v/%v", id, "data")
-	if extension != "" {
-		url = url + "." + extension
+	if extension != nil {
+		url = url + "." + extension[0]
 	}
-
 	body, statusCode, err := c.httpGet(url)
 	if statusCode != 200 {
 		err = fmt.Errorf("not found data")
