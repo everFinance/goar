@@ -86,6 +86,17 @@ func Test_client2(t *testing.T) {
 	}
 }
 
+func TestAA(t *testing.T) {
+	arNode := "https://arweave.net"
+	wallet, err := wallet2.NewFromPath("./testKey.json", arNode)
+	assert.NoError(t, err)
+
+	status, code, err := wallet.Client.GetTransactionStatus("ggt-x5Q_niHifdNzMxZrhiibKf0KQ-cJun0UIBBa-yA")
+	assert.Equal(t, "Success", status)
+	assert.Equal(t, 200, code)
+	assert.NoError(t, err)
+}
+
 func Test_Arq(t *testing.T) {
 	arqStr := `{
 			"op": "and",
