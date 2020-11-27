@@ -120,13 +120,6 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id, status string, err 
 
 	id = tx.ID
 	status, err = w.Client.SubmitTransaction(tx)
-	if err != nil || status != "OK" {
-		return
-	}
-
-	// no data & no target tx sent return OK but tx not really accept from ar node.
-	// TODO: catch ar node not found tx
-	_, status, err = w.Client.GetTransactionByID(id)
-
+	// 发送成功之后status == "OK"
 	return
 }

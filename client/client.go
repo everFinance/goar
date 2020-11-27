@@ -53,6 +53,18 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 	return
 }
 
+// GetTransactionStatus
+func (c *Client) GetTransactionStatus(id string) (status string, code int, err error) {
+	body, code, err := c.httpGet(fmt.Sprintf("tx/%s/status", id))
+	if code == 200 {
+		return types.SuccessTxStatus, code, nil
+	} else if code == 202 {
+		return types.PendingTxStatus, code, nil
+	} else {
+		return string(body), code, err
+	}
+}
+
 func (c *Client) GetTransactionField(id string, field string) (f string, err error) {
 	url := fmt.Sprintf("tx/%v/%v", id, field)
 
