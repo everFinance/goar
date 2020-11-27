@@ -86,7 +86,7 @@ func Test_client2(t *testing.T) {
 	}
 }
 
-func TestAA(t *testing.T) {
+func TestGetTransactionsStatus(t *testing.T) {
 	arNode := "https://arweave.net"
 	wallet, err := wallet2.NewFromPath("./testKey.json", arNode)
 	assert.NoError(t, err)

@@ -1,5 +1,10 @@
 package types
 
+const (
+	SuccessTxStatus = "Success"
+	PendingTxStatus = "Pending"
+)
+
 type NetworkInfo struct {
 	Network          string `json:"network"`
 	Version          int64  `json:"version"`
@@ -49,8 +54,3 @@ type Tag struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
-
-const (
-	SuccessTxStatus = "Success"
-	PendingTxStatus = "Pending"
-)
