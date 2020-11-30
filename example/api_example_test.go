@@ -2,12 +2,13 @@ package example
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/types"
 	wallet2 "github.com/everFinance/goar/wallet"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func Test_Client(t *testing.T) {
