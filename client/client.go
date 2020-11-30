@@ -152,6 +152,7 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 		return nil, fmt.Errorf(string(data))
 	}
 
+	// unwrap data
 	res := struct {
 		Data interface{}
 	}{}
