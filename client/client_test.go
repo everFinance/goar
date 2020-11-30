@@ -63,6 +63,34 @@ package client
 // 	)
 // }
 
+// func TestGraphQL(t *testing.T) {
+// 	client := New("https://arweave.net")
+// 	data, err := client.GraphQL(`
+// 	{
+// 		transactions(
+// 			tags: [
+// 					{
+// 							name: "TokenSymbol",
+// 							values: "ROL"
+// 					},
+// 			]
+// 			sort: HEIGHT_ASC
+// 		) {
+// 			edges {
+// 				node {
+// 					id
+// 					tags {
+// 						name
+// 						value
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}`)
+// 	assert.NoError(t, err)
+// 	t.Log(string(data))
+// }
+
 // func TestGetWalletBalance(t *testing.T) {
 // 	client := New("https://arweave.net")
 // 	fmt.Println(

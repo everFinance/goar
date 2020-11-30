@@ -125,10 +125,42 @@ func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, err er
 	return
 }
 
+// Arql is Deprecated, recommended to use GraphQL
 func (c *Client) Arql(arql string) (ids []string, err error) {
 	body, _, err := c.httpPost("arql", []byte(arql))
 	err = json.Unmarshal(body, &ids)
 	return
+}
+
+func (c *Client) GraphQL(query string) ([]byte, error) {
+	// generate query
+	graQuery := struct {
+		Query string `json:"query"`
+	}{query}
+	byQuery, err := json.Marshal(graQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// query from http client
+	data, statusCode, err := c.httpPost("graphql", byQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf(string(data))
+	}
+
+	// unwrap data
+	res := struct {
+		Data interface{}
+	}{}
+	if err := json.Unmarshal(data, &res); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(res.Data)
 }
 
 // Wallet
