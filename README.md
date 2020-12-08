@@ -81,12 +81,14 @@ func main() {
 
 - [x] GetInfo
 - [x] GetTransactionByID
+- [x] GetTransactionStatus
 - [x] GetTransactionField
 - [x] GetTransactionData
 - [x] GetTransactionPrice
 - [x] GetTransactionAnchor
 - [x] SubmitTransaction
-- [x] Arql
+- [x] Arql(Deprecated)
+- [x] GraphQL
 - [x] GetWalletBalance
 - [x] GetLastTransactionID
 - [x] GetBlockByID
