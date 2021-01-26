@@ -105,6 +105,7 @@ arClient := New("https://arweave.net")
 - [x] SendAR
 - [x] SendWinston
 - [x] SendData
+- [x] SendDataSpeedUp
 - [x] SendTransaction
 
 Initialize the instance, use a keyfile.json:
