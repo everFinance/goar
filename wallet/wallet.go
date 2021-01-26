@@ -87,6 +87,27 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 	return w.SendTransaction(tx)
 }
 
+// SendDataSpeedUp set speedFactor for speed up
+// eg: speedFactor = 10, reward = 1.1 * reward
+func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (id, status string, err error) {
+	reward, err := w.Client.GetTransactionPrice(data, nil)
+	if err != nil {
+		return
+	}
+
+	tx := &types.Transaction{
+		Format:   2,
+		Target:   "",
+		Quantity: "0",
+		Tags:     utils.TagsEncode(tags),
+		Data:     utils.Base64Encode(data),
+		DataSize: fmt.Sprintf("%d", len(string(data))),
+		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
+	}
+
+	return w.SendTransaction(tx)
+}
+
 func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err error) {
 	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
