@@ -25,7 +25,7 @@ func New(url string) *Client {
 }
 
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
-	body, _, err := c.httpGet("info")
+	body, _, err := c.HttpGet("info")
 	if err != nil {
 		return
 	}
@@ -38,7 +38,7 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 // Transaction
 // status: Pending/Invalid hash/overspend
 func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, err error) {
-	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
+	body, statusCode, err := c.HttpGet(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return
 	}
@@ -55,7 +55,7 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 
 // GetTransactionStatus
 func (c *Client) GetTransactionStatus(id string) (status string, code int, err error) {
-	body, code, err := c.httpGet(fmt.Sprintf("tx/%s/status", id))
+	body, code, err := c.HttpGet(fmt.Sprintf("tx/%s/status", id))
 	if code == 200 {
 		return types.SuccessTxStatus, code, nil
 	} else if code == 202 {
@@ -68,7 +68,7 @@ func (c *Client) GetTransactionStatus(id string) (status string, code int, err e
 func (c *Client) GetTransactionField(id string, field string) (f string, err error) {
 	url := fmt.Sprintf("tx/%v/%v", id, field)
 
-	body, statusCode, err := c.httpGet(url)
+	body, statusCode, err := c.HttpGet(url)
 	if statusCode != 200 {
 		err = fmt.Errorf("not found data")
 	}
@@ -82,7 +82,7 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	if extension != nil {
 		url = url + "." + extension[0]
 	}
-	body, statusCode, err := c.httpGet(url)
+	body, statusCode, err := c.HttpGet(url)
 	if statusCode != 200 {
 		err = fmt.Errorf("not found data")
 	}
@@ -96,7 +96,7 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 		url = fmt.Sprintf("%v/%v", url, *target)
 	}
 
-	body, _, err := c.httpGet(url)
+	body, _, err := c.HttpGet(url)
 	if err != nil {
 		return
 	}
@@ -105,7 +105,7 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 }
 
 func (c *Client) GetTransactionAnchor() (anchor string, err error) {
-	body, _, err := c.httpGet("tx_anchor")
+	body, _, err := c.HttpGet("tx_anchor")
 	if err != nil {
 		return
 	}
@@ -120,14 +120,14 @@ func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, err er
 		return
 	}
 
-	body, _, err := c.httpPost("tx", by)
+	body, _, err := c.HttpPost("tx", by)
 	status = string(body)
 	return
 }
 
 // Arql is Deprecated, recommended to use GraphQL
 func (c *Client) Arql(arql string) (ids []string, err error) {
-	body, _, err := c.httpPost("arql", []byte(arql))
+	body, _, err := c.HttpPost("arql", []byte(arql))
 	err = json.Unmarshal(body, &ids)
 	return
 }
@@ -143,7 +143,7 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 	}
 
 	// query from http client
-	data, statusCode, err := c.httpPost("graphql", byQuery)
+	data, statusCode, err := c.HttpPost("graphql", byQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 
 // Wallet
 func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
+	body, _, err := c.HttpGet(fmt.Sprintf("wallet/%s/balance", address))
 	if err != nil {
 		return
 	}
@@ -182,7 +182,7 @@ func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err erro
 }
 
 func (c *Client) GetLastTransactionID(address string) (id string, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("wallet/%s/last_tx", address))
+	body, _, err := c.HttpGet(fmt.Sprintf("wallet/%s/last_tx", address))
 	if err != nil {
 		return
 	}
@@ -193,7 +193,7 @@ func (c *Client) GetLastTransactionID(address string) (id string, err error) {
 
 // Block
 func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("block/hash/%s", id))
+	body, _, err := c.HttpGet(fmt.Sprintf("block/hash/%s", id))
 	if err != nil {
 		return
 	}
@@ -204,7 +204,7 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 }
 
 func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("block/height/%d", height))
+	body, _, err := c.HttpGet(fmt.Sprintf("block/height/%d", height))
 	if err != nil {
 		return
 	}
@@ -214,7 +214,7 @@ func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) 
 	return
 }
 
-func (c *Client) httpGet(_path string) (body []byte, statusCode int, err error) {
+func (c *Client) HttpGet(_path string) (body []byte, statusCode int, err error) {
 	u, err := url.Parse(c.url)
 	if err != nil {
 		return
@@ -233,7 +233,7 @@ func (c *Client) httpGet(_path string) (body []byte, statusCode int, err error) 
 	return
 }
 
-func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
+func (c *Client) HttpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
 	u, err := url.Parse(c.url)
 	if err != nil {
 		return

@@ -251,3 +251,9 @@ func ConcatBuffer(buffers ...[]byte) []byte {
 	}
 	return temp
 }
+
+// 验证merkle path
+func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) bool {
+	// todo `export async function validatePath`
+	return true
+}
