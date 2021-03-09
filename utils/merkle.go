@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"crypto/sha256"
+	"crypto/sha512"
 	"math"
 	"math/big"
 
@@ -240,7 +241,7 @@ func ReadBits(bigint *big.Int, buf []byte) {
 	}
 }
 
-// ConcatBuffer
+// ConcatBuffer 更好的 slice append
 func ConcatBuffer(buffers ...[]byte) []byte {
 	totalLength := 0
 	for i := 0; i < len(buffers); i++ {
@@ -278,10 +279,9 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 		pathData := path[0:HASH_SIZE]
 		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
 
-		// todo deepHash 实现可能有错
-		pathDataHash := DeepHash([]interface{}{
-			DeepHash([]interface{}{pathData}),
-			DeepHash([]interface{}{endOffsetBuffer}),
+		pathDataHash := Hash([][]byte{
+			Hash([][]byte{pathData}),
+			Hash([][]byte{endOffsetBuffer}),
 		})
 		result := arrayCompare(id, pathDataHash[:])
 		if result {
@@ -302,10 +302,10 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 
 	remainder := path[len(left)+len(right)+len(offsetBuffer):]
 
-	pathHash := DeepHash([]interface{}{
-		DeepHash([]interface{}{left}),
-		DeepHash([]interface{}{right}),
-		DeepHash([]interface{}{offsetBuffer}),
+	pathHash := Hash([][]byte{
+		Hash([][]byte{left}),
+		Hash([][]byte{right}),
+		Hash([][]byte{offsetBuffer}),
 	})
 
 	if arrayCompare(id, pathHash[:]) {
@@ -328,4 +328,9 @@ func bufferToInt(buf []byte) int {
 
 func arrayCompare(a, b []byte) bool {
 	return bytes.Equal(a, b)
+}
+
+func Hash(data [][]byte) []byte {
+	byte32 := sha512.Sum512_256(ConcatBuffer(data...))
+	return byte32[:]
 }
