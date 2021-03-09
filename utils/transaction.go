@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/types"
 	"strconv"
 )
@@ -82,4 +83,40 @@ func (tx *Transaction) GetChunk(idx int, data []byte) (*GetChunk, error) {
 
 func (gc *GetChunk) Marshal() ([]byte, error) {
 	return json.Marshal(gc)
+}
+
+// GetUploader
+// @param upload: Transaction | SerializedUploader | string,
+func GetUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
+
+	var (
+		uploader *TransactionUploader
+		err      error
+	)
+
+	if tt, ok := upload.(*Transaction); ok {
+		uploader, err = NewTransactionUploader(tt, api)
+		if err != nil {
+			return nil, err
+		}
+		return uploader, nil
+	}
+
+	if id, ok := upload.(string); ok {
+		// upload 返回为 SerializedUploader 类型
+		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// 最后 upload 为 SerializedUploader type
+		newUpload, ok := upload.(*SerializedUploader)
+		if !ok {
+			panic("upload params error")
+		}
+		upload = newUpload
+	}
+
+	uploader, err = (&TransactionUploader{Client: api}).FromSerialized(upload.(*SerializedUploader), data)
+	return uploader, err
 }
