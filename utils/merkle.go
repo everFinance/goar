@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"math"
 	"math/big"
@@ -11,6 +12,8 @@ import (
 const (
 	MAX_CHUNK_SIZE = 256 * 1024
 	MIN_CHUNK_SIZE = 32 * 1024
+	NOTE_SIZE      = 32
+	HASH_SIZE      = 32
 
 	// number of bits in a big.Word
 	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
@@ -252,8 +255,77 @@ func ConcatBuffer(buffers ...[]byte) []byte {
 	return temp
 }
 
+type ValidateResult struct {
+	Offset     int
+	LeftBound  int
+	RightBound int
+	ChunkSize  int
+}
+
 // 验证merkle path
-func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) bool {
-	// todo `export async function validatePath`
-	return true
+func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*ValidateResult, bool) {
+	if rightBound <= 0 {
+		return nil, false
+	}
+
+	if dest >= rightBound {
+		return ValidatePath(id, 0, rightBound-1, rightBound, path)
+	}
+	if dest < 0 {
+		return ValidatePath(id, 0, 0, rightBound, path)
+	}
+	if len(path) == HASH_SIZE+NOTE_SIZE {
+		pathData := path[0:HASH_SIZE]
+		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
+
+		// todo deepHash 实现可能有错
+		pathDataHash := DeepHash([]interface{}{
+			DeepHash([]interface{}{pathData}),
+			DeepHash([]interface{}{endOffsetBuffer}),
+		})
+		result := arrayCompare(id, pathDataHash[:])
+		if result {
+			return &ValidateResult{
+				Offset:     rightBound - 1,
+				LeftBound:  leftBound,
+				RightBound: rightBound,
+				ChunkSize:  rightBound - leftBound,
+			}, true
+		}
+		return nil, false
+	}
+
+	left := path[0:HASH_SIZE]
+	right := path[len(left) : len(left)+HASH_SIZE]
+	offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
+	offset := bufferToInt(offsetBuffer)
+
+	remainder := path[len(left)+len(right)+len(offsetBuffer):]
+
+	pathHash := DeepHash([]interface{}{
+		DeepHash([]interface{}{left}),
+		DeepHash([]interface{}{right}),
+		DeepHash([]interface{}{offsetBuffer}),
+	})
+
+	if arrayCompare(id, pathHash[:]) {
+		if dest < offset {
+			return ValidatePath(left, dest, leftBound, int(math.Min(float64(rightBound), float64(offset))), remainder)
+		}
+		return ValidatePath(right, dest, int(math.Max(float64(leftBound), float64(offset))), rightBound, remainder)
+	}
+	return nil, false
+}
+
+func bufferToInt(buf []byte) int {
+	value := 0
+	for i := 0; i < len(buf); i++ {
+		value *= 256
+		value += int(buf[i])
+	}
+	return value
+}
+
+func arrayCompare(a, b []byte) bool {
+	return bytes.Equal(a, b)
 }

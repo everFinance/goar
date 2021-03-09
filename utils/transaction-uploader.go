@@ -166,9 +166,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	chunkOk := ValidatePath(tt.transaction.Chunks.DataRoot,
-		offset, 0, dataSize, path)
-
+	_, chunkOk := ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.chunkIndex))
 	}
