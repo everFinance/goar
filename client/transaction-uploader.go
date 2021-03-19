@@ -1,10 +1,10 @@
-package utils
+package client
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/client"
+	"github.com/everFinance/goar/utils"
 	"math"
 	"math/rand"
 	"strconv"
@@ -45,7 +45,7 @@ type SerializedUploader struct {
 }
 
 type TransactionUploader struct {
-	Client             *client.Client
+	Client             *Client
 	chunkIndex         int
 	txPosted           bool
 	transaction        *Transaction
@@ -56,7 +56,7 @@ type TransactionUploader struct {
 	LastResponseError  string
 }
 
-func NewTransactionUploader(tt *Transaction, client *client.Client) (*TransactionUploader, error) {
+func NewTransactionUploader(tt *Transaction, client *Client) (*TransactionUploader, error) {
 	if tt.ID == "" {
 		return nil, errors.New("Transaction is not signed.")
 	}
@@ -154,7 +154,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	path, err := Base64Decode(chunk.DataPath)
+	path, err := utils.Base64Decode(chunk.DataPath)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, chunkOk := ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
+	_, chunkOk := utils.ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.chunkIndex))
 	}
@@ -179,7 +179,8 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, statusCode, err := tt.Client.HttpPost("chunk", byteGc)
+	body, statusCode, err := tt.Client.HttpPost("chunk", byteGc)
+	fmt.Println("post chunk body: ", string(body))
 	tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
@@ -262,16 +263,15 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 func (tt *TransactionUploader) postTransaction() error {
 	var uploadInBody = tt.TotalChunks() <= MAX_CHUNKS_IN_BODY
 
-	byteTx, err := json.Marshal(&tt.transaction)
-	if err != nil {
-		return err
-	}
-
 	if uploadInBody {
 		// Post the transaction with data.
 		tt.transaction.Data = tt.data
-
-		_, status, err := tt.Client.HttpPost("tx", byteTx)
+		byteTx, err := json.Marshal(tt.transaction)
+		if err != nil {
+			return err
+		}
+		body, status, err := tt.Client.HttpPost("tx", byteTx)
+		fmt.Println("tx return body: ", string(body))
 		if err != nil {
 			fmt.Printf("tt.Client.SubmitTransaction(&tt.transaction) error: %v", err)
 			return err
@@ -288,6 +288,11 @@ func (tt *TransactionUploader) postTransaction() error {
 		}
 		tt.LastResponseError = ""
 		return nil
+	}
+
+	byteTx, err := json.Marshal(tt.transaction)
+	if err != nil {
+		return err
 	}
 
 	// else

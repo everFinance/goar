@@ -20,7 +20,7 @@ func SignTransaction(tx *types.Transaction, pubKey *rsa.PublicKey, prvKey *rsa.P
 		return
 	}
 
-	sig, err := sign(signData, prvKey)
+	sig, err := Sign(signData, prvKey)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func VerifyTransaction(tx types.Transaction) (err error) {
 	return verify(signData, pubKey, sig)
 }
 
-func sign(msg []byte, prvKey *rsa.PrivateKey) ([]byte, error) {
+func Sign(msg []byte, prvKey *rsa.PrivateKey) ([]byte, error) {
 	hashed := sha256.Sum256(msg)
 
 	return rsa.SignPSS(rand.Reader, prvKey, crypto.SHA256, hashed[:], &rsa.PSSOptions{

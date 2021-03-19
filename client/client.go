@@ -251,3 +251,5 @@ func (c *Client) HttpPost(_path string, payload []byte) (body []byte, statusCode
 	body, err = ioutil.ReadAll(resp.Body)
 	return
 }
+
+// new

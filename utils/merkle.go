@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"crypto/sha256"
-	"crypto/sha512"
 	"math"
 	"math/big"
 
@@ -25,9 +24,9 @@ const (
 )
 
 type Chunks struct {
-	DataRoot []byte
-	Chunks   []Chunk
-	Proofs   []*Proof
+	DataRoot []byte   `json:"data_root"`
+	Chunks   []Chunk  `json:"chunks"`
+	Proofs   []*Proof `json:"proofs"`
 }
 
 type Chunk struct {
@@ -331,6 +330,6 @@ func arrayCompare(a, b []byte) bool {
 }
 
 func Hash(data [][]byte) []byte {
-	byte32 := sha512.Sum512_256(ConcatBuffer(data...))
+	byte32 := sha256.Sum256(ConcatBuffer(data...))
 	return byte32[:]
 }

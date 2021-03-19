@@ -1,10 +1,11 @@
-package utils
+package client
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/everFinance/goar/client"
+	"fmt"
 	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
 	"strconv"
 )
 
@@ -17,13 +18,13 @@ type Transaction struct {
 	Target    string      `json:"target"`
 	Quantity  string      `json:"quantity"`
 	Data      []byte      `json:"data"`
-	DataSize  int         `json:"data_size"`
+	DataSize  string      `json:"data_size"`
 	DataRoot  string      `json:"data_root"`
 	Reward    string      `json:"reward"`
 	Signature string      `json:"signature"`
 
 	// Computed when needed.
-	Chunks *Chunks
+	Chunks *utils.Chunks `json:"-"`
 }
 
 func (tx *Transaction) PrepareChunks(data []byte) {
@@ -34,15 +35,16 @@ func (tx *Transaction) PrepareChunks(data []byte) {
 	// data *from* this transaction.
 
 	if tx.Chunks == nil && len(data) > 0 {
-		*tx.Chunks = GenerateChunks(data)
-		tx.DataRoot = Base64Encode(tx.Chunks.DataRoot)
+		chunks := utils.GenerateChunks(data)
+		tx.Chunks = &chunks
+		tx.DataRoot = utils.Base64Encode(tx.Chunks.DataRoot)
 	}
 
 	if tx.Chunks == nil && len(data) == 0 {
-		tx.Chunks = &Chunks{
+		tx.Chunks = &utils.Chunks{
 			DataRoot: make([]byte, 0),
-			Chunks:   make([]Chunk, 0),
-			Proofs:   make([]*Proof, 0),
+			Chunks:   make([]utils.Chunk, 0),
+			Proofs:   make([]*utils.Proof, 0),
 		}
 		tx.DataRoot = ""
 	}
@@ -50,11 +52,11 @@ func (tx *Transaction) PrepareChunks(data []byte) {
 }
 
 type GetChunk struct {
-	DataRoot string
-	DataSize string
-	DataPath string
-	Offset   string
-	Chunk    string
+	DataRoot string `json:"data_root"`
+	DataSize string `json:"data_size"`
+	DataPath string `json:"data_path"`
+	Offset   string `json:"offset"`
+	Chunk    string `json:"chunk"`
 }
 
 // Returns a chunk in a format suitable for posting to /chunk.
@@ -65,19 +67,19 @@ func (tx *Transaction) GetChunk(idx int, data []byte) (*GetChunk, error) {
 		return nil, errors.New("Chunks have not been prepared")
 	}
 
-	if len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx {
-		return nil, errors.New("len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx")
-	}
+	// if len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx {
+	// 	return nil, errors.New("len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx")
+	// }
 
 	proof := tx.Chunks.Proofs[idx]
 	chunk := tx.Chunks.Chunks[idx]
 
 	return &GetChunk{
 		DataRoot: tx.DataRoot,
-		DataSize: strconv.Itoa(tx.DataSize),
-		DataPath: Base64Encode(proof.Proof),
+		DataSize: tx.DataSize,
+		DataPath: utils.Base64Encode(proof.Proof),
 		Offset:   strconv.Itoa(proof.Offest),
-		Chunk:    Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
+		Chunk:    utils.Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
 	}, nil
 }
 
@@ -87,8 +89,8 @@ func (gc *GetChunk) Marshal() ([]byte, error) {
 
 // GetUploader
 // @param upload: Transaction | SerializedUploader | string,
-func GetUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
-
+// @param data the data of the transaction. Required when resuming an upload.
+func GetUploader(api *Client, upload interface{}, data []byte) (*TransactionUploader, error) {
 	var (
 		uploader *TransactionUploader
 		err      error
@@ -119,4 +121,38 @@ func GetUploader(api *client.Client, upload interface{}, data []byte) (*Transact
 
 	uploader, err = (&TransactionUploader{Client: api}).FromSerialized(upload.(*SerializedUploader), data)
 	return uploader, err
+}
+
+func (tx *Transaction) GetSignatureData() ([]byte, error) {
+	switch tx.Format {
+	case 1:
+		// todo
+		return nil, errors.New("current do not support format is 1 tx")
+	case 2:
+		tx.PrepareChunks(tx.Data)
+		tags := [][]string{}
+		for _, tag := range tx.Tags {
+			tags = append(tags, []string{
+				tag.Name, tag.Value,
+			})
+		}
+
+		dataList := []interface{}{}
+		dataList = append(dataList, utils.Base64Encode([]byte(fmt.Sprintf("%d", tx.Format))))
+		dataList = append(dataList, tx.Owner)
+		dataList = append(dataList, tx.Target)
+		dataList = append(dataList, utils.Base64Encode([]byte(tx.Quantity)))
+		dataList = append(dataList, utils.Base64Encode([]byte(tx.Reward)))
+		dataList = append(dataList, tx.LastTx)
+		dataList = append(dataList, tags)
+		dataList = append(dataList, utils.Base64Encode([]byte(tx.DataSize)))
+		dataList = append(dataList, tx.DataRoot)
+
+		hash := utils.DeepHash(dataList)
+		deepHash := hash[:]
+		return deepHash, nil
+
+	default:
+		return nil, errors.New(fmt.Sprintf("Unexpected transaction format: %d", tx.Format))
+	}
 }

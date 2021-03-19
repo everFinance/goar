@@ -54,7 +54,7 @@ func TestSignAndVerify(t *testing.T) {
 	assert.NoError(t, err)
 	msg := []byte("123")
 
-	sig, err := sign(msg[:], rightKey)
+	sig, err := Sign(msg[:], rightKey)
 	assert.NoError(t, err)
 	assert.NoError(t, verify(msg, &rightKey.PublicKey, sig))
 	assert.Error(t, verify(msg, &wrongKey.PublicKey, sig))
