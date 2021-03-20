@@ -52,6 +52,16 @@ type Proof struct {
 	Proof  []byte
 }
 
+/**
+ * Generates the data_root, chunks & proofs
+ * needed for a transaction.
+ *
+ * This also checks if the last chunk is a zero-length
+ * chunk and discards that chunk and proof if so.
+ * (we do not need to upload this zero length chunk)
+ *
+ * @param data
+ */
 func GenerateChunks(data []byte) Chunks {
 	chunks := chunkData(data)
 	leaves := generateLeaves(chunks)
@@ -109,13 +119,17 @@ func chunkData(data []byte) (chunks []Chunk) {
 
 func generateLeaves(chunks []Chunk) (leafs []*Node) {
 	for _, chunk := range chunks {
-		hDataHash := sha256.Sum256(chunk.DataHash)
-		hMaxByteRange := sha256.Sum256(PaddedBigBytes(big.NewInt(int64(chunk.MaxByteRange)), 32))
+		// hDataHash := sha256.Sum256(chunk.DataHash)
+		// hMaxByteRange := sha256.Sum256(PaddedBigBytes(big.NewInt(int64(chunk.MaxByteRange)), 32))
 
 		leafs = append(leafs, &Node{
-			ID: hashArray(
-				[][]byte{hDataHash[:], hMaxByteRange[:]},
-			),
+			// ID: hashArray(
+			// 	[][]byte{hDataHash[:], hMaxByteRange[:]},
+			// ),
+			ID: Hash([][]byte{
+				Hash([][]byte{chunk.DataHash}),
+				Hash([][]byte{intToBuffer(chunk.MaxByteRange)}),
+			}),
 			Type:         LeafNodeType,
 			DataHash:     chunk.DataHash,
 			MinByteRange: chunk.MinByteRange,
@@ -156,9 +170,10 @@ func hashBranch(leftNode, rightNode *Node) (branchNode *Node) {
 	}
 	hLeafNodeId := sha256.Sum256(leftNode.ID)
 	hRightNodeId := sha256.Sum256(rightNode.ID)
-	hLeafNodeMaxRange := sha256.Sum256(PaddedBigBytes(big.NewInt(int64(leftNode.MaxByteRange)), 32))
-	id := hashArray([][]byte{hLeafNodeId[:], hRightNodeId[:], hLeafNodeMaxRange[:]})
-
+	// hLeafNodeMaxRange := sha256.Sum256(PaddedBigBytes(big.NewInt(int64(leftNode.MaxByteRange)), 32))
+	hLeafNodeMaxRange := sha256.Sum256(intToBuffer(leftNode.MaxByteRange))
+	// id := hashArray([][]byte{hLeafNodeId[:], hRightNodeId[:], hLeafNodeMaxRange[:]})
+	id := Hash([][]byte{hLeafNodeId[:], hRightNodeId[:], hLeafNodeMaxRange[:]})
 	branchNode = &Node{
 		Type:         BranchNodeType,
 		ID:           id,
@@ -186,7 +201,8 @@ func resolveBranchProofs(node *Node, proof []byte, depth int) (proofs []*Proof) 
 			Proof: ConcatBuffer(
 				proof,
 				node.DataHash,
-				PaddedBigBytes(big.NewInt(int64(node.MaxByteRange)), 32),
+				// PaddedBigBytes(big.NewInt(int64(node.MaxByteRange)), 32),
+				intToBuffer(node.MaxByteRange),
 			),
 		}
 		proofs = append(proofs, p)
@@ -198,7 +214,8 @@ func resolveBranchProofs(node *Node, proof []byte, depth int) (proofs []*Proof) 
 			proof,
 			node.LeftChild.ID,
 			node.RightChild.ID,
-			PaddedBigBytes(big.NewInt(int64(node.ByteRange)), 32),
+			// PaddedBigBytes(big.NewInt(int64(node.ByteRange)), 32),
+			intToBuffer(node.ByteRange),
 		)
 		leftProofs := resolveBranchProofs(node.LeftChild, partialProof, depth+1)
 		rightProofs := resolveBranchProofs(node.RightChild, partialProof, depth+1)
@@ -282,7 +299,7 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 			Hash([][]byte{pathData}),
 			Hash([][]byte{endOffsetBuffer}),
 		})
-		result := arrayCompare(id, pathDataHash[:])
+		result := arrayCompare(id, pathDataHash)
 		if result {
 			return &ValidateResult{
 				Offset:     rightBound - 1,
@@ -307,7 +324,7 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 		Hash([][]byte{offsetBuffer}),
 	})
 
-	if arrayCompare(id, pathHash[:]) {
+	if arrayCompare(id, pathHash) {
 		if dest < offset {
 			return ValidatePath(left, dest, leftBound, int(math.Min(float64(rightBound), float64(offset))), remainder)
 		}
@@ -323,6 +340,17 @@ func bufferToInt(buf []byte) int {
 		value += int(buf[i])
 	}
 	return value
+}
+
+func intToBuffer(note int) []byte {
+	buffer := make([]byte, NOTE_SIZE)
+
+	for i := len(buffer) - 1; i >= 0; i-- {
+		byt := note % 256
+		buffer[i] = byte(byt)
+		note = (note - byt) / 256 // todo 在js 中 /  是包含小数的 eg: 1/2 = 0.5
+	}
+	return buffer
 }
 
 func arrayCompare(a, b []byte) bool {

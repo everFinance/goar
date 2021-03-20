@@ -168,6 +168,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	}
 	_, chunkOk := utils.ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
+		panic(tt.chunkIndex)
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.chunkIndex))
 	}
 	// Catch network errors and turn them into objects with status -1 and an error message.
@@ -297,7 +298,8 @@ func (tt *TransactionUploader) postTransaction() error {
 
 	// else
 	// Post the transaction with no data.
-	_, status, err := tt.Client.HttpPost("tx", byteTx)
+	body, status, err := tt.Client.HttpPost("tx", byteTx)
+	fmt.Println("send tx: ", string(body))
 	tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = status
 	if !(status >= 200 && status < 300) {
