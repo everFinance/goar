@@ -1,9 +1,11 @@
-package client
+package transfer
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/everFinance/goar/client"
+	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/utils"
 	"math"
 	"math/rand"
@@ -38,17 +40,17 @@ const ERROR_DELAY = 1000 * 40
 type SerializedUploader struct {
 	chunkIndex         int
 	txPosted           bool
-	transaction        *Transaction
+	transaction        *TransactionChunks
 	lastRequestTimeEnd int64
 	lastResponseStatus int
 	lastResponseError  string
 }
 
 type TransactionUploader struct {
-	Client             *Client
+	Client             *client.Client
 	chunkIndex         int
 	txPosted           bool
-	transaction        *Transaction
+	transaction        *TransactionChunks
 	data               []byte
 	lastRequestTimeEnd int64
 	TotalErrors        int // Not serialized.
@@ -56,19 +58,19 @@ type TransactionUploader struct {
 	LastResponseError  string
 }
 
-func NewTransactionUploader(tt *Transaction, client *Client) (*TransactionUploader, error) {
+func NewTransactionUploader(tt *TransactionChunks, client *client.Client) (*TransactionUploader, error) {
 	if tt.ID == "" {
-		return nil, errors.New("Transaction is not signed.")
+		return nil, errors.New("TransactionChunks is not signed.")
 	}
 	if tt.Chunks == nil {
-		return nil, errors.New("Transaction chunks not perpared.")
+		return nil, errors.New("TransactionChunks chunks not perpared.")
 	}
 	// Make a copy of transaction, zeroing the data so we can serialize.
 	tu := &TransactionUploader{
 		Client: client,
 	}
 	tu.data = tt.Data
-	tu.transaction = &Transaction{
+	tu.transaction = &TransactionChunks{
 		Format:    tt.Format,
 		ID:        tt.ID,
 		LastTx:    tt.LastTx,
@@ -166,7 +168,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, chunkOk := utils.ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
+	_, chunkOk := merkle.ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
 		panic(tt.chunkIndex)
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.chunkIndex))
@@ -242,7 +244,7 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Tx %s not found: %d", id, statusCode))
 	}
-	transaction := &Transaction{}
+	transaction := &TransactionChunks{}
 	if err := json.Unmarshal(body, transaction); err != nil {
 		return nil, err
 	}
@@ -272,7 +274,8 @@ func (tt *TransactionUploader) postTransaction() error {
 			return err
 		}
 		body, status, err := tt.Client.HttpPost("tx", byteTx)
-		fmt.Println("tx return body: ", string(body))
+		fmt.Println("tx without chunks body : ", string(body))
+		fmt.Println("tx id: ", tt.transaction.ID)
 		if err != nil {
 			fmt.Printf("tt.Client.SubmitTransaction(&tt.transaction) error: %v", err)
 			return err
@@ -300,6 +303,7 @@ func (tt *TransactionUploader) postTransaction() error {
 	// Post the transaction with no data.
 	body, status, err := tt.Client.HttpPost("tx", byteTx)
 	fmt.Println("send tx: ", string(body))
+	fmt.Println("tx id: ", tt.transaction.ID)
 	tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = status
 	if !(status >= 200 && status < 300) {

@@ -43,7 +43,7 @@ type Transaction struct {
 	Tags      []Tag  `json:"tags"`
 	Target    string `json:"target"`
 	Quantity  string `json:"quantity"`
-	Data      string `json:"data"`
+	Data      []byte `json:"data"`
 	DataSize  string `json:"data_size"`
 	DataRoot  string `json:"data_root"`
 	Reward    string `json:"reward"`

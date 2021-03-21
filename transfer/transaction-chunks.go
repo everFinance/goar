@@ -1,15 +1,20 @@
-package client
+package transfer
 
 import (
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/everFinance/goar/client"
+	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"math/big"
 	"strconv"
 )
 
-type Transaction struct {
+type TransactionChunks struct {
 	Format    int         `json:"format"`
 	ID        string      `json:"id"`
 	LastTx    string      `json:"last_tx"`
@@ -24,10 +29,27 @@ type Transaction struct {
 	Signature string      `json:"signature"`
 
 	// Computed when needed.
-	Chunks *utils.Chunks `json:"-"`
+	Chunks *merkle.Chunks `json:"-"`
 }
 
-func (tx *Transaction) PrepareChunks(data []byte) {
+func (tx *TransactionChunks) FormatTransaction() *types.Transaction {
+	return &types.Transaction{
+		Format:    tx.Format,
+		ID:        tx.ID,
+		LastTx:    tx.LastTx,
+		Owner:     tx.Owner,
+		Tags:      tx.Tags,
+		Target:    tx.Target,
+		Quantity:  tx.Quantity,
+		Data:      tx.Data,
+		DataSize:  tx.DataSize,
+		DataRoot:  tx.DataRoot,
+		Reward:    tx.Reward,
+		Signature: tx.Signature,
+	}
+}
+
+func (tx *TransactionChunks) PrepareChunks(data []byte) {
 	// Note: we *do not* use `this.data`, the caller may be
 	// operating on a transaction with an zero length data field.
 	// This function computes the chunks for the data passed in and
@@ -35,16 +57,16 @@ func (tx *Transaction) PrepareChunks(data []byte) {
 	// data *from* this transaction.
 
 	if tx.Chunks == nil && len(data) > 0 {
-		chunks := utils.GenerateChunks(data)
+		chunks := merkle.GenerateChunks(data)
 		tx.Chunks = &chunks
 		tx.DataRoot = utils.Base64Encode(tx.Chunks.DataRoot)
 	}
 
 	if tx.Chunks == nil && len(data) == 0 {
-		tx.Chunks = &utils.Chunks{
+		tx.Chunks = &merkle.Chunks{
 			DataRoot: make([]byte, 0),
-			Chunks:   make([]utils.Chunk, 0),
-			Proofs:   make([]*utils.Proof, 0),
+			Chunks:   make([]merkle.Chunk, 0),
+			Proofs:   make([]*merkle.Proof, 0),
 		}
 		tx.DataRoot = ""
 	}
@@ -62,14 +84,10 @@ type GetChunk struct {
 // Returns a chunk in a format suitable for posting to /chunk.
 // Similar to `prepareChunks()` this does not operate `this.data`,
 // instead using the data passed in.
-func (tx *Transaction) GetChunk(idx int, data []byte) (*GetChunk, error) {
+func (tx *TransactionChunks) GetChunk(idx int, data []byte) (*GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
 	}
-
-	// if len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx {
-	// 	return nil, errors.New("len(tx.Chunks.Proofs) >= idx || len(tx.Chunks.Chunks) >= idx")
-	// }
 
 	proof := tx.Chunks.Proofs[idx]
 	chunk := tx.Chunks.Chunks[idx]
@@ -88,15 +106,15 @@ func (gc *GetChunk) Marshal() ([]byte, error) {
 }
 
 // GetUploader
-// @param upload: Transaction | SerializedUploader | string,
+// @param upload: TransactionChunks | SerializedUploader | string,
 // @param data the data of the transaction. Required when resuming an upload.
-func GetUploader(api *Client, upload interface{}, data []byte) (*TransactionUploader, error) {
+func GetUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
 	var (
 		uploader *TransactionUploader
 		err      error
 	)
 
-	if tt, ok := upload.(*Transaction); ok {
+	if tt, ok := upload.(*TransactionChunks); ok {
 		uploader, err = NewTransactionUploader(tt, api)
 		if err != nil {
 			return nil, err
@@ -123,7 +141,25 @@ func GetUploader(api *Client, upload interface{}, data []byte) (*TransactionUplo
 	return uploader, err
 }
 
-func (tx *Transaction) GetSignatureData() ([]byte, error) {
+func (tx *TransactionChunks) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.PrivateKey) error {
+	tx.Owner = utils.Base64Encode(pubKey.N.Bytes())
+
+	signData, err := GetSignatureData(tx)
+	if err != nil {
+		return err
+	}
+	sig, err := utils.Sign(signData, prvKey)
+	if err != nil {
+		return err
+	}
+
+	id := sha256.Sum256(sig)
+	tx.ID = utils.Base64Encode(id[:])
+	tx.Signature = utils.Base64Encode(sig)
+	return nil
+}
+
+func GetSignatureData(tx *TransactionChunks) ([]byte, error) {
 	switch tx.Format {
 	case 1:
 		// todo
@@ -155,4 +191,34 @@ func (tx *Transaction) GetSignatureData() ([]byte, error) {
 	default:
 		return nil, errors.New(fmt.Sprintf("Unexpected transaction format: %d", tx.Format))
 	}
+}
+
+func VerifyTransaction(tx TransactionChunks) (err error) {
+	sig, err := utils.Base64Decode(tx.Signature)
+	if err != nil {
+		return
+	}
+
+	// verify ID
+	id := sha256.Sum256(sig)
+	if utils.Base64Encode(id[:]) != tx.ID {
+		err = fmt.Errorf("wrong id")
+	}
+
+	signData, err := GetSignatureData(&tx)
+	if err != nil {
+		return
+	}
+
+	owner, err := utils.Base64Decode(tx.Owner)
+	if err != nil {
+		return
+	}
+
+	pubKey := &rsa.PublicKey{
+		N: new(big.Int).SetBytes(owner),
+		E: 65537, //"AQAB"
+	}
+
+	return utils.Verify(signData, pubKey, sig)
 }

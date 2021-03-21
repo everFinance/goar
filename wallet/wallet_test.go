@@ -2,7 +2,10 @@ package wallet
 
 import (
 	"encoding/base64"
+	"github.com/everFinance/goar/types"
+	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -43,4 +46,32 @@ func TestPubKey(t *testing.T) {
 func TestAddress(t *testing.T) {
 	addr := testWallet.Address
 	assert.Equal(t, "eIgnDk4vSKPe0lYB6yhCHDV1dOw3JgYHGocfj7WGrjQ", addr)
+}
+
+func TestWallet_SendBigData(t *testing.T) {
+	arNode := "https://arweave.net"
+	w, err := NewFromPath("../example/testKey.json", arNode)
+	assert.NoError(t, err)
+	bigData, err := ioutil.ReadFile("../testFile.json")
+	assert.NoError(t, err)
+	t.Log("test file length: ", len(bigData))
+
+	tags := []types.Tag{
+		types.Tag{
+			Name:  "Used",
+			Value: "TestChunks",
+		},
+		types.Tag{
+			Name:  "CreatedBy",
+			Value: "goar",
+		},
+		types.Tag{
+			Name:  "CreateTime",
+			Value: time.Now().Local().String(),
+		},
+	}
+	id, err := w.SendBigData(bigData, tags, 0)
+	assert.NoError(t, err)
+	t.Log("tx hash: ", id)
+
 }

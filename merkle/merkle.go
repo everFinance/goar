@@ -1,4 +1,4 @@
-package utils
+package merkle
 
 import (
 	"bytes"
@@ -279,7 +279,7 @@ type ValidateResult struct {
 	ChunkSize  int
 }
 
-// 验证merkle path
+// 验证 merkle path
 func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*ValidateResult, bool) {
 	if rightBound <= 0 {
 		return nil, false
