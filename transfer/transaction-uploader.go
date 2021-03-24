@@ -7,6 +7,8 @@ import (
 	"github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/utils"
+	"github.com/shopspring/decimal"
+	"github.com/zyjblockchain/sandy_log/log"
 	"math"
 	"math/rand"
 	"strconv"
@@ -63,7 +65,8 @@ func NewTransactionUploader(tt *TransactionChunks, client *client.Client) (*Tran
 		return nil, errors.New("TransactionChunks is not signed.")
 	}
 	if tt.Chunks == nil {
-		return nil, errors.New("TransactionChunks chunks not perpared.")
+		log.Errorf("TransactionChunks chunks not perpared.")
+		// return nil, errors.New("TransactionChunks chunks not perpared.")
 	}
 	// Make a copy of transaction, zeroing the data so we can serialize.
 	tu := &TransactionUploader{
@@ -110,7 +113,9 @@ func (tt *TransactionUploader) UploadChunks() int {
 }
 
 func (tt *TransactionUploader) PctComplete() float64 {
-	return math.Trunc(float64(tt.UploadChunks()/tt.TotalChunks()) * 100)
+	val := decimal.NewFromInt(int64(tt.UploadChunks())).Div(decimal.NewFromInt(int64(tt.TotalChunks())))
+	fval, _ := val.Float64()
+	return math.Trunc(fval * 100)
 }
 
 /**
@@ -246,6 +251,7 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 	}
 	transaction := &TransactionChunks{}
 	if err := json.Unmarshal(body, transaction); err != nil {
+		log.Errorf("json.Unmarshal(body, transaction) error; body: %s", string(body))
 		return nil, err
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/zyjblockchain/sandy_log/log"
 	"math/big"
 	"strconv"
 )
@@ -126,6 +127,7 @@ func GetUploader(api *client.Client, upload interface{}, data []byte) (*Transact
 		// upload 返回为 SerializedUploader 类型
 		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
 		if err != nil {
+			log.Errorf("(&TransactionUploader{Client: api}).FromTransactionId(id) error: %v", err)
 			return nil, err
 		}
 	} else {
