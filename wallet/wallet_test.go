@@ -50,7 +50,7 @@ func TestAddress(t *testing.T) {
 
 func TestWallet_SendBigData(t *testing.T) {
 	arNode := "https://arweave.net"
-	w, err := NewFromPath("../example/testKey.json", arNode)
+	w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
 	assert.NoError(t, err)
 	bigData, err := ioutil.ReadFile("../testFile.json")
 	assert.NoError(t, err)

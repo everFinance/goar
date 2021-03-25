@@ -20,7 +20,7 @@ func Test_Tx(t *testing.T) {
 	// assert.NoError(t, err)
 	// t.Log(string(tx.Data))
 
-	// url := fmt.Sprintf("tx/%v/%v", id, "data")
+	// url := fmt.Sprintf("tx/%v/%v", id, "Data")
 	// body, statusCode, err := c.HttpGet(url)
 	// assert.NoError(t, err)
 	// t.Log("code: ", statusCode)

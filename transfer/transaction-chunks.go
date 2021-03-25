@@ -51,11 +51,11 @@ func (tx *TransactionChunks) FormatTransaction() *types.Transaction {
 }
 
 func (tx *TransactionChunks) PrepareChunks(data []byte) {
-	// Note: we *do not* use `this.data`, the caller may be
-	// operating on a transaction with an zero length data field.
-	// This function computes the chunks for the data passed in and
-	// assigns the result to this transaction. It should not read the
-	// data *from* this transaction.
+	// Note: we *do not* use `this.Data`, the caller may be
+	// operating on a Transaction with an zero length Data field.
+	// This function computes the chunks for the Data passed in and
+	// assigns the result to this Transaction. It should not read the
+	// Data *from* this Transaction.
 
 	if tx.Chunks == nil && len(data) > 0 {
 		chunks := merkle.GenerateChunks(data)
@@ -83,8 +83,8 @@ type GetChunk struct {
 }
 
 // Returns a chunk in a format suitable for posting to /chunk.
-// Similar to `prepareChunks()` this does not operate `this.data`,
-// instead using the data passed in.
+// Similar to `prepareChunks()` this does not operate `this.Data`,
+// instead using the Data passed in.
 func (tx *TransactionChunks) GetChunk(idx int, data []byte) (*GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
@@ -108,7 +108,7 @@ func (gc *GetChunk) Marshal() ([]byte, error) {
 
 // GetUploader
 // @param upload: TransactionChunks | SerializedUploader | string,
-// @param data the data of the transaction. Required when resuming an upload.
+// @param Data the Data of the Transaction. Required when resuming an upload.
 func GetUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
 	var (
 		uploader *TransactionUploader
@@ -191,7 +191,7 @@ func GetSignatureData(tx *TransactionChunks) ([]byte, error) {
 		return deepHash, nil
 
 	default:
-		return nil, errors.New(fmt.Sprintf("Unexpected transaction format: %d", tx.Format))
+		return nil, errors.New(fmt.Sprintf("Unexpected Transaction format: %d", tx.Format))
 	}
 }
 

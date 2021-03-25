@@ -49,12 +49,12 @@ type SerializedUploader struct {
 }
 
 type TransactionUploader struct {
-	Client             *client.Client
-	chunkIndex         int
-	txPosted           bool
-	transaction        *TransactionChunks
-	data               []byte
-	lastRequestTimeEnd int64
+	Client             *client.Client `json:"-"`
+	ChunkIndex         int
+	TxPosted           bool
+	Transaction        *TransactionChunks
+	Data               []byte
+	LastRequestTimeEnd int64
 	TotalErrors        int // Not serialized.
 	LastResponseStatus int
 	LastResponseError  string
@@ -68,12 +68,12 @@ func NewTransactionUploader(tt *TransactionChunks, client *client.Client) (*Tran
 		log.Errorf("TransactionChunks chunks not perpared.")
 		// return nil, errors.New("TransactionChunks chunks not perpared.")
 	}
-	// Make a copy of transaction, zeroing the data so we can serialize.
+	// Make a copy of Transaction, zeroing the Data so we can serialize.
 	tu := &TransactionUploader{
 		Client: client,
 	}
-	tu.data = tt.Data
-	tu.transaction = &TransactionChunks{
+	tu.Data = tt.Data
+	tu.Transaction = &TransactionChunks{
 		Format:    tt.Format,
 		ID:        tt.ID,
 		LastTx:    tt.LastTx,
@@ -92,24 +92,24 @@ func NewTransactionUploader(tt *TransactionChunks, client *client.Client) (*Tran
 }
 
 func (tt *TransactionUploader) IsComplete() bool {
-	tChunks := tt.transaction.Chunks
+	tChunks := tt.Transaction.Chunks
 	if tChunks == nil {
 		return false
 	} else {
-		return tt.txPosted && (tt.chunkIndex == len(tChunks.Chunks))
+		return tt.TxPosted && (tt.ChunkIndex == len(tChunks.Chunks))
 	}
 }
 
 func (tt *TransactionUploader) TotalChunks() int {
-	if tt.transaction.Chunks == nil {
+	if tt.Transaction.Chunks == nil {
 		return 0
 	} else {
-		return len(tt.transaction.Chunks.Chunks)
+		return len(tt.Transaction.Chunks.Chunks)
 	}
 }
 
 func (tt *TransactionUploader) UploadChunks() int {
-	return tt.chunkIndex
+	return tt.ChunkIndex
 }
 
 func (tt *TransactionUploader) PctComplete() float64 {
@@ -119,8 +119,8 @@ func (tt *TransactionUploader) PctComplete() float64 {
 }
 
 /**
- * Uploads the next part of the transaction.
- * On the first call this posts the transaction
+ * Uploads the next part of the Transaction.
+ * On the first call this posts the Transaction
  * itself and on any subsequent calls uploads the
  * next chunk until it completes.
  */
@@ -143,7 +143,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 
 	var delay = 0.0
 	if tt.LastResponseError != "" {
-		delay = math.Max(float64(tt.lastRequestTimeEnd+ERROR_DELAY-time.Now().UnixNano()/1000000), float64(ERROR_DELAY))
+		delay = math.Max(float64(tt.LastRequestTimeEnd+ERROR_DELAY-time.Now().UnixNano()/1000000), float64(ERROR_DELAY))
 	}
 	if delay > 0.0 {
 		// Jitter delay bcoz networks, subtract up to 30% from 40 seconds
@@ -153,11 +153,11 @@ func (tt *TransactionUploader) UploadChunk() error {
 
 	tt.LastResponseError = ""
 
-	if !tt.txPosted {
+	if !tt.TxPosted {
 		return tt.postTransaction()
 	}
 
-	chunk, err := tt.transaction.GetChunk(tt.chunkIndex, tt.data)
+	chunk, err := tt.Transaction.GetChunk(tt.ChunkIndex, tt.Data)
 	if err != nil {
 		return err
 	}
@@ -173,13 +173,13 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, chunkOk := merkle.ValidatePath(tt.transaction.Chunks.DataRoot, offset, 0, dataSize, path)
+	_, chunkOk := merkle.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
-		panic(tt.chunkIndex)
-		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.chunkIndex))
+		panic(tt.ChunkIndex)
+		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.ChunkIndex))
 	}
 	// Catch network errors and turn them into objects with status -1 and an error message.
-	gc, err := tt.transaction.GetChunk(tt.chunkIndex, tt.data)
+	gc, err := tt.Transaction.GetChunk(tt.ChunkIndex, tt.Data)
 	if err != nil {
 		return err
 	}
@@ -189,14 +189,14 @@ func (tt *TransactionUploader) UploadChunk() error {
 	}
 	body, statusCode, err := tt.Client.HttpPost("chunk", byteGc)
 	fmt.Println("post chunk body: ", string(body))
-	tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
+	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
-		tt.chunkIndex++
+		tt.ChunkIndex++
 	} else if err != nil {
 		tt.LastResponseError = err.Error()
 		if _, ok := FATAL_CHUNK_UPLOAD_ERRORS[err.Error()]; ok {
-			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.chunkIndex, err))
+			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.ChunkIndex, err))
 		}
 	}
 	return nil
@@ -220,18 +220,18 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
 	if err != nil {
 		return nil, err
 	}
-	// Copy the serialized upload information, and data passed in.
-	upload.chunkIndex = serialized.chunkIndex
-	upload.lastRequestTimeEnd = serialized.lastRequestTimeEnd
+	// Copy the serialized upload information, and Data passed in.
+	upload.ChunkIndex = serialized.chunkIndex
+	upload.LastRequestTimeEnd = serialized.lastRequestTimeEnd
 	upload.LastResponseError = serialized.lastResponseError
 	upload.LastResponseStatus = serialized.lastResponseStatus
-	upload.txPosted = serialized.txPosted
-	upload.data = data
+	upload.TxPosted = serialized.txPosted
+	upload.Data = data
 
-	upload.transaction.PrepareChunks(data)
+	upload.Transaction.PrepareChunks(data)
 
-	if upload.transaction.DataRoot != serialized.transaction.DataRoot {
-		return nil, errors.New("Data mismatch: Uploader doesn't match provided data.")
+	if upload.Transaction.DataRoot != serialized.transaction.DataRoot {
+		return nil, errors.New("Data mismatch: Uploader doesn't match provided Data.")
 	}
 
 	return upload, nil
@@ -251,7 +251,7 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 	}
 	transaction := &TransactionChunks{}
 	if err := json.Unmarshal(body, transaction); err != nil {
-		log.Errorf("json.Unmarshal(body, transaction) error; body: %s", string(body))
+		log.Errorf("json.Unmarshal(body, Transaction) error; body: %s", string(body))
 		return nil, err
 	}
 
@@ -268,56 +268,68 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 	return serialized, nil
 }
 
+func (tt *TransactionUploader) FormatSerializedUploader() *SerializedUploader {
+	tx := tt.Transaction
+	return &SerializedUploader{
+		chunkIndex:         tt.ChunkIndex,
+		txPosted:           tt.TxPosted,
+		transaction:        tx,
+		lastRequestTimeEnd: tt.LastRequestTimeEnd,
+		lastResponseStatus: tt.LastResponseStatus,
+		lastResponseError:  tt.LastResponseError,
+	}
+}
+
 // POST to /tx
 func (tt *TransactionUploader) postTransaction() error {
 	var uploadInBody = tt.TotalChunks() <= MAX_CHUNKS_IN_BODY
 
 	if uploadInBody {
-		// Post the transaction with data.
-		tt.transaction.Data = tt.data
-		byteTx, err := json.Marshal(tt.transaction)
+		// Post the Transaction with Data.
+		tt.Transaction.Data = tt.Data
+		byteTx, err := json.Marshal(tt.Transaction)
 		if err != nil {
 			return err
 		}
 		body, status, err := tt.Client.HttpPost("tx", byteTx)
 		fmt.Println("tx without chunks body : ", string(body))
-		fmt.Println("tx id: ", tt.transaction.ID)
+		fmt.Println("tx id: ", tt.Transaction.ID)
 		if err != nil {
-			fmt.Printf("tt.Client.SubmitTransaction(&tt.transaction) error: %v", err)
+			fmt.Printf("tt.Client.SubmitTransaction(&tt.Transaction) error: %v", err)
 			return err
 		}
-		tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
+		tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 		tt.LastResponseStatus = status
-		tt.transaction.Data = make([]byte, 0)
+		tt.Transaction.Data = make([]byte, 0)
 
 		if status >= 200 && status < 300 {
 			// We are complete.
-			tt.txPosted = true
-			tt.chunkIndex = MAX_CHUNKS_IN_BODY
+			tt.TxPosted = true
+			tt.ChunkIndex = MAX_CHUNKS_IN_BODY
 			return nil
 		}
 		tt.LastResponseError = ""
 		return nil
 	}
 
-	byteTx, err := json.Marshal(tt.transaction)
+	byteTx, err := json.Marshal(tt.Transaction)
 	if err != nil {
 		return err
 	}
 
 	// else
-	// Post the transaction with no data.
+	// Post the Transaction with no Data.
 	body, status, err := tt.Client.HttpPost("tx", byteTx)
 	fmt.Println("send tx: ", string(body))
-	fmt.Println("tx id: ", tt.transaction.ID)
-	tt.lastRequestTimeEnd = time.Now().UnixNano() / 1000000
+	fmt.Println("tx id: ", tt.Transaction.ID)
+	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = status
 	if !(status >= 200 && status < 300) {
 		if err != nil {
 			tt.LastResponseError = err.Error()
 		}
-		return errors.New(fmt.Sprintf("Unable to upload transaction: %d, %v", status, err))
+		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v", status, err))
 	}
-	tt.txPosted = true
+	tt.TxPosted = true
 	return nil
 }
