@@ -183,7 +183,7 @@ func (w *Wallet) SendBigData(data []byte, tags []types.Tag, speedFactor int64) (
 		if err != nil {
 			return
 		}
-		fmt.Printf("%f complete, %d/%d \n", uploader.PctComplete(), uploader.UploadChunks(), uploader.TotalChunks())
+		fmt.Printf("%f complete, %d/%d \n", uploader.PctComplete(), uploader.UploadedChunks(), uploader.TotalChunks())
 	}
 	return
 }

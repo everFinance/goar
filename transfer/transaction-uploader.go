@@ -65,8 +65,7 @@ func NewTransactionUploader(tt *TransactionChunks, client *client.Client) (*Tran
 		return nil, errors.New("TransactionChunks is not signed.")
 	}
 	if tt.Chunks == nil {
-		log.Errorf("TransactionChunks chunks not perpared.")
-		// return nil, errors.New("TransactionChunks chunks not perpared.")
+		log.Warnf("TransactionChunks chunks not perpared.")
 	}
 	// Make a copy of Transaction, zeroing the Data so we can serialize.
 	tu := &TransactionUploader{
@@ -108,12 +107,12 @@ func (tt *TransactionUploader) TotalChunks() int {
 	}
 }
 
-func (tt *TransactionUploader) UploadChunks() int {
+func (tt *TransactionUploader) UploadedChunks() int {
 	return tt.ChunkIndex
 }
 
 func (tt *TransactionUploader) PctComplete() float64 {
-	val := decimal.NewFromInt(int64(tt.UploadChunks())).Div(decimal.NewFromInt(int64(tt.TotalChunks())))
+	val := decimal.NewFromInt(int64(tt.UploadedChunks())).Div(decimal.NewFromInt(int64(tt.TotalChunks())))
 	fval, _ := val.Float64()
 	return math.Trunc(fval * 100)
 }
@@ -125,6 +124,9 @@ func (tt *TransactionUploader) PctComplete() float64 {
  * next chunk until it completes.
  */
 func (tt *TransactionUploader) UploadChunk() error {
+	defer func() {
+		fmt.Printf("%f%% completes, %d/%d \n", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks())
+	}()
 	if tt.IsComplete() {
 		return errors.New("Upload is already complete.")
 	}
@@ -175,8 +177,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	}
 	_, chunkOk := merkle.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
-		panic(tt.ChunkIndex)
-		return errors.New(fmt.Sprintf("Unable to validate chunk %d", tt.ChunkIndex))
+		return errors.New(fmt.Sprintf("Unable to validate chunk %d ", tt.ChunkIndex))
 	}
 	// Catch network errors and turn them into objects with status -1 and an error message.
 	gc, err := tt.Transaction.GetChunk(tt.ChunkIndex, tt.Data)
@@ -188,7 +189,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 		return err
 	}
 	body, statusCode, err := tt.Client.HttpPost("chunk", byteGc)
-	fmt.Println("post chunk body: ", string(body))
+	fmt.Println("post tx chunk body: ", string(body))
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
@@ -246,7 +247,7 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
  */
 func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader, error) {
 	body, statusCode, err := tt.Client.HttpGet(fmt.Sprintf("tx/%s", id))
-	if err != nil {
+	if err != nil || string(body) == "Pending" || statusCode/100 != 2 {
 		return nil, errors.New(fmt.Sprintf("Tx %s not found: %d", id, statusCode))
 	}
 	transaction := &TransactionChunks{}
@@ -292,8 +293,7 @@ func (tt *TransactionUploader) postTransaction() error {
 			return err
 		}
 		body, status, err := tt.Client.HttpPost("tx", byteTx)
-		fmt.Println("tx without chunks body : ", string(body))
-		fmt.Println("tx id: ", tt.Transaction.ID)
+		fmt.Printf("post tx with data;body: %s, status: %d, txId: %s \n", string(body), status, tt.Transaction.ID)
 		if err != nil {
 			fmt.Printf("tt.Client.SubmitTransaction(&tt.Transaction) error: %v", err)
 			return err
@@ -320,8 +320,7 @@ func (tt *TransactionUploader) postTransaction() error {
 	// else
 	// Post the Transaction with no Data.
 	body, status, err := tt.Client.HttpPost("tx", byteTx)
-	fmt.Println("send tx: ", string(body))
-	fmt.Println("tx id: ", tt.Transaction.ID)
+	fmt.Printf("post tx with no data; body: %s, status: %d, txId: %s \n", string(body), status, tt.Transaction.ID)
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = status
 	if !(status >= 200 && status < 300) {

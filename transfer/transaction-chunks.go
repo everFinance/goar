@@ -57,6 +57,7 @@ func (tx *TransactionChunks) PrepareChunks(data []byte) {
 	// assigns the result to this Transaction. It should not read the
 	// Data *from* this Transaction.
 
+	fmt.Printf("Tx data size: %fMB \n", float64(len(data))/1024.0/1024.0)
 	if tx.Chunks == nil && len(data) > 0 {
 		chunks := merkle.GenerateChunks(data)
 		tx.Chunks = &chunks
