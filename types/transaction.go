@@ -1,4 +1,4 @@
-package transfer
+package types
 
 import (
 	"crypto/rsa"
@@ -6,57 +6,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/merkle"
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/zyjblockchain/sandy_log/log"
 	"math/big"
 	"strconv"
 )
 
-type TransactionChunks struct {
-	Format    int         `json:"format"`
-	ID        string      `json:"id"`
-	LastTx    string      `json:"last_tx"`
-	Owner     string      `json:"owner"`
-	Tags      []types.Tag `json:"tags"`
-	Target    string      `json:"target"`
-	Quantity  string      `json:"quantity"`
-	Data      []byte      `json:"data"`
-	DataSize  string      `json:"data_size"`
-	DataRoot  string      `json:"data_root"`
-	Reward    string      `json:"reward"`
-	Signature string      `json:"signature"`
+type Transaction struct {
+	Format    int    `json:"format"`
+	ID        string `json:"id"`
+	LastTx    string `json:"last_tx"`
+	Owner     string `json:"owner"`
+	Tags      []Tag  `json:"tags"`
+	Target    string `json:"target"`
+	Quantity  string `json:"quantity"`
+	Data      []byte `json:"data"`
+	DataSize  string `json:"data_size"`
+	DataRoot  string `json:"data_root"`
+	Reward    string `json:"reward"`
+	Signature string `json:"signature"`
 
 	// Computed when needed.
 	Chunks *merkle.Chunks `json:"-"`
 }
 
-func (tx *TransactionChunks) FormatTransaction() *types.Transaction {
-	return &types.Transaction{
-		Format:    tx.Format,
-		ID:        tx.ID,
-		LastTx:    tx.LastTx,
-		Owner:     tx.Owner,
-		Tags:      tx.Tags,
-		Target:    tx.Target,
-		Quantity:  tx.Quantity,
-		Data:      tx.Data,
-		DataSize:  tx.DataSize,
-		DataRoot:  tx.DataRoot,
-		Reward:    tx.Reward,
-		Signature: tx.Signature,
-	}
-}
-
-func (tx *TransactionChunks) PrepareChunks(data []byte) {
+func (tx *Transaction) PrepareChunks(data []byte) {
 	// Note: we *do not* use `this.Data`, the caller may be
 	// operating on a Transaction with an zero length Data field.
 	// This function computes the chunks for the Data passed in and
 	// assigns the result to this Transaction. It should not read the
 	// Data *from* this Transaction.
-
 	fmt.Printf("Tx data size: %fMB \n", float64(len(data))/1024.0/1024.0)
 	if tx.Chunks == nil && len(data) > 0 {
 		chunks := merkle.GenerateChunks(data)
@@ -84,9 +63,9 @@ type GetChunk struct {
 }
 
 // Returns a chunk in a format suitable for posting to /chunk.
-// Similar to `prepareChunks()` this does not operate `this.Data`,
+// Similar to `PrepareChunks()` this does not operate `this.Data`,
 // instead using the Data passed in.
-func (tx *TransactionChunks) GetChunk(idx int, data []byte) (*GetChunk, error) {
+func (tx *Transaction) GetChunk(idx int, data []byte) (*GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
 	}
@@ -107,44 +86,7 @@ func (gc *GetChunk) Marshal() ([]byte, error) {
 	return json.Marshal(gc)
 }
 
-// GetUploader
-// @param upload: TransactionChunks | SerializedUploader | string,
-// @param Data the Data of the Transaction. Required when resuming an upload.
-func GetUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
-	var (
-		uploader *TransactionUploader
-		err      error
-	)
-
-	if tt, ok := upload.(*TransactionChunks); ok {
-		uploader, err = NewTransactionUploader(tt, api)
-		if err != nil {
-			return nil, err
-		}
-		return uploader, nil
-	}
-
-	if id, ok := upload.(string); ok {
-		// upload 返回为 SerializedUploader 类型
-		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
-		if err != nil {
-			log.Errorf("(&TransactionUploader{Client: api}).FromTransactionId(id) error: %v", err)
-			return nil, err
-		}
-	} else {
-		// 最后 upload 为 SerializedUploader type
-		newUpload, ok := upload.(*SerializedUploader)
-		if !ok {
-			panic("upload params error")
-		}
-		upload = newUpload
-	}
-
-	uploader, err = (&TransactionUploader{Client: api}).FromSerialized(upload.(*SerializedUploader), data)
-	return uploader, err
-}
-
-func (tx *TransactionChunks) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.PrivateKey) error {
+func (tx *Transaction) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.PrivateKey) error {
 	tx.Owner = utils.Base64Encode(pubKey.N.Bytes())
 
 	signData, err := GetSignatureData(tx)
@@ -162,7 +104,7 @@ func (tx *TransactionChunks) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.
 	return nil
 }
 
-func GetSignatureData(tx *TransactionChunks) ([]byte, error) {
+func GetSignatureData(tx *Transaction) ([]byte, error) {
 	switch tx.Format {
 	case 1:
 		// todo
@@ -196,7 +138,7 @@ func GetSignatureData(tx *TransactionChunks) ([]byte, error) {
 	}
 }
 
-func VerifyTransaction(tx TransactionChunks) (err error) {
+func VerifyTransaction(tx Transaction) (err error) {
 	sig, err := utils.Base64Decode(tx.Signature)
 	if err != nil {
 		return

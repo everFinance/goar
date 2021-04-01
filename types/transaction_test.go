@@ -1,8 +1,7 @@
-package transfer
+package types
 
 import (
 	"github.com/everFinance/goar/client"
-	"github.com/everFinance/goar/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,22 +10,22 @@ func Test_Tx(t *testing.T) {
 	c := client.New("https://arweave.net")
 	id := "HepOYsiov0ijeJIIE6o2sajI_vekdD1wSaFvP0-Ujw8"
 
-	// body, statusCode, err := c.HttpGet(fmt.Sprintf("tx/%s", id))
+	// body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
 	// assert.NoError(t, err)
 	// t.Log("body: ", string(body))
 	// t.Log("code: ", statusCode)
-	// tx := &TransactionChunks{}
+	// tx := &Transaction{}
 	// err = json.Unmarshal(body, tx)
 	// assert.NoError(t, err)
 	// t.Log(string(tx.Data))
 
 	// url := fmt.Sprintf("tx/%v/%v", id, "Data")
-	// body, statusCode, err := c.HttpGet(url)
+	// body, statusCode, err := c.httpGet(url)
 	// assert.NoError(t, err)
 	// t.Log("code: ", statusCode)
 	// t.Log(string(body))
 
-	tx, status, err := c.GetTransactionByID(id)
+	tx, status, _, err := c.GetTransactionByID(id)
 	assert.NoError(t, err)
 	t.Log(status)
 	t.Log(tx.Data)
@@ -34,25 +33,25 @@ func Test_Tx(t *testing.T) {
 }
 
 func TestVerifyTransaction(t *testing.T) {
-	tx := TransactionChunks{
+	tx := Transaction{
 		Format: 2,
 		ID:     "QLRuAX12XtlNwDZ1UdPTfGV5grt-V1BJksTjyvbGeM4",
 		LastTx: "JrWwVEXja1AI7mVB2v24Ye_Dd2WIUTVaHdmpFrse37dOqnqPy-6UtsPuXeHl4SCG",
 		Owner:  "oA4bDVEjBSVf324cQPfyJcE-90rwPo1xOvrvc7g2-Lminag5lT0JZAVfcSjg1vgeoivSu2I0yO-jznomZ1m4H2CUJGY8Hc3wEsO3SUqxPIEaOKuFvezeAZpRuh__SlzYGfvhwLfoGf7KJ6UlvcuNm49xyIfsRGTc52u-fTDevqvBtz5YtYsyk6LcMoCMDoPzE4ldTBZ8V3ucaFXz-kbwkN1aU2Ph8MYfKIySOtjeVsCxU5BBRn39cHm4dVbDqEZu8QT-l26d8QjITl91tpTatzGivvFioR5_dJEtlo1xkNsOYIsPXT6WrwgPkRYflqhJ8GW9wqp7QCoekYIxr2nQXxOm0lLsPoA_gx4ZCDGsfUtumWdk2UV-cKsvQo-iuxPPVWX-7bWTP9aMKDTyyywW9Ho6r99ggeSEpNYYGqYBmLb-v2S0L-8EdvjAQ2M6yCw0qpNN6XhFvNVcPZXATrhhDIijp-KXDHx2zy2IDubjShCmZOSRrJy5OV6EfJOpPEgBXO-CdKtVk48uh8htb5SMEZ48hDyeU-4Htjaryz-N_M1n9Rv9ffqVQf-pIrP_cpw0DzxcrvFsFRYnAkFLnXlY9FX5mha2FW5veeL0ZMCN7ETEVovCrO1Q8_sV9v2rs6S8NuMjA4RW93nKJjqvAJFkt7rMpv4a_tuftZvuX8OzxOc",
-		Tags: []types.Tag{
-			types.Tag{
+		Tags: []Tag{
+			Tag{
 				Name:  "QXBwLU5hbWU",
 				Value: "U21hcnRXZWF2ZUFjdGlvbg",
 			},
-			types.Tag{
+			Tag{
 				Name:  "QXBwLVZlcnNpb24",
 				Value: "MC4zLjA",
 			},
-			types.Tag{
+			Tag{
 				Name:  "Q29udHJhY3Q",
 				Value: "dHJ1ZQ",
 			},
-			types.Tag{
+			Tag{
 				Name:  "SW5wdXQ",
 				Value: "eyJmdW5jdGlvbiI6InRyYW5zZmVyIiwicXR5Ijo1MDAsInRhcmdldCI6Ilp5aGhBTHdxazhuMnVyV1Y0RTNqSEJjNzd3YWE1RnItcUhscl9jdGlIQk0ifQ",
 			},
@@ -69,25 +68,25 @@ func TestVerifyTransaction(t *testing.T) {
 }
 
 func TestGetSignatureData(t *testing.T) {
-	tx := TransactionChunks{
+	tx := Transaction{
 		Format: 2,
 		ID:     "QLRuAX12XtlNwDZ1UdPTfGV5grt-V1BJksTjyvbGeM4",
 		LastTx: "JrWwVEXja1AI7mVB2v24Ye_Dd2WIUTVaHdmpFrse37dOqnqPy-6UtsPuXeHl4SCG",
 		Owner:  "oA4bDVEjBSVf324cQPfyJcE-90rwPo1xOvrvc7g2-Lminag5lT0JZAVfcSjg1vgeoivSu2I0yO-jznomZ1m4H2CUJGY8Hc3wEsO3SUqxPIEaOKuFvezeAZpRuh__SlzYGfvhwLfoGf7KJ6UlvcuNm49xyIfsRGTc52u-fTDevqvBtz5YtYsyk6LcMoCMDoPzE4ldTBZ8V3ucaFXz-kbwkN1aU2Ph8MYfKIySOtjeVsCxU5BBRn39cHm4dVbDqEZu8QT-l26d8QjITl91tpTatzGivvFioR5_dJEtlo1xkNsOYIsPXT6WrwgPkRYflqhJ8GW9wqp7QCoekYIxr2nQXxOm0lLsPoA_gx4ZCDGsfUtumWdk2UV-cKsvQo-iuxPPVWX-7bWTP9aMKDTyyywW9Ho6r99ggeSEpNYYGqYBmLb-v2S0L-8EdvjAQ2M6yCw0qpNN6XhFvNVcPZXATrhhDIijp-KXDHx2zy2IDubjShCmZOSRrJy5OV6EfJOpPEgBXO-CdKtVk48uh8htb5SMEZ48hDyeU-4Htjaryz-N_M1n9Rv9ffqVQf-pIrP_cpw0DzxcrvFsFRYnAkFLnXlY9FX5mha2FW5veeL0ZMCN7ETEVovCrO1Q8_sV9v2rs6S8NuMjA4RW93nKJjqvAJFkt7rMpv4a_tuftZvuX8OzxOc",
-		Tags: []types.Tag{
-			types.Tag{
+		Tags: []Tag{
+			Tag{
 				Name:  "QXBwLU5hbWU",
 				Value: "U21hcnRXZWF2ZUFjdGlvbg",
 			},
-			types.Tag{
+			Tag{
 				Name:  "QXBwLVZlcnNpb24",
 				Value: "MC4zLjA",
 			},
-			types.Tag{
+			Tag{
 				Name:  "Q29udHJhY3Q",
 				Value: "dHJ1ZQ",
 			},
-			types.Tag{
+			Tag{
 				Name:  "SW5wdXQ",
 				Value: "eyJmdW5jdGlvbiI6InRyYW5zZmVyIiwicXR5Ijo1MDAsInRhcmdldCI6Ilp5aGhBTHdxazhuMnVyV1Y0RTNqSEJjNzd3YWE1RnItcUhscl9jdGlIQk0ifQ",
 			},

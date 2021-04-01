@@ -21,7 +21,7 @@ func Test_Client(t *testing.T) {
 	t.Logf("%v", nodeInfo)
 
 	// 2. full transaction via Id
-	tx, state, err := c.GetTransactionByID(txId)
+	tx, state, _, err := c.GetTransactionByID(txId)
 	assert.NoError(t, err)
 	t.Logf("state: %s", state)
 	t.Log(tx)

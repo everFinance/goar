@@ -1,5 +1,9 @@
 package types
 
+import (
+	"github.com/everFinance/goar/utils"
+)
+
 const (
 	SuccessTxStatus = "Success"
 	PendingTxStatus = "Pending"
@@ -35,22 +39,43 @@ type Block struct {
 	BlockSize     int           `json:"block_size"`
 }
 
-type Transaction struct {
-	Format    int    `json:"format"`
-	ID        string `json:"id"`
-	LastTx    string `json:"last_tx"`
-	Owner     string `json:"owner"`
-	Tags      []Tag  `json:"tags"`
-	Target    string `json:"target"`
-	Quantity  string `json:"quantity"`
-	Data      []byte `json:"data"`
-	DataSize  string `json:"data_size"`
-	DataRoot  string `json:"data_root"`
-	Reward    string `json:"reward"`
-	Signature string `json:"signature"`
-}
-
 type Tag struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+
+func TagsEncode(tags []Tag) []Tag {
+	base64Tags := []Tag{}
+
+	for _, tag := range tags {
+		base64Tags = append(base64Tags, Tag{
+			Name:  utils.Base64Encode([]byte(tag.Name)),
+			Value: utils.Base64Encode([]byte(tag.Value)),
+		})
+	}
+
+	return base64Tags
+}
+
+func TagsDecode(base64Tags []Tag) ([]Tag, error) {
+	tags := []Tag{}
+
+	for _, bt := range base64Tags {
+		bName, err := utils.Base64Decode(bt.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		bValue, err := utils.Base64Decode(bt.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		tags = append(tags, Tag{
+			Name:  string(bName),
+			Value: string(bValue),
+		})
+	}
+
+	return tags, nil
 }

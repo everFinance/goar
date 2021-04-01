@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	txType "github.com/everFinance/goar/transfer"
 	"github.com/everFinance/goar/types"
+	txType "github.com/everFinance/goar/uploader"
 	"github.com/everFinance/goar/utils"
 	wallet2 "github.com/everFinance/goar/wallet"
 	"github.com/stretchr/testify/assert"
@@ -30,16 +30,16 @@ func init() {
 	}
 }
 
-func assemblyDataTx(bigData []byte, wallet *wallet2.Wallet, tags []types.Tag) (*txType.TransactionChunks, error) {
+func assemblyDataTx(bigData []byte, wallet *wallet2.Wallet, tags []types.Tag) (*types.Transaction, error) {
 	reward, err := wallet.Client.GetTransactionPrice(bigData, nil)
 	if err != nil {
 		return nil, err
 	}
-	tx := &txType.TransactionChunks{
+	tx := &types.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
+		Tags:     types.TagsEncode(tags),
 		Data:     bigData,
 		DataSize: fmt.Sprintf("%d", len(bigData)),
 		Reward:   fmt.Sprintf("%d", reward),
@@ -51,7 +51,7 @@ func assemblyDataTx(bigData []byte, wallet *wallet2.Wallet, tags []types.Tag) (*
 	tx.LastTx = anchor
 	tx.Owner = utils.Base64Encode(wallet.PubKey.N.Bytes())
 
-	signData, err := txType.GetSignatureData(tx)
+	signData, err := types.GetSignatureData(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +78,8 @@ func Test_PostBigDataByChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("txHash: ", tx.ID)
 
-	// uploader TransactionChunks
-	uploader, err := txType.GetUploader(wallet.Client, tx, nil)
+	// uploader Transaction
+	uploader, err := txType.CreateUploader(wallet.Client, tx, nil)
 	assert.NoError(t, err)
 	for !uploader.IsComplete() {
 		err := uploader.UploadChunk()
@@ -101,15 +101,13 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 
 	// 1. post this tx without data
 	tx.Data = make([]byte, 0)
-	byteTx, err := json.Marshal(tx)
-	assert.NoError(t, err)
-	body, status, err := wallet.Client.HttpPost("tx", byteTx)
+	body, status, err := wallet.Client.SubmitTransaction(tx)
 	assert.NoError(t, err)
 	t.Logf("post tx without data; body: %s, status: %d", string(body), status)
 
 	// 2. watcher this tx from ar chain and must be sure the tx on chain
 	getTxOnchain := func() bool {
-		body, statusCode, _ := wallet.Client.HttpGet(fmt.Sprintf("tx/%s", tx.ID))
+		_, body, statusCode, _ := wallet.Client.GetTransactionByID(tx.ID)
 		if statusCode/100 == 2 && string(body) == "Pending" {
 			t.Log("watcher tx status: ", string(body))
 			return false
@@ -126,7 +124,7 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 	}
 
 	// get uploader by txId and post big data by chunks
-	uploader, err := txType.GetUploader(wallet.Client, tx.ID, bigData)
+	uploader, err := txType.CreateUploader(wallet.Client, tx.ID, bigData)
 	assert.NoError(t, err)
 	for !uploader.IsComplete() {
 		err := uploader.UploadChunk()
@@ -146,7 +144,7 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	t.Log("txHash: ", tx.ID)
 
 	// 1. Upload a portion of data, for test when uploaded chunk == 2 and stop upload
-	uploader, err := txType.GetUploader(wallet.Client, tx, nil)
+	uploader, err := txType.CreateUploader(wallet.Client, tx, nil)
 	assert.NoError(t, err)
 	// only upload 2 chunks to ar chain
 	for !uploader.IsComplete() && uploader.ChunkIndex <= 2 {
@@ -170,7 +168,7 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	assert.NoError(t, err)
 
 	// new uploader object by last time uploader
-	newUploader, err := txType.GetUploader(wallet.Client, lastUploader.FormatSerializedUploader(), bigData)
+	newUploader, err := txType.CreateUploader(wallet.Client, lastUploader.FormatSerializedUploader(), bigData)
 	assert.NoError(t, err)
 	for !newUploader.IsComplete() {
 		err := newUploader.UploadChunk()

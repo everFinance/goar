@@ -4,7 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"github.com/everFinance/goar/transfer"
+	"github.com/everFinance/goar/uploader"
 	"io/ioutil"
 	"math/big"
 
@@ -75,11 +75,11 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 		return
 	}
 
-	tx := &transfer.TransactionChunks{
+	tx := &types.Transaction{
 		Format:   2,
 		Target:   target,
 		Quantity: amount.String(),
-		Tags:     utils.TagsEncode(tags),
+		Tags:     types.TagsEncode(tags),
 		Data:     nil,
 		DataSize: "0",
 		Reward:   fmt.Sprintf("%d", reward),
@@ -96,11 +96,11 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		return
 	}
 
-	tx := &transfer.TransactionChunks{
+	tx := &types.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
+		Tags:     types.TagsEncode(tags),
 		Data:     data,
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
@@ -115,11 +115,11 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err
 		return
 	}
 
-	tx := &transfer.TransactionChunks{
+	tx := &types.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
+		Tags:     types.TagsEncode(tags),
 		Data:     data,
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward),
@@ -129,7 +129,7 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err
 }
 
 // SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(tx *transfer.TransactionChunks) (id, status string, err error) {
+func (w *Wallet) SendTransaction(tx *types.Transaction) (id, status string, err error) {
 	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return
@@ -141,7 +141,7 @@ func (w *Wallet) SendTransaction(tx *transfer.TransactionChunks) (id, status str
 	}
 
 	id = tx.ID
-	status, err = w.Client.SubmitTransaction(tx.FormatTransaction())
+	status, _, err = w.Client.SubmitTransaction(tx)
 	// 发送成功之后status == "OK"
 	return
 }
@@ -153,11 +153,11 @@ func (w *Wallet) SendBigData(data []byte, tags []types.Tag, speedFactor int64) (
 		return
 	}
 
-	tx := &transfer.TransactionChunks{
+	tx := &types.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
+		Tags:     types.TagsEncode(tags),
 		Data:     data,
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
@@ -174,7 +174,7 @@ func (w *Wallet) SendBigData(data []byte, tags []types.Tag, speedFactor int64) (
 	}
 
 	id = tx.ID
-	uploader, err := transfer.GetUploader(w.Client, tx, nil)
+	uploader, err := uploader.CreateUploader(w.Client, tx, nil)
 	if err != nil {
 		return
 	}
