@@ -132,7 +132,7 @@ func (tt *TransactionUploader) IsComplete() bool {
 	if tChunks == nil {
 		return false
 	} else {
-		return tt.TxPosted && (tt.ChunkIndex == len(tChunks.Chunks))
+		return tt.TxPosted && (tt.ChunkIndex == len(tChunks.Chunks)) || tt.TxPosted && len(tChunks.Chunks) == 0
 	}
 }
 
@@ -162,7 +162,9 @@ func (tt *TransactionUploader) PctComplete() float64 {
  */
 func (tt *TransactionUploader) UploadChunk() error {
 	defer func() {
-		fmt.Printf("%f%% completes, %d/%d \n", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks())
+		if tt.TotalChunks() > 0 {
+			fmt.Printf("%f%% completes, %d/%d \n", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks())
+		}
 	}()
 	if tt.IsComplete() {
 		return errors.New("Upload is already complete.")

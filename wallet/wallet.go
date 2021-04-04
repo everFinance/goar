@@ -65,6 +65,7 @@ func New(b []byte, clientUrl string) (w *Wallet, err error) {
 
 	return
 }
+
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id, status string, err error) {
 	return w.SendWinston(utils.ARToWinston(amount), target, tags)
 }
@@ -80,7 +81,7 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 		Target:   target,
 		Quantity: amount.String(),
 		Tags:     types.TagsEncode(tags),
-		Data:     nil,
+		Data:     []byte{},
 		DataSize: "0",
 		Reward:   fmt.Sprintf("%d", reward),
 	}
@@ -141,39 +142,7 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id, status string, err 
 	}
 
 	id = tx.ID
-	status, _, err = w.Client.SubmitTransaction(tx)
-	// 发送成功之后status == "OK"
-	return
-}
 
-// SendBigData send big data to ar
-func (w *Wallet) SendBigData(data []byte, tags []types.Tag, speedFactor int64) (id string, err error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
-	if err != nil {
-		return
-	}
-
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   "",
-		Quantity: "0",
-		Tags:     types.TagsEncode(tags),
-		Data:     data,
-		DataSize: fmt.Sprintf("%d", len(data)),
-		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
-	anchor, err := w.Client.GetTransactionAnchor()
-	if err != nil {
-		return
-	}
-	tx.LastTx = anchor
-
-	if err = tx.SignTransaction(w.PubKey, w.PrvKey); err != nil {
-		return
-	}
-
-	id = tx.ID
 	uploader, err := uploader.CreateUploader(w.Client, tx, nil)
 	if err != nil {
 		return
@@ -183,7 +152,6 @@ func (w *Wallet) SendBigData(data []byte, tags []types.Tag, speedFactor int64) (
 		if err != nil {
 			return
 		}
-		fmt.Printf("%f complete, %d/%d \n", uploader.PctComplete(), uploader.UploadedChunks(), uploader.TotalChunks())
 	}
 	return
 }
