@@ -174,7 +174,7 @@ Simple example:
 		}
 	}
 ```
-###### Breakpoint continuingly
+##### Breakpoint continuingly
 You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
 ```
     uploaderBuf, err := ioutil.ReadFile("./jsonUploaderFile.json")
@@ -192,7 +192,7 @@ You can resume an upload from a saved uploader object, that you have persisted i
 	}
 ```
 When resuming the upload, you must provide the same data as the original upload. When you serialize the uploader object with json.marshal() to save it somewhere, it will not include the data.
-###### Breakpoint retransmission
+##### Breakpoint retransmission
 You can also resume an upload from just the transaction ID and data, once it has been mined into a block. This can be useful if you didn't save the uploader somewhere but the upload got interrupted. This will re-upload all of the data from the beginning, since we don't know which parts have been uploaded:
 ```
     bigData, err := ioutil.ReadFile(filePath)
@@ -207,5 +207,5 @@ You can also resume an upload from just the transaction ID and data, once it has
 	}
 ```
 
-NOTE: About all chunk transfer full example can be viewed in path `./example/chunks_tx_test.go`
+##### NOTE: About all chunk transfer full example can be viewed in path `./example/chunks_tx_test.go`
 ---
