@@ -20,7 +20,7 @@ type BundleData struct {
 }
 
 type DataItemJson struct {
-	Owner     string      `json:"owner"`
+	Owner     string      `json:"owner"` //  utils.Base64Encode(wallet.PubKey.N.Bytes())
 	Target    string      `json:"target"`
 	Nonce     string      `json:"nonce"`
 	Tags      []types.Tag `json:"tags"`
@@ -72,17 +72,17 @@ func (d DataItemJson) getSignatureData() []byte {
 	return deepHash
 }
 
-func (d *DataItemJson) Sign(w wallet.Wallet) (*DataItemJson, error) {
+func (d *DataItemJson) Sign(w *wallet.Wallet) (DataItemJson, error) {
 	// sign item
 	signatureData := d.getSignatureData()
 	signatureBytes, err := utils.Sign(signatureData, w.PrvKey)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("signature error: %v", err))
+		return DataItemJson{}, errors.New(fmt.Sprintf("signature error: %v", err))
 	}
 	id := sha256.Sum256(signatureBytes)
 	d.Id = utils.Base64Encode(id[:])
 	d.Signature = utils.Base64Encode(signatureBytes)
-	return d, nil
+	return *d, nil
 }
 
 func (d *DataItemJson) AddTag(name, value string) {
@@ -148,7 +148,7 @@ func (d DataItemJson) DecodeTag(tag types.Tag) (types.Tag, error) {
 
 func (d DataItemJson) DecodeTagAt(index int) (types.Tag, error) {
 	if len(d.Tags) < index-1 {
-		return types.Tag{}, errors.New(fmt.Sprintf("Invalid index %d when tags array has %s tags", index, len(d.Tags)))
+		return types.Tag{}, errors.New(fmt.Sprintf("Invalid index %d when tags array has %d tags", index, len(d.Tags)))
 	}
 	return d.DecodeTag(d.Tags[index])
 }
@@ -171,7 +171,7 @@ func (d DataItemJson) UnpackTags() (map[string][]string, error) {
 	return tagsMap, nil
 }
 
-func (d DataItemJson) BundleData(datas []DataItemJson) (BundleData, error) {
+func (d DataItemJson) BundleData(datas ...DataItemJson) (BundleData, error) {
 	// verify
 	for _, data := range datas {
 		if !data.Verify() {

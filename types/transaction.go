@@ -16,7 +16,7 @@ type Transaction struct {
 	Format    int    `json:"format"`
 	ID        string `json:"id"`
 	LastTx    string `json:"last_tx"`
-	Owner     string `json:"owner"`
+	Owner     string `json:"owner"` // utils.Base64Encode(wallet.PubKey.N.Bytes())
 	Tags      []Tag  `json:"tags"`
 	Target    string `json:"target"`
 	Quantity  string `json:"quantity"`
