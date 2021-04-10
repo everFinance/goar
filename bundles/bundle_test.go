@@ -2,6 +2,7 @@ package bundles
 
 import (
 	"encoding/json"
+	client2 "github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	wallet2 "github.com/everFinance/goar/wallet"
@@ -48,4 +49,16 @@ func TestCreateDataItemJson(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(state)
 	t.Log(id)
+}
+
+func TestDataItemJson_UnBundleData(t *testing.T) {
+	id := "osaq5RLaHYyU_Vw2JL4vE9aGjcxxrV2quOSjoIfbfME"
+	c := client2.New(arNode)
+	data, err := c.GetTransactionData(id, "json")
+	assert.NoError(t, err)
+	items, err := (DataItemJson{}).UnBundleData(data)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(items))
+	assert.Equal(t, "99", items[0].Nonce)
+	assert.Equal(t, "100", items[1].Nonce)
 }
