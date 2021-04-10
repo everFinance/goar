@@ -1,3 +1,8 @@
+/*
+	js-lib:  https://github.com/ArweaveTeam/arweave-bundles
+	ANS-102 format: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-102.md
+*/
+
 package bundles
 
 import (
