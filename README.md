@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json")
+	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
@@ -56,7 +56,7 @@ import (
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json")
+	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
