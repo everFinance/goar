@@ -1,5 +1,11 @@
 package client
 
+import (
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"testing"
+)
+
 // import (
 // 	"fmt"
 // 	"testing"
@@ -97,3 +103,27 @@ package client
 // 		client.GetWalletBalance("dQzTM9hXV5MD1fRniOKI3MvPF_-8b2XDLmpfcMN9hi8"),
 // 	)
 // }
+
+func TestClient_DownloadChunkData(t *testing.T) {
+	client := New("https://arweave.net")
+	id := "ybEmme6TE3JKwnSYciPCjnAINwi_CWthomsxBes-kYk"
+	data, err := client.GetTransactionData(id, "jpg")
+	assert.NoError(t, err)
+
+	t.Log(len(data))
+	err = ioutil.WriteFile("photo.jpg", data, 0777)
+	assert.NoError(t, err)
+}
+
+func TestClient_GetTransactionData(t *testing.T) {
+	proxy := "http://127.0.0.1:8001"
+	client := New("https://arweave.net", proxy)
+	id := "OQyMO1ZBL9fMKkAy_f20TZuDfgLd5xfuRYvPkuHEgBE"
+	data, err := client.GetTransactionData(id, "txt")
+	if err != nil {
+		t.Log(err.Error())
+	}
+	t.Log(len(data))
+	err = ioutil.WriteFile("yoyo.txt", data, 0777)
+	assert.NoError(t, err)
+}
