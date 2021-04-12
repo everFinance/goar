@@ -98,6 +98,10 @@ Initialize the instance:
 
 ```golang
 arClient := New("https://arweave.net")
+
+// if your network is not good, you can config http proxy
+proxyUrl := "http://127.0.0.1:8001"
+arClient := New("https://arweave.net", proxyUrl)
 ```
 
 #### wallet
@@ -112,6 +116,10 @@ Initialize the instance, use a keyfile.json:
 
 ```golang
 arWallet := NewFromPath("./keyfile.json")
+
+// if your network is not good, you can config http proxy
+proxyUrl := "http://127.0.0.1:8001"
+arWallet := NewFromPath("./keyfile.json", proxyUrl)
 ```
 
 ### Development

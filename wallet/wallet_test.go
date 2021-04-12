@@ -90,3 +90,11 @@ func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// assert.NoError(t, err)
 	// t.Logf("tx hash: %s; status: %s", id, status)
 }
+
+func TestNew(t *testing.T) {
+	arNode := "https://arweave.net"
+	// proxyUrl := "http://127.0.0.1:8001"
+	w, err := NewFromPath("../example/testKey.json", arNode)
+	t.Log(w)
+	assert.NoError(t, err)
+}
