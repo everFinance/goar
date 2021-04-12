@@ -35,13 +35,13 @@ type Block struct {
 	BlockSize     int           `json:"block_size"`
 }
 
-type TransactionChunkResponse struct {
+type TransactionChunk struct {
 	Chunk    string `json:"chunk"`
 	DataPath string `json:"data_path"`
 	TxPath   string `json:"tx_path"`
 }
 
-type TransactionOffsetResponse struct {
+type TransactionOffset struct {
 	Size   string `json:"size"`
 	Offset string `json:"offset"`
 }

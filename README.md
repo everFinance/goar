@@ -119,7 +119,7 @@ arWallet := NewFromPath("./keyfile.json")
 
 // if your network is not good, you can config http proxy
 proxyUrl := "http://127.0.0.1:8001"
-arWallet := NewFromPath("./keyfile.json", proxyUrl)
+arWallet := NewFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
 ```
 
 ### Development

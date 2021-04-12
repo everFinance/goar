@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/zyjblockchain/sandy_log/log"
 	"io/ioutil"
 	"math/big"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
+
+	"github.com/zyjblockchain/sandy_log/log"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -286,7 +287,7 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 
 // about chunk
 
-func (c *Client) getChunk(offset int64) (*types.TransactionChunkResponse, error) {
+func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
 	_path := "chunk/" + strconv.FormatInt(offset, 10)
 	body, statusCode, err := c.httpGet(_path)
 	if statusCode != 200 {
@@ -295,7 +296,7 @@ func (c *Client) getChunk(offset int64) (*types.TransactionChunkResponse, error)
 	if err != nil {
 		return nil, err
 	}
-	txChunk := &types.TransactionChunkResponse{}
+	txChunk := &types.TransactionChunk{}
 	if err := json.Unmarshal(body, txChunk); err != nil {
 		return nil, err
 	}
@@ -310,7 +311,7 @@ func (c *Client) getChunkData(offset int64) ([]byte, error) {
 	return utils.Base64Decode(chunk.Chunk)
 }
 
-func (c *Client) getTransactionOffset(id string) (*types.TransactionOffsetResponse, error) {
+func (c *Client) getTransactionOffset(id string) (*types.TransactionOffset, error) {
 	_path := fmt.Sprintf("tx/%s/offset", id)
 	body, statusCode, err := c.httpGet(_path)
 	if statusCode != 200 {
@@ -319,7 +320,7 @@ func (c *Client) getTransactionOffset(id string) (*types.TransactionOffsetRespon
 	if err != nil {
 		return nil, err
 	}
-	txOffset := &types.TransactionOffsetResponse{}
+	txOffset := &types.TransactionOffset{}
 	if err := json.Unmarshal(body, txOffset); err != nil {
 		return nil, err
 	}
