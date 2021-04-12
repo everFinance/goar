@@ -34,3 +34,14 @@ type Block struct {
 	WeaveSize     int           `json:"weave_size"`
 	BlockSize     int           `json:"block_size"`
 }
+
+type TransactionChunk struct {
+	Chunk    string `json:"chunk"`
+	DataPath string `json:"data_path"`
+	TxPath   string `json:"tx_path"`
+}
+
+type TransactionOffset struct {
+	Size   string `json:"size"`
+	Offset string `json:"offset"`
+}

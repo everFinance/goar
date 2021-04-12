@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json")
+	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
@@ -56,7 +56,7 @@ import (
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json")
+	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
@@ -98,6 +98,10 @@ Initialize the instance:
 
 ```golang
 arClient := New("https://arweave.net")
+
+// if your network is not good, you can config http proxy
+proxyUrl := "http://127.0.0.1:8001"
+arClient := New("https://arweave.net", proxyUrl)
 ```
 
 #### wallet
@@ -112,6 +116,10 @@ Initialize the instance, use a keyfile.json:
 
 ```golang
 arWallet := NewFromPath("./keyfile.json")
+
+// if your network is not good, you can config http proxy
+proxyUrl := "http://127.0.0.1:8001"
+arWallet := NewFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
 ```
 
 ### Development
@@ -131,7 +139,8 @@ make test
 ##### upload all transaction data
 The method of sumbitting a data transaction is to use chunk uploading. This method will allow larger transaction zises,resuming a transaction upload if it's interrupted and give progress updates while uploading.
 Simple example:
-```
+
+```golang
     arNode := "https://arweave.net"
 	w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
     anchor, err := w.Client.GetTransactionAnchor()
@@ -194,7 +203,8 @@ You can resume an upload from a saved uploader object, that you have persisted i
 When resuming the upload, you must provide the same data as the original upload. When you serialize the uploader object with json.marshal() to save it somewhere, it will not include the data.
 ##### Breakpoint retransmission
 You can also resume an upload from just the transaction ID and data, once it has been mined into a block. This can be useful if you didn't save the uploader somewhere but the upload got interrupted. This will re-upload all of the data from the beginning, since we don't know which parts have been uploaded:
-```
+
+```golang
 
     bigData, err := ioutil.ReadFile(filePath)
     txId := "myTxId"
