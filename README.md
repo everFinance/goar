@@ -139,7 +139,8 @@ make test
 ##### upload all transaction data
 The method of sumbitting a data transaction is to use chunk uploading. This method will allow larger transaction zises,resuming a transaction upload if it's interrupted and give progress updates while uploading.
 Simple example:
-```
+
+```golang
     arNode := "https://arweave.net"
 	w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
     anchor, err := w.Client.GetTransactionAnchor()
@@ -202,7 +203,8 @@ You can resume an upload from a saved uploader object, that you have persisted i
 When resuming the upload, you must provide the same data as the original upload. When you serialize the uploader object with json.marshal() to save it somewhere, it will not include the data.
 ##### Breakpoint retransmission
 You can also resume an upload from just the transaction ID and data, once it has been mined into a block. This can be useful if you didn't save the uploader somewhere but the upload got interrupted. This will re-upload all of the data from the beginning, since we don't know which parts have been uploaded:
-```
+
+```golang
 
     bigData, err := ioutil.ReadFile(filePath)
     txId := "myTxId"
