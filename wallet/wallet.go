@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
+	"github.com/everFinance/goar/uploader"
 	"io/ioutil"
 	"math/big"
 
@@ -20,16 +21,17 @@ type Wallet struct {
 	Address string
 }
 
-func NewFromPath(path string, clientUrl string) (*Wallet, error) {
+// proxyUrl: option
+func NewFromPath(path string, clientUrl string, proxyUrl ...string) (*Wallet, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	return New(b, clientUrl)
+	return New(b, clientUrl, proxyUrl...)
 }
 
-func New(b []byte, clientUrl string) (w *Wallet, err error) {
+func New(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err error) {
 	key, err := gojwk.Unmarshal(b)
 	if err != nil {
 		return
@@ -56,7 +58,7 @@ func New(b []byte, clientUrl string) (w *Wallet, err error) {
 
 	addr := sha256.Sum256(pub.N.Bytes())
 	w = &Wallet{
-		Client:  client.New(clientUrl),
+		Client:  client.New(clientUrl, proxyUrl...),
 		PubKey:  pub,
 		PrvKey:  prv,
 		Address: utils.Base64Encode(addr[:]),
@@ -64,6 +66,7 @@ func New(b []byte, clientUrl string) (w *Wallet, err error) {
 
 	return
 }
+
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id, status string, err error) {
 	return w.SendWinston(utils.ARToWinston(amount), target, tags)
 }
@@ -78,8 +81,8 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 		Format:   2,
 		Target:   target,
 		Quantity: amount.String(),
-		Tags:     utils.TagsEncode(tags),
-		Data:     "",
+		Tags:     types.TagsEncode(tags),
+		Data:     []byte{},
 		DataSize: "0",
 		Reward:   fmt.Sprintf("%d", reward),
 	}
@@ -99,9 +102,9 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(string(data))),
+		Tags:     types.TagsEncode(tags),
+		Data:     data,
+		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
@@ -118,9 +121,9 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(string(data))),
+		Tags:     types.TagsEncode(tags),
+		Data:     data,
+		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward),
 	}
 
@@ -135,12 +138,21 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id, status string, err 
 	}
 	tx.LastTx = anchor
 
-	if err = utils.SignTransaction(tx, w.PubKey, w.PrvKey); err != nil {
+	if err = tx.SignTransaction(w.PubKey, w.PrvKey); err != nil {
 		return
 	}
 
 	id = tx.ID
-	status, err = w.Client.SubmitTransaction(tx)
-	// 发送成功之后status == "OK"
+
+	uploader, err := uploader.CreateUploader(w.Client, tx, nil)
+	if err != nil {
+		return
+	}
+	for !uploader.IsComplete() {
+		err = uploader.UploadChunk()
+		if err != nil {
+			return
+		}
+	}
 	return
 }

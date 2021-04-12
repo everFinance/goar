@@ -1,14 +1,10 @@
 package example
 
 import (
-	"fmt"
-	"testing"
-	"time"
-
 	"github.com/everFinance/goar/client"
-	"github.com/everFinance/goar/types"
 	wallet2 "github.com/everFinance/goar/wallet"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func Test_Client(t *testing.T) {
@@ -23,7 +19,7 @@ func Test_Client(t *testing.T) {
 	t.Logf("%v", nodeInfo)
 
 	// 2. full transaction via Id
-	tx, state, err := c.GetTransactionByID(txId)
+	tx, state, _, err := c.GetTransactionByID(txId)
 	assert.NoError(t, err)
 	t.Logf("state: %s", state)
 	t.Log(tx)
@@ -55,36 +51,6 @@ func Test_Client(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(anchor)
 
-}
-
-func Test_client2(t *testing.T) {
-	arNode := "https://arweave.net"
-	wallet, err := wallet2.NewFromPath("./testKey.json", arNode)
-	assert.NoError(t, err)
-
-	tag := []types.Tag{
-		types.Tag{
-			Name:  "TokenSymbol",
-			Value: "DXN",
-		},
-		types.Tag{
-			Name:  "Version",
-			Value: "1.1.0",
-		},
-		types.Tag{
-			Name:  "CreatedBy",
-			Value: "ZYJ123",
-		},
-	}
-	// 连续发送5 笔交易来测试交易打包顺序
-	for i := 0; i < 5; i++ {
-		data := fmt.Sprintf("nonce: %d", i)
-		id, status, err := wallet.SendData([]byte(data), tag)
-		t.Log(id)
-		t.Log(status)
-		t.Log(err)
-		time.Sleep(30 * time.Second)
-	}
 }
 
 func TestGetTransactionsStatus(t *testing.T) {

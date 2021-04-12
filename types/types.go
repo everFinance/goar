@@ -35,22 +35,13 @@ type Block struct {
 	BlockSize     int           `json:"block_size"`
 }
 
-type Transaction struct {
-	Format    int    `json:"format"`
-	ID        string `json:"id"`
-	LastTx    string `json:"last_tx"`
-	Owner     string `json:"owner"`
-	Tags      []Tag  `json:"tags"`
-	Target    string `json:"target"`
-	Quantity  string `json:"quantity"`
-	Data      string `json:"data"`
-	DataSize  string `json:"data_size"`
-	DataRoot  string `json:"data_root"`
-	Reward    string `json:"reward"`
-	Signature string `json:"signature"`
+type TransactionChunk struct {
+	Chunk    string `json:"chunk"`
+	DataPath string `json:"data_path"`
+	TxPath   string `json:"tx_path"`
 }
 
-type Tag struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+type TransactionOffset struct {
+	Size   string `json:"size"`
+	Offset string `json:"offset"`
 }

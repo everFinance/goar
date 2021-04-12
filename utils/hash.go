@@ -4,51 +4,7 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"reflect"
-
-	"github.com/everFinance/goar/types"
 )
-
-func DataHash(tx *types.Transaction) (deepHash []byte, err error) {
-	if err = PrepareChunks(tx); err != nil {
-		return
-	}
-
-	tags := [][]string{}
-	for _, tag := range tx.Tags {
-		tags = append(tags, []string{
-			tag.Name, tag.Value,
-		})
-	}
-
-	dataList := []interface{}{}
-	dataList = append(dataList, Base64Encode([]byte(fmt.Sprintf("%d", tx.Format))))
-	dataList = append(dataList, tx.Owner)
-	dataList = append(dataList, tx.Target)
-	dataList = append(dataList, Base64Encode([]byte(tx.Quantity)))
-	dataList = append(dataList, Base64Encode([]byte(tx.Reward)))
-	dataList = append(dataList, tx.LastTx)
-	dataList = append(dataList, tags)
-	dataList = append(dataList, Base64Encode([]byte(tx.DataSize)))
-	dataList = append(dataList, tx.DataRoot)
-
-	hash := DeepHash(dataList)
-	deepHash = hash[:]
-	return
-}
-
-func PrepareChunks(tx *types.Transaction) (err error) {
-	if tx.Data == "" {
-		return
-	}
-
-	data, _ := Base64Decode(tx.Data)
-	chunks := GenerateChunks(data)
-	tx.DataRoot = Base64Encode(chunks.DataRoot)
-
-	// TODO, use chunks in tx
-
-	return
-}
 
 func DeepHash(data []interface{}) [48]byte {
 	tag := append([]byte("list"), []byte(fmt.Sprintf("%d", len(data)))...)

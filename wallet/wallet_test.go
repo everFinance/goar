@@ -44,3 +44,58 @@ func TestAddress(t *testing.T) {
 	addr := testWallet.Address
 	assert.Equal(t, "eIgnDk4vSKPe0lYB6yhCHDV1dOw3JgYHGocfj7WGrjQ", addr)
 }
+
+// test sand ar without data
+func TestWallet_SendAR(t *testing.T) {
+	// arNode := "https://arweave.net"
+	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// target := "Goueytjwney8mRqbWBwuxbk485svPUWxFQojteZpTx8"
+	// amount := big.NewFloat(0.001)
+	// tags := []types.Tag{
+	// 	{Name: "GOAR", Value: "sendAR"},
+	// }
+	// id, status, err := w.SendAR(amount, target, tags)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s; tx status: %s \n", id, status)
+}
+
+// test send small size file
+func TestWallet_SendDataSpeedUp01(t *testing.T) {
+	// arNode := "https://arweave.net"
+	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data := []byte("this is a goar test small size file data") // small file
+	// tags := []types.Tag{
+	// 	{Name: "GOAR", Value: "SMDT"},
+	// }
+	// id, status, err := w.SendDataSpeedUp(data, tags, 0)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s; status: %s", id, status)
+}
+
+// test send big size file
+func TestWallet_SendDataSpeedUp02(t *testing.T) {
+	// arNode := "https://arweave.net"
+	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data, err := ioutil.ReadFile("./2.3MBPhoto.jpg")
+	// assert.NoError(t, err)
+	// tags := []types.Tag{
+	// 	{Name: "GOAR", Value: "BGDT"},
+	// }
+	// id, status, err := w.SendDataSpeedUp(data, tags, 0)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s; status: %s", id, status)
+}
+
+func TestNew(t *testing.T) {
+	// arNode := "https://arweave.net"
+	// proxyUrl := "http://127.0.0.1:8001"
+	// w, err := NewFromPath("../example/testKey.json", arNode)
+	// t.Log(w)
+	// assert.NoError(t, err)
+}

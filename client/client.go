@@ -3,6 +3,7 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
@@ -10,6 +11,8 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+
+	"github.com/zyjblockchain/sandy_log/log"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -20,8 +23,21 @@ type Client struct {
 	url    string
 }
 
-func New(url string) *Client {
-	return &Client{client: http.DefaultClient, url: url}
+func New(nodeUrl string, proxyUrl ...string) *Client {
+	httpClient := http.DefaultClient
+	// if exist proxy url
+	if len(proxyUrl) > 0 {
+		pUrl := proxyUrl[0]
+		proxyUrl, err := url.Parse(pUrl)
+		if err != nil {
+			log.Errorf("url parse error: %v", err)
+			panic(err)
+		}
+		tr := &http.Transport{Proxy: http.ProxyURL(proxyUrl)}
+		httpClient = &http.Client{Transport: tr}
+	}
+
+	return &Client{client: httpClient, url: nodeUrl}
 }
 
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
@@ -37,12 +53,13 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 
 // Transaction
 // status: Pending/Invalid hash/overspend
-func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, err error) {
+func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, code int, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return
 	}
 
+	code = statusCode
 	if statusCode != 200 {
 		status = string(body)
 		return
@@ -83,7 +100,10 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 		url = url + "." + extension[0]
 	}
 	body, statusCode, err := c.httpGet(url)
-	if statusCode != 200 {
+
+	if statusCode == 400 {
+		body, err = c.DownloadChunkData(id)
+	} else if statusCode != 200 {
 		err = fmt.Errorf("not found data")
 	}
 
@@ -114,13 +134,26 @@ func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	return
 }
 
-func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, err error) {
+func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, code int, err error) {
 	by, err := json.Marshal(tx)
 	if err != nil {
 		return
 	}
 
-	body, _, err := c.httpPost("tx", by)
+	body, statusCode, err := c.httpPost("tx", by)
+	status = string(body)
+	code = statusCode
+	return
+}
+
+func (c *Client) SubmitChunks(gc *types.GetChunk) (status string, code int, err error) {
+	byteGc, err := gc.Marshal()
+	if err != nil {
+		return
+	}
+
+	var body []byte
+	body, code, err = c.httpPost("chunk", byteGc)
 	status = string(body)
 	return
 }
@@ -250,4 +283,73 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 	statusCode = resp.StatusCode
 	body, err = ioutil.ReadAll(resp.Body)
 	return
+}
+
+// about chunk
+
+func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
+	_path := "chunk/" + strconv.FormatInt(offset, 10)
+	body, statusCode, err := c.httpGet(_path)
+	if statusCode != 200 {
+		return nil, errors.New("not found chunk data")
+	}
+	if err != nil {
+		return nil, err
+	}
+	txChunk := &types.TransactionChunk{}
+	if err := json.Unmarshal(body, txChunk); err != nil {
+		return nil, err
+	}
+	return txChunk, nil
+}
+
+func (c *Client) getChunkData(offset int64) ([]byte, error) {
+	chunk, err := c.getChunk(offset)
+	if err != nil {
+		return nil, err
+	}
+	return utils.Base64Decode(chunk.Chunk)
+}
+
+func (c *Client) getTransactionOffset(id string) (*types.TransactionOffset, error) {
+	_path := fmt.Sprintf("tx/%s/offset", id)
+	body, statusCode, err := c.httpGet(_path)
+	if statusCode != 200 {
+		return nil, errors.New("not found tx offset")
+	}
+	if err != nil {
+		return nil, err
+	}
+	txOffset := &types.TransactionOffset{}
+	if err := json.Unmarshal(body, txOffset); err != nil {
+		return nil, err
+	}
+	return txOffset, nil
+}
+
+func (c *Client) DownloadChunkData(id string) ([]byte, error) {
+	offsetResponse, err := c.getTransactionOffset(id)
+	if err != nil {
+		return nil, err
+	}
+	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	startOffset := endOffset - size + 1
+	data := make([]byte, 0, size)
+	for i := 0; int64(i)+startOffset < endOffset; {
+		chunkData, err := c.getChunkData(int64(i) + startOffset)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, chunkData...)
+		fmt.Printf("download chunk data; offset: %d/%d; size: %d/%d \n", int64(i)+startOffset, endOffset, len(data), size)
+		i += len(chunkData)
+	}
+	return data, nil
 }
