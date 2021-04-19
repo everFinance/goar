@@ -2,8 +2,6 @@ package wallet
 
 import (
 	"encoding/base64"
-	"github.com/everFinance/goar/types"
-	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,21 +79,21 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 // test send big size file
 func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// proxyUrl := "http://127.0.0.1:8001"
-	arNode := "https://arweave.net"
-	w, err := NewFromPath("./account1.json", arNode) // your wallet private key
-	assert.NoError(t, err)
-
-	data, err := ioutil.ReadFile("/Users/sandy/Desktop/1.zip")
-	assert.NoError(t, err)
-	tags := []types.Tag{
-		{Name: "Content-Type", Value: "gzip"},
-		{Name: "Sender", Value: "yu-ji-zhou"},
-		{Name: "Date-Size", Value: "3.3GB"},
-		{Name: "Data-Introduce", Value: "Longchang No.1 Middle School Class 1, 2013 photo"},
-	}
-	id, err := w.SendDataSpeedUp(data, tags, 0)
-	assert.NoError(t, err)
-	t.Logf("tx hash: %s;", id)
+	// arNode := "https://arweave.net"
+	// w, err := NewFromPath("./account1.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data, err := ioutil.ReadFile("/Users/sandy/Desktop/1.zip")
+	// assert.NoError(t, err)
+	// tags := []types.Tag{
+	// 	{Name: "Content-Type", Value: "gzip"},
+	// 	{Name: "Sender", Value: "yu-ji-zhou"},
+	// 	{Name: "Date-Size", Value: "3.3GB"},
+	// 	{Name: "Data-Introduce", Value: "Longchang No.1 Middle School Class 1, 2013 photo"},
+	// }
+	// id, err := w.SendDataSpeedUp(data, tags, 0)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s;", id)
 }
 
 func TestNew(t *testing.T) {
