@@ -67,11 +67,11 @@ func New(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err error) 
 	return
 }
 
-func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id, status string, err error) {
+func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id string, err error) {
 	return w.SendWinston(utils.ARToWinston(amount), target, tags)
 }
 
-func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (id, status string, err error) {
+func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (id string, err error) {
 	reward, err := w.Client.GetTransactionPrice(nil, &target)
 	if err != nil {
 		return
@@ -92,7 +92,7 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (id, status string, err error) {
+func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (id string, err error) {
 	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
 		return
@@ -111,7 +111,7 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err error) {
+func (w *Wallet) SendData(data []byte, tags []types.Tag) (id string, err error) {
 	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
 		return
@@ -131,7 +131,7 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (id, status string, err
 }
 
 // SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(tx *types.Transaction) (id, status string, err error) {
+func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return
