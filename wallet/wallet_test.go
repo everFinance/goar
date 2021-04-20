@@ -56,9 +56,9 @@ func TestWallet_SendAR(t *testing.T) {
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},
 	// }
-	// id, status, err := w.SendAR(amount, target, tags)
+	// id,  err := w.SendAR(amount, target, tags)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; tx status: %s \n", id, status)
+	// t.Logf("tx hash: %s \n", id)
 }
 
 // test send small size file

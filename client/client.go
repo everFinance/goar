@@ -51,7 +51,21 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	return
 }
 
-// Transaction
+type RawTx struct {
+	Format    int             `json:"format"`
+	ID        string          `json:"id"`
+	LastTx    string          `json:"last_tx"`
+	Owner     string          `json:"owner"`
+	Tags      []types.Tag     `json:"tags"`
+	Target    string          `json:"target"`
+	Quantity  string          `json:"quantity"`
+	Data      json.RawMessage `json:"data"`
+	DataSize  string          `json:"data_size"`
+	DataRoot  string          `json:"data_root"`
+	Reward    string          `json:"reward"`
+	Signature string          `json:"signature"`
+}
+
 // status: Pending/Invalid hash/overspend
 func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, code int, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
@@ -65,8 +79,25 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 		return
 	}
 
-	tx = &types.Transaction{}
-	err = json.Unmarshal(body, tx)
+	// json unmarshal
+
+	rawTx := &RawTx{}
+	err = json.Unmarshal(body, rawTx)
+	tx = &types.Transaction{
+		Format:    rawTx.Format,
+		ID:        rawTx.ID,
+		LastTx:    rawTx.LastTx,
+		Owner:     rawTx.Owner,
+		Tags:      rawTx.Tags,
+		Target:    rawTx.Target,
+		Quantity:  rawTx.Quantity,
+		Data:      rawTx.Data,
+		DataSize:  rawTx.DataSize,
+		DataRoot:  rawTx.DataRoot,
+		Reward:    rawTx.Reward,
+		Signature: rawTx.Signature,
+		Chunks:    nil,
+	}
 	return
 }
 
