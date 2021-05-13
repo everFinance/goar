@@ -1,6 +1,8 @@
 package example
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -40,7 +42,7 @@ func assemblyDataTx(bigData []byte, wallet *wallet2.Wallet, tags []types.Tag) (*
 		Target:   "",
 		Quantity: "0",
 		Tags:     types.TagsEncode(tags),
-		Data:     bigData,
+		Data:     utils.Base64Encode(bigData),
 		DataSize: fmt.Sprintf("%d", len(bigData)),
 		Reward:   fmt.Sprintf("%d", reward),
 	}
@@ -100,7 +102,7 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 	t.Log("txHash: ", tx.ID)
 
 	// 1. post this tx without data
-	tx.Data = make([]byte, 0)
+	tx.Data = ""
 	body, status, err := wallet.Client.SubmitTransaction(tx)
 	assert.NoError(t, err)
 	t.Logf("post tx without data; body: %s, status: %d", string(body), status)
@@ -177,4 +179,19 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 
 	// end remove jsonUploaderFile.json file
 	_ = os.Remove("./jsonUploaderFile.json")
+}
+
+func Test_aa(t *testing.T) {
+	t.Log("address: ", wallet.Address)
+
+	ownerBy := wallet.PubKey.N.Bytes()
+	t.Log("length: ", len(ownerBy))
+	owner := utils.Base64Encode(ownerBy)
+	t.Log("owner:", owner)
+}
+
+func Test_dd(t *testing.T) {
+	prv, err := rsa.GenerateKey(rand.Reader, 4096)
+	assert.NoError(t, err)
+	t.Log("size: ", len(prv.PublicKey.N.Bytes()))
 }

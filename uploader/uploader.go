@@ -71,7 +71,13 @@ func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUplo
 	tu := &TransactionUploader{
 		Client: client,
 	}
-	tu.Data = tt.Data
+	da, err := utils.Base64Decode(tt.Data)
+	if err != nil {
+		log.Errorf("da, err := utils.Base64Decode(tt.Data) error: %v", err)
+		return nil, err
+
+	}
+	tu.Data = da
 	tu.Transaction = &types.Transaction{
 		Format:    tt.Format,
 		ID:        tt.ID,
@@ -80,7 +86,7 @@ func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUplo
 		Tags:      tt.Tags,
 		Target:    tt.Target,
 		Quantity:  tt.Quantity,
-		Data:      make([]byte, 0),
+		Data:      "",
 		DataSize:  tt.DataSize,
 		DataRoot:  tt.DataRoot,
 		Reward:    tt.Reward,
@@ -286,7 +292,7 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 		return nil, errors.New(fmt.Sprintf("Tx %s not found: %d, error: %v", id, code, err))
 	}
 	transaction := tx
-	transaction.Data = make([]byte, 0)
+	transaction.Data = ""
 
 	serialized := &SerializedUploader{
 		chunkIndex:         0,
@@ -320,7 +326,7 @@ func (tt *TransactionUploader) postTransaction() error {
 func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	if withBody {
 		// Post the Transaction with Data.
-		tt.Transaction.Data = tt.Data
+		tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	}
 	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	fmt.Printf("uplaodTx; body: %s, status: %d, txId: %s \n", body, statusCode, tt.Transaction.ID)
@@ -333,7 +339,7 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	tt.LastResponseStatus = statusCode
 
 	if withBody {
-		tt.Transaction.Data = make([]byte, 0)
+		tt.Transaction.Data = ""
 	}
 
 	if statusCode >= 200 && statusCode < 300 {
