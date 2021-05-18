@@ -5,12 +5,18 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
+	"github.com/everFinance/goar/client"
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
 	"github.com/niclabs/tcrsa"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"math/big"
 	"testing"
 )
 
+// 测试 秘钥创建和门限签名
 func TestCreateKeyPair(t *testing.T) {
 	exampleData := []byte("aaabbbcccddd112233")
 	signHashed := sha256.Sum256(exampleData)
@@ -331,4 +337,149 @@ func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, 
 		return nil, nil, err
 	}
 	return keyShares, keyMeta, nil
+}
+
+// 获取门限秘钥地址
+func TestCreateKeyPair3(t *testing.T) {
+	keyMeta := &tcrsa.KeyMeta{}
+	keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
+	assert.NoError(t, err)
+	err = json.Unmarshal(keyMetaBy, keyMeta)
+	assert.NoError(t, err)
+	addr := sha256.Sum256(keyMeta.PublicKey.N.Bytes())
+	t.Log("address: ", utils.Base64Encode(addr[:])) // KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms
+}
+
+// 测试 通过门限签名发送 ar 交易
+func TestCreateKeyPair2(t *testing.T) {
+	cli := client.New("https://arweave.net")
+
+	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
+	reward, err := cli.GetTransactionPrice(nil, &target)
+	assert.NoError(t, err)
+	// anchor, err := cli.GetTransactionAnchor()
+	anchor, err := cli.GetLastTransactionID("KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms")
+	assert.NoError(t, err)
+	t.Log("lastTx: ", anchor)
+	// 读取本地生产的 门限签名秘钥对的公钥部分，注：测试使用的是 4096 bit 的秘钥，需要先单独生成并放到本地。
+	keyMeta := &tcrsa.KeyMeta{}
+	keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
+	assert.NoError(t, err)
+	err = json.Unmarshal(keyMetaBy, keyMeta)
+	assert.NoError(t, err)
+
+	owner := utils.Base64Encode(keyMeta.PublicKey.N.Bytes())
+
+	amount := big.NewInt(130000) // 转账余额
+	tags := []types.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
+	tx := &types.Transaction{
+		Format:    2,
+		ID:        "",
+		LastTx:    anchor,
+		Owner:     owner,
+		Tags:      types.TagsEncode(tags),
+		Target:    target,
+		Quantity:  amount.String(),
+		Data:      []byte{},
+		DataSize:  "0",
+		DataRoot:  "",
+		Reward:    fmt.Sprintf("%d", reward),
+		Signature: "",
+		Chunks:    nil,
+	}
+	signData, err := types.GetSignatureData(tx)
+	assert.NoError(t, err)
+	t.Log("signData: ", signData)
+
+	// 门限签名
+	keyShares := tcrsa.KeyShareList{}
+	keySharesBy, err := ioutil.ReadFile("keyShares.json")
+	assert.NoError(t, err)
+	err = json.Unmarshal(keySharesBy, &keyShares)
+	assert.NoError(t, err)
+
+	signHashed := sha256.Sum256(signData)
+	signDataByPss, err := tcrsa.PreparePssDocumentHash(keyMeta.PublicKey.N.BitLen(), crypto.SHA256, signHashed[:], &rsa.PSSOptions{
+		SaltLength: 0,
+		Hash:       crypto.SHA256,
+	})
+	assert.NoError(t, err)
+
+	/* -------------------------- 把 keyShare 分发给各个签名者 ----------------------------*/
+	signer01 := keyShares[0]
+	signer02 := keyShares[1]
+	signer03 := keyShares[2]
+	signer04 := keyShares[3]
+	signer05 := keyShares[4]
+
+	/* -------------------------- 各个签名者对收到的数据进行签名并提交到服务器 ----------------------------*/
+	// 分别对数据进行签名
+	signedData01, err := signer01.Sign(signDataByPss, crypto.SHA256, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(signedData01.Id)
+
+	signedData02, err := signer02.Sign(signDataByPss, crypto.SHA256, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(signedData02.Id)
+
+	signedData03, err := signer03.Sign(signDataByPss, crypto.SHA256, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(signedData03.Id)
+
+	signedData04, err := signer04.Sign(signDataByPss, crypto.SHA256, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(signedData04.Id)
+
+	signedData05, err := signer05.Sign(signDataByPss, crypto.SHA256, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	t.Log(signedData05.Id)
+
+	/* -------------------------- 服务器收到签名者们提交的签名数据之后进行验证签名、组装签名 ----------------------------*/
+	// 收集好签名者的签名数据到一个数组中
+	signedShares := tcrsa.SigShareList{
+		// signedData01,
+		signedData02,
+		signedData03,
+		signedData04,
+		// signedData05,
+	}
+
+	// 验证每个收集的签名者的签名。在实际过程中是服务器收到签名者提交的签名就要做一次验证验证通过之后再放入上面的数组
+	for _, sd := range signedShares {
+		err = sd.Verify(signDataByPss, keyMeta)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// 组装签名
+	signature, err := signedShares.Join(signDataByPss, keyMeta)
+	if err != nil {
+		panic(err)
+	}
+	// 最后通过 rsa 原生的pss 验证签名方法来验证聚合之后的签名
+	err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature, nil)
+	if err != nil {
+		panic(err)
+	}
+	// assemble tx and send to ar chain
+	txId := sha256.Sum256(signature)
+	tx.ID = utils.Base64Encode(txId[:])
+	t.Log("txHash: ", tx.ID)
+	tx.Signature = utils.Base64Encode(signature)
+
+	status, code, err := cli.SubmitTransaction(tx)
+	assert.NoError(t, err)
+	t.Log("status: ", status)
+	t.Log("code: ", code)
 }
