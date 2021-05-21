@@ -460,10 +460,8 @@ func TestCreateKeyPair2(t *testing.T) {
 		panic(err)
 	}
 	// assemble tx and send to ar chain
-	txId := sha256.Sum256(signature)
-	tx.ID = utils.Base64Encode(txId[:])
+	tx.AddSignature(signature)
 	t.Log("txHash: ", tx.ID)
-	tx.Signature = utils.Base64Encode(signature)
 
 	status, code, err := cli.SubmitTransaction(tx)
 	assert.NoError(t, err)
