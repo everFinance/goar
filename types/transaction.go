@@ -30,6 +30,12 @@ type Transaction struct {
 	Chunks *merkle.Chunks `json:"-"`
 }
 
+func (tx *Transaction) AddSignature(signature []byte) {
+	txId := sha256.Sum256(signature)
+	tx.ID = utils.Base64Encode(txId[:])
+	tx.Signature = utils.Base64Encode(signature)
+}
+
 func (tx *Transaction) PrepareChunks(data []byte) {
 	// Note: we *do not* use `this.Data`, the caller may be
 	// operating on a Transaction with an zero length Data field.
@@ -98,9 +104,7 @@ func (tx *Transaction) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.Privat
 		return err
 	}
 
-	id := sha256.Sum256(sig)
-	tx.ID = utils.Base64Encode(id[:])
-	tx.Signature = utils.Base64Encode(sig)
+	tx.AddSignature(sig)
 	return nil
 }
 
