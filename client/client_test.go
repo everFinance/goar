@@ -1,6 +1,9 @@
 package client
 
 import (
+	"github.com/everFinance/goar/utils"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 )
 
@@ -115,13 +118,33 @@ func TestClient_DownloadChunkData(t *testing.T) {
 
 func TestClient_GetTransactionData(t *testing.T) {
 	// proxy := "http://127.0.0.1:8001"
-	// client := New("https://arweave.net", proxy)
-	// id := "OQyMO1ZBL9fMKkAy_f20TZuDfgLd5xfuRYvPkuHEgBE"
-	// data, err := client.GetTransactionData(id, "txt")
-	// if err != nil {
-	// 	t.Log(err.Error())
-	// }
-	// t.Log(len(data))
-	// err = ioutil.WriteFile("yoyo.txt", data, 0777)
+	client := New("https://arweave.net")
+	// id := "yloTqnHYW1nfU29USLatTp4z2a1Rfrei4qnmRP61cwU"
+	id := "ubZYnr2lPrsp4kg9GY95tex5D8x2CFCRMN0FS54aTBk"
+	// id := "Z-KuJJOGGV1G_0bYH6rT340UQMW54xSjPChr9bvayWg"
+	// id := "nQmckodRJaaLkUwUQr_hgBXJCavUtF11p6RlyEmeAgs" // 之前的
+	// id := "m-BVy201X4wdlTKdFmHlIyunIaLe_frpFtkP19xe3qA"
+	data, err := client.GetTransactionData(id, "json")
+	if err != nil {
+		t.Log(err.Error())
+	}
+	// tx, state, code, err := client.GetTransactionByID(id)
+	// t.Log(tx)
+	// t.Log(state)
+	// t.Log(code)
+
+	// dd, err := client.GetTransactionField(id, "data")
 	// assert.NoError(t, err)
+	// t.Log(dd)
+
+	t.Log(data)
+	t.Log(string(data))
+	err = ioutil.WriteFile("aa.txt", data, 0777)
+	assert.NoError(t, err)
+}
+
+func TestNew(t *testing.T) {
+	data := []byte("this is a goar test small size file data")
+	a := utils.Base64Encode(data)
+	t.Log(a)
 }
