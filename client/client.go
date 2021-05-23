@@ -51,7 +51,6 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	return
 }
 
-// Transaction
 // status: Pending/Invalid hash/overspend
 func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, code int, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
@@ -65,6 +64,7 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 		return
 	}
 
+	// json unmarshal
 	tx = &types.Transaction{}
 	err = json.Unmarshal(body, tx)
 	return
@@ -101,7 +101,7 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	}
 	body, statusCode, err := c.httpGet(url)
 
-	if statusCode == 400 {
+	if statusCode == 400 || len(body) == 0 {
 		body, err = c.DownloadChunkData(id)
 	} else if statusCode != 200 {
 		err = fmt.Errorf("not found data")
