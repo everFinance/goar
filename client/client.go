@@ -101,7 +101,7 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	}
 	body, statusCode, err := c.httpGet(url)
 
-	if statusCode == 400 {
+	if statusCode == 400 || len(body) == 0 {
 		body, err = c.DownloadChunkData(id)
 	} else if statusCode != 200 {
 		err = fmt.Errorf("not found data")
