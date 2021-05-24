@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/utils"
 	"github.com/zyjblockchain/sandy_log/log"
-	"math/big"
-	"strconv"
 )
 
 type Transaction struct {
@@ -161,14 +161,9 @@ func VerifyTransaction(tx Transaction) (err error) {
 		return
 	}
 
-	owner, err := utils.Base64Decode(tx.Owner)
+	pubKey, err := utils.OwnerToPubKey(tx.Owner)
 	if err != nil {
 		return
-	}
-
-	pubKey := &rsa.PublicKey{
-		N: new(big.Int).SetBytes(owner),
-		E: 65537, //"AQAB"
 	}
 
 	return utils.Verify(signData, pubKey, sig)
