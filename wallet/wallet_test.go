@@ -2,7 +2,6 @@ package wallet
 
 import (
 	"encoding/base64"
-	"github.com/everFinance/goar/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,17 +63,17 @@ func TestWallet_SendAR(t *testing.T) {
 
 // test send small size file
 func TestWallet_SendDataSpeedUp01(t *testing.T) {
-	arNode := "https://arweave.net"
-	w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
-	assert.NoError(t, err)
-
-	data := []byte("aaa this is a goar test small size file data") // small file
-	tags := []types.Tag{
-		{Name: "GOAR", Value: "SMDT"},
-	}
-	id, err := w.SendDataSpeedUp(data, tags, 0)
-	assert.NoError(t, err)
-	t.Logf("tx hash: %s", id)
+	// arNode := "https://arweave.net"
+	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data := []byte("aaa this is a goar test small size file data") // small file
+	// tags := []types.Tag{
+	// 	{Name: "GOAR", Value: "SMDT"},
+	// }
+	// id, err := w.SendDataSpeedUp(data, tags, 0)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s", id)
 }
 
 // test send big size file
