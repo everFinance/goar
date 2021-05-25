@@ -56,9 +56,9 @@ func TestWallet_SendAR(t *testing.T) {
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},
 	// }
-	// id, status, err := w.SendAR(amount, target, tags)
+	// id,  err := w.SendAR(amount, target, tags)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; tx status: %s \n", id, status)
+	// t.Logf("tx hash: %s \n", id)
 }
 
 // test send small size file
@@ -67,29 +67,29 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data := []byte("this is a goar test small size file data") // small file
+	// data := []byte("aaa this is a goar test small size file data") // small file
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "SMDT"},
 	// }
-	// id, status, err := w.SendDataSpeedUp(data, tags, 0)
+	// id, err := w.SendDataSpeedUp(data, tags, 0)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; status: %s", id, status)
+	// t.Logf("tx hash: %s", id)
 }
 
 // test send big size file
 func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// proxyUrl := "http://127.0.0.1:8001"
 	// arNode := "https://arweave.net"
-	// w, err := NewFromPath("./account1.json", arNode) // your wallet private key
+	// w, err := NewFromPath("./account1.json", arNode, proxyUrl) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data, err := ioutil.ReadFile("/Users/sandy/Desktop/1.zip")
+	// data, err := ioutil.ReadFile("/Users/sandy/Downloads/3F.jpeg")
 	// assert.NoError(t, err)
 	// tags := []types.Tag{
-	// 	{Name: "Content-Type", Value: "gzip"},
-	// 	{Name: "Sender", Value: "yu-ji-zhou"},
-	// 	{Name: "Date-Size", Value: "3.3GB"},
-	// 	{Name: "Data-Introduce", Value: "Longchang No.1 Middle School Class 1, 2013 photo"},
+	// 	{Name: "Content-Type", Value: "jpeg"},
+	// 	{Name: "Sender", Value: "Sandy"},
+	// 	{Name: "Date-Size", Value: "11.3MB"},
+	// 	{Name: "Data-Introduce", Value: "Sandy Riely PeiJie"},
 	// }
 	// id, err := w.SendDataSpeedUp(data, tags, 0)
 	// assert.NoError(t, err)

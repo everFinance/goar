@@ -82,7 +82,7 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 		Target:   target,
 		Quantity: amount.String(),
 		Tags:     types.TagsEncode(tags),
-		Data:     []byte{},
+		Data:     "",
 		DataSize: "0",
 		Reward:   fmt.Sprintf("%d", reward),
 	}
@@ -103,7 +103,7 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		Target:   "",
 		Quantity: "0",
 		Tags:     types.TagsEncode(tags),
-		Data:     data,
+		Data:     utils.Base64Encode(data),
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
@@ -122,7 +122,7 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (id string, err error) 
 		Target:   "",
 		Quantity: "0",
 		Tags:     types.TagsEncode(tags),
-		Data:     data,
+		Data:     utils.Base64Encode(data),
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward),
 	}

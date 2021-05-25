@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/utils"
-	"math/big"
-	"strconv"
+	"github.com/zyjblockchain/sandy_log/log"
 )
 
 type Transaction struct {
@@ -20,7 +21,7 @@ type Transaction struct {
 	Tags      []Tag  `json:"tags"`
 	Target    string `json:"target"`
 	Quantity  string `json:"quantity"`
-	Data      []byte `json:"data"`
+	Data      string `json:"data"` // base64.encode
 	DataSize  string `json:"data_size"`
 	DataRoot  string `json:"data_root"`
 	Reward    string `json:"reward"`
@@ -114,7 +115,12 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 		// todo
 		return nil, errors.New("current do not support format is 1 tx")
 	case 2:
-		tx.PrepareChunks(tx.Data)
+		data, err := utils.Base64Decode(tx.Data)
+		if err != nil {
+			log.Errorf("data, err := utils.Base64Decode(tx.Data) error:%v", err)
+			return nil, err
+		}
+		tx.PrepareChunks(data)
 		tags := [][]string{}
 		for _, tag := range tx.Tags {
 			tags = append(tags, []string{
@@ -159,14 +165,9 @@ func VerifyTransaction(tx Transaction) (err error) {
 		return
 	}
 
-	owner, err := utils.Base64Decode(tx.Owner)
+	pubKey, err := utils.OwnerToPubKey(tx.Owner)
 	if err != nil {
 		return
-	}
-
-	pubKey := &rsa.PublicKey{
-		N: new(big.Int).SetBytes(owner),
-		E: 65537, //"AQAB"
 	}
 
 	return utils.Verify(signData, pubKey, sig)

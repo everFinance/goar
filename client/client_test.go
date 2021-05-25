@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/everFinance/goar/utils"
 	"testing"
 )
 
@@ -115,13 +116,18 @@ func TestClient_DownloadChunkData(t *testing.T) {
 
 func TestClient_GetTransactionData(t *testing.T) {
 	// proxy := "http://127.0.0.1:8001"
-	// client := New("https://arweave.net", proxy)
-	// id := "OQyMO1ZBL9fMKkAy_f20TZuDfgLd5xfuRYvPkuHEgBE"
-	// data, err := client.GetTransactionData(id, "txt")
-	// if err != nil {
-	// 	t.Log(err.Error())
-	// }
-	// t.Log(len(data))
-	// err = ioutil.WriteFile("yoyo.txt", data, 0777)
-	// assert.NoError(t, err)
+	client := New("https://arweave.net")
+	id := "lSHWbAfjJsK0so08BTTmHO_n809fGW2DYOMySsXHNuI"
+	data, err := client.GetTransactionData(id, "json")
+	if err != nil {
+		t.Log(err.Error())
+	}
+
+	t.Log(string(data))
+}
+
+func TestNew(t *testing.T) {
+	data := []byte("this is a goar test small size file data")
+	a := utils.Base64Encode(data)
+	t.Log(a)
 }
