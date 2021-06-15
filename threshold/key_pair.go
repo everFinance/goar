@@ -1,10 +1,10 @@
-package rsa_crypto
+package threshold
 
 import (
 	"errors"
 	"fmt"
+	"github.com/everFinance/sandy_log/log"
 	"github.com/niclabs/tcrsa"
-	"github.com/zyjblockchain/sandy_log/log"
 	"time"
 )
 

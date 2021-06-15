@@ -1,11 +1,11 @@
-package rsa_crypto
+package threshold
 
 import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
+	"github.com/everFinance/sandy_log/log"
 	"github.com/niclabs/tcrsa"
-	"github.com/zyjblockchain/sandy_log/log"
 )
 
 type TcSign struct {

@@ -1,4 +1,4 @@
-package rsa_crypto
+package threshold
 
 import (
 	"crypto"
@@ -16,16 +16,16 @@ import (
 	"testing"
 )
 
-// 测试 秘钥创建和门限签名
+// TestCreateKeyPair Secret key creation and threshold signature
 func TestCreateKeyPair(t *testing.T) {
 	exampleData := []byte("aaabbbcccddd112233")
 	signHashed := sha256.Sum256(exampleData)
 
-	/* -------------------------- 服务器端生成rsa 门限签名的 key pair ----------------------------*/
-	bitSize := 1024 // 如果为2048 以及4096 则下面的生成函数会执行分钟级别的时间，生产环境我们需要4096 位作为最高安全级别。
+	/* -------------------------- Key pair that generates RSA threshold signature on the server side ----------------------------*/
+	bitSize := 1024 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
 	l := 5
 	k := 3
-	// keyShares 为分发给每个签名者，keyMeta 里面存储了 publicKey, k, l 等公开的信息，需要一起发送给签名者
+	// Keyshares are distributed to each signer, and KeyMeta stores publicKey, k, l and other public information, which should be sent to the signer together
 	keyShares, keyMeta, err := CreateKeyPair(bitSize, k, l)
 	if err != nil {
 		panic(err)
@@ -36,15 +36,15 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	/* -------------------------- 把keyShare 分发给各个签名者 ----------------------------*/
+	/* -------------------------- Distribute KeyShare to the signatories ----------------------------*/
 	signer01 := keyShares[0]
 	signer02 := keyShares[1]
 	signer03 := keyShares[2]
 	signer04 := keyShares[3]
 	signer05 := keyShares[4]
 
-	/* -------------------------- 各个签名者对收到的数据进行签名并提交到服务器 ----------------------------*/
-	// 分别对数据进行签名
+	/* -------------------------- Each signer signs the data received and submits it to the server ----------------------------*/
+	// sign data
 
 	signedData01, err := ts.ThresholdSign(signer01)
 	if err != nil {
@@ -71,8 +71,7 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	/* -------------------------- 服务器收到签名者们提交的签名数据之后进行验证签名、组装签名 ----------------------------*/
-	// 收集好签名者的签名数据到一个数组中
+	/* -------------------------- After receiving the signature data submitted by the signers, the server verifies the signature and assembles the signature ----------------------------*/
 	signedShares := tcrsa.SigShareList{
 		signedData01,
 		signedData02,
@@ -90,16 +89,20 @@ func TestCreateKeyPair(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	/* -------------------------- 以上流程是一个门限签名的完整流程，下面我们基于上面的环境来进行门限测试 ----------------------------*/
-	// 从上面能看到l=5 k=3, 签名者有5个，门限是3，但是上面流程我们把5个签名者的签名都提交上去了，没有达到门限测试的目的，下面测试门限
 
-	// 1. 提交signer1,2,3 的签名数据并验证
+	/* --------------------------------------------------------------------------------------------------------------*/
+	/* -------------------------- Next, we will test the threshold based on the above environment ----------------------------*/
+	// As can be seen from the above, L =5, K =3, there are 5 signers, and the threshold is 3.
+	// However, in the above process, we have submitted the signatures of all 5 signers, and the goal of threshold test has not been reached.
+	// The threshold test is as follows
+
+	// 1. Submit the signature data of signer1,2,3 and verify it
 	signedShares123 := tcrsa.SigShareList{
 		signedData01,
 		signedData02,
 		signedData03,
 	}
-	// 组装
+	// assemble
 	signature123, err := ts.AssembleSigShares(signedShares123)
 	if err != nil {
 		panic(err)
@@ -110,13 +113,13 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 2. 提交 signer 3,2,1
+	// 2. Submit signer 3,2,1
 	signedShares321 := tcrsa.SigShareList{
 		signedData03,
 		signedData02,
 		signedData01,
 	}
-	// 组装
+	// assemble
 	signature321, err := ts.AssembleSigShares(signedShares321)
 	if err != nil {
 		panic(err)
@@ -127,13 +130,13 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 3. 提交 signer 3,1,2
+	// 3. Submit signer 3,1,2
 	signedShares312 := tcrsa.SigShareList{
 		signedData03,
 		signedData01,
 		signedData02,
 	}
-	// 组装
+	// assemble
 	signature312, err := ts.AssembleSigShares(signedShares312)
 	if err != nil {
 		panic(err)
@@ -144,13 +147,13 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 4. 提交 signer 1,3,5
+	// 4. Submit signer 1,3,5
 	signedShares135 := tcrsa.SigShareList{
 		signedData01,
 		signedData03,
 		signedData05,
 	}
-	// 组装
+	// assemble
 	signature135, err := ts.AssembleSigShares(signedShares135)
 	if err != nil {
 		panic(err)
@@ -161,13 +164,13 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 5. 提交 signer 5, 1, 4
+	// 5. Submit signer 5, 1, 4
 	signedShares514 := tcrsa.SigShareList{
 		signedData05,
 		signedData01,
 		signedData04,
 	}
-	// 组装
+	// assemble
 	signature514, err := ts.AssembleSigShares(signedShares514)
 	if err != nil {
 		panic(err)
@@ -178,14 +181,14 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 6. 提交 signer 2,3,4,5
+	// 6. Submit signer 2,3,4,5
 	signedShares2345 := tcrsa.SigShareList{
 		signedData02,
 		signedData03,
 		signedData04,
 		signedData05,
 	}
-	// 组装
+	// assemble
 	signature2345, err := ts.AssembleSigShares(signedShares2345)
 	if err != nil {
 		panic(err)
@@ -196,14 +199,14 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 7. 提交 signer 5,4,2,3
+	// 7. Submit signer 5,4,2,3
 	signedShares5423 := tcrsa.SigShareList{
 		signedData05,
 		signedData04,
 		signedData02,
 		signedData03,
 	}
-	// 组装
+	// assemble
 	signature5423, err := ts.AssembleSigShares(signedShares5423)
 	if err != nil {
 		panic(err)
@@ -214,7 +217,7 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 8. 提交 5， 4， 3，2，1
+	// 8. Submit 5， 4， 3，2，1
 	signedShares54321 := tcrsa.SigShareList{
 		signedData05,
 		signedData04,
@@ -222,7 +225,7 @@ func TestCreateKeyPair(t *testing.T) {
 		signedData02,
 		signedData01,
 	}
-	// 组装
+	// assemble
 	signature54321, err := ts.AssembleSigShares(signedShares54321)
 	if err != nil {
 		panic(err)
@@ -233,53 +236,53 @@ func TestCreateKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	// 9. 提交 4，3
+	// 9. Submit 4，3
 	signedShares43 := tcrsa.SigShareList{
 		signedData04,
 		signedData03,
 	}
-	// 组装
+	// assemble
 	_, err = ts.AssembleSigShares(signedShares43)
 	assert.EqualError(t, err, "insufficient number of signature shares. provided: 2, needed: 3")
 
 	/*
-		验证提交重构签名数据的情况。
-		先给出结论：
-		门限值k=3, 能通过的情况[a,b,c,x,x,x]; [a,b,c,d,x,x];
-		不能通过的情况[a,a,b,c,d,e,x,x,x]; [a,b,b,c,x,x,x];
-		原因： 不管你提交多少签名上来，Join 方法只取 signedShares 数组中的前3(k)个数据来组装最终的签名。
+		Verify that the refactored signature data is committed.
+		So let's start with the conclusion：
+		threshold k=3, Pass the test [a,b,c,x,x,x]; [a,b,c,d,x,x];
+		Fail test [a,a,b,c,d,e,x,x,x]; [a,b,b,c,x,x,x];
+		why: No matter how many signatures you submit, the Join method only takes the first 3(k) pieces of the signedShares array to assemble the final signature.
 
 	*/
 
-	// 10. 提交 1，1，3，4; 组装的签名数据是signer01,signer01,signer03, 这样只有2个有效的签名，低于门限值
+	// 10. Submit 1，1，3，4; Is the signature of the assembly data signer01 signer01, signer03, so only two valid signatures, below the threshold
 	signedShares1134 := tcrsa.SigShareList{
 		signedData01,
 		signedData01,
 		signedData03,
 		signedData04,
 	}
-	// 组装
+	// assemble
 	signature1134, err := ts.AssembleSigShares(signedShares1134)
 	assert.EqualError(t, err, "crypto/rsa: verification error")
 	// verify
 	err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature1134, nil)
 	assert.EqualError(t, err, "crypto/rsa: verification error")
 
-	// 11. 提交1，2，2，3; 和上面情况一致
+	// 11. submit 1，2，2，3; Same thing as above
 	signedShares1223 := tcrsa.SigShareList{
 		signedData01,
 		signedData02,
 		signedData02,
 		signedData03,
 	}
-	// 组装
+	// assemble
 	signature1223, err := ts.AssembleSigShares(signedShares1223)
 	assert.EqualError(t, err, "crypto/rsa: verification error")
 	// verify
 	err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature1223, nil)
 	assert.EqualError(t, err, "crypto/rsa: verification error")
 
-	// 12. 提交 3，2，5，5，5，4，2，1，3； 是可以的，能取到3，2，5 这三个签名数据满足门限值
+	// 12. submit 3，2，5，5，5，4，2，1，3；Can get 3, 2 and 5 signature data to meet the threshold value
 	signedShares325554213 := tcrsa.SigShareList{
 		signedData03,
 		signedData02,
@@ -291,7 +294,7 @@ func TestCreateKeyPair(t *testing.T) {
 		signedData01,
 		signedData03,
 	}
-	// 组装
+	// assemble
 	signature325554213, err := ts.AssembleSigShares(signedShares325554213)
 	if err != nil {
 		panic(err)
@@ -329,10 +332,10 @@ func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, 
 	return keyShares, keyMeta, nil
 }
 
-// 获取门限秘钥地址
+// TestCreateKeyPair3 get address
 func TestCreateKeyPair3(t *testing.T) {
 	keyMeta := &tcrsa.KeyMeta{}
-	keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
+	keyMetaBy, err := ioutil.ReadFile("keyMeta.json") // replace your key
 	assert.NoError(t, err)
 	err = json.Unmarshal(keyMetaBy, keyMeta)
 	assert.NoError(t, err)
@@ -340,18 +343,18 @@ func TestCreateKeyPair3(t *testing.T) {
 	t.Log("address: ", utils.Base64Encode(addr[:])) // KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms
 }
 
-// 测试通过门限签名发送 ar 交易
+// TestCreateKeyPair2 send ar tx by threshold signature keypair
 func TestCreateKeyPair2(t *testing.T) {
 	cli := client.New("https://arweave.net")
 
 	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
 	reward, err := cli.GetTransactionPrice(nil, &target)
 	assert.NoError(t, err)
-	// anchor, err := cli.GetTransactionAnchor()
+	// anchor, err := cli.GetTransactionAnchor() // for test
 	anchor, err := cli.GetLastTransactionID("KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms")
 	assert.NoError(t, err)
 	t.Log("lastTx: ", anchor)
-	// 读取本地生产的 门限签名秘钥对的公钥部分，注：测试使用的是 4096 bit 的秘钥，需要先单独生成并放到本地。
+	// read created threshold keypair for local file; need to be generated ahead of time;
 	keyMeta := &tcrsa.KeyMeta{}
 	keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
 	assert.NoError(t, err)
@@ -360,7 +363,7 @@ func TestCreateKeyPair2(t *testing.T) {
 
 	owner := utils.Base64Encode(keyMeta.PublicKey.N.Bytes())
 
-	amount := big.NewInt(140000) // 转账余额
+	amount := big.NewInt(140000) // transfer amount
 	tags := []types.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
 	tx := &types.Transaction{
 		Format:    2,
@@ -381,7 +384,7 @@ func TestCreateKeyPair2(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("signData: ", signData)
 
-	// 门限签名
+	// signature
 	keyShares := tcrsa.KeyShareList{}
 	keySharesBy, err := ioutil.ReadFile("keyShares.json")
 	assert.NoError(t, err)
@@ -391,15 +394,14 @@ func TestCreateKeyPair2(t *testing.T) {
 	ts, err := NewTcSign(keyMeta, signData)
 	assert.NoError(t, err)
 
-	/* -------------------------- 把 keyShare 分发给各个签名者 ----------------------------*/
+	/* --------------------------distribute keyShares to the signers ----------------------------*/
 	signer01 := keyShares[0]
 	signer02 := keyShares[1]
 	signer03 := keyShares[2]
 	signer04 := keyShares[3]
 	signer05 := keyShares[4]
 
-	/* -------------------------- 各个签名者对收到的数据进行签名并提交到服务器 ----------------------------*/
-	// 分别对数据进行签名
+	/* -------------------------- signers to sign data ----------------------------*/
 	signedData01, err := ts.ThresholdSign(signer01)
 	if err != nil {
 		panic(err)
@@ -430,8 +432,8 @@ func TestCreateKeyPair2(t *testing.T) {
 	}
 	t.Log(signedData05.Id)
 
-	/* -------------------------- 服务器收到签名者们提交的签名数据之后进行验证签名、组装签名 ----------------------------*/
-	// 收集好签名者的签名数据到一个数组中
+	/* -------------------------- After receiving the signature data submitted by the signers, the server verifies the signature and assembles the signature ----------------------------*/
+	// Collect the signer's signature data into an array
 	signedShares := tcrsa.SigShareList{
 		// signedData01,
 		signedData02,
@@ -440,7 +442,7 @@ func TestCreateKeyPair2(t *testing.T) {
 		// signedData05,
 	}
 
-	// 验证每个收集的签名者的签名。在实际过程中是服务器收到签名者提交的签名就要做一次验证验证通过之后再放入上面的数组
+	// Verify the signature of each collected signer. And what happens in practice is that the server receives the signature submitted by the signer and then it verifies it and then it puts it in the array above
 	for _, sd := range signedShares {
 		err = sd.Verify(ts.pssData, keyMeta)
 		if err != nil {
@@ -448,12 +450,12 @@ func TestCreateKeyPair2(t *testing.T) {
 		}
 	}
 
-	// 组装签名
+	// assemble signatures
 	signature, err := ts.AssembleSigShares(signedShares)
 	if err != nil {
 		panic(err)
 	}
-	// 最后通过 rsa 原生的pss 验证签名方法来验证聚合之后的签名
+	// Finally, RSA native PSS verification signature method is used to verify the aggregated signature
 	signHashed := sha256.Sum256(signData)
 	err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature, nil)
 	if err != nil {
