@@ -370,7 +370,7 @@ func TestCreateKeyPair2(t *testing.T) {
 		Tags:      types.TagsEncode(tags),
 		Target:    target,
 		Quantity:  amount.String(),
-		Data:      []byte{},
+		Data:      "",
 		DataSize:  "0",
 		DataRoot:  "",
 		Reward:    fmt.Sprintf("%d", reward),
