@@ -10,7 +10,7 @@ import (
 
 	"github.com/everFinance/goar/merkle"
 	"github.com/everFinance/goar/utils"
-	"github.com/zyjblockchain/sandy_log/log"
+	"github.com/everFinance/sandy_log/log"
 )
 
 type Transaction struct {
@@ -29,6 +29,12 @@ type Transaction struct {
 
 	// Computed when needed.
 	Chunks *merkle.Chunks `json:"-"`
+}
+
+func (tx *Transaction) AddSignature(signature []byte) {
+	txId := sha256.Sum256(signature)
+	tx.ID = utils.Base64Encode(txId[:])
+	tx.Signature = utils.Base64Encode(signature)
 }
 
 func (tx *Transaction) PrepareChunks(data []byte) {
@@ -99,9 +105,7 @@ func (tx *Transaction) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.Privat
 		return err
 	}
 
-	id := sha256.Sum256(sig)
-	tx.ID = utils.Base64Encode(id[:])
-	tx.Signature = utils.Base64Encode(sig)
+	tx.AddSignature(sig)
 	return nil
 }
 
