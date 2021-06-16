@@ -1,7 +1,9 @@
 package client
 
 import (
+	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -130,4 +132,17 @@ func TestNew(t *testing.T) {
 	data := []byte("this is a goar test small size file data")
 	a := utils.Base64Encode(data)
 	t.Log(a)
+}
+
+func TestClient_VerifyTx(t *testing.T) {
+	// txId := "XOzxw5kaYJrt9Vljj23pA5_6b63kY2ydQ0lPfnhksMA"
+	txId := "_fVj-WyEtXV3URXlNkSnHVGupl7_DM1UWZ64WMdhPkU"
+	client := New("https://arweave.net")
+	tx, status, code, err := client.GetTransactionByID(txId)
+	assert.NoError(t, err)
+	t.Log(status, code)
+	t.Log(tx.Format)
+	t.Log(types.TagsDecode(tx.Tags))
+	err = types.VerifyTransaction(*tx)
+	assert.NoError(t, err)
 }
