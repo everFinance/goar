@@ -9,7 +9,7 @@ import (
 	"github.com/everFinance/goar/client"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/niclabs/tcrsa"
+	tcrsa "github.com/everFinance/ttcrsa"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"math/big"

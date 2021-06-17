@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"github.com/everFinance/sandy_log/log"
-	"github.com/niclabs/tcrsa"
+	tcrsa "github.com/everFinance/ttcrsa"
 )
 
 type TcSign struct {

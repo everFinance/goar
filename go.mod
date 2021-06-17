@@ -5,9 +5,7 @@ go 1.14
 require (
 	github.com/everFinance/gojwk v1.0.0
 	github.com/everFinance/sandy_log v1.0.3
-	github.com/niclabs/tcrsa v0.0.5
+	github.com/everFinance/ttcrsa v1.1.1
 	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.7.0
 )
-
-replace github.com/niclabs/tcrsa v0.0.5 => github.com/everFinance/tcrsa v1.0.1
