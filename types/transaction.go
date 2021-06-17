@@ -193,6 +193,7 @@ func VerifyTransaction(tx Transaction) (err error) {
 	id := sha256.Sum256(sig)
 	if utils.Base64Encode(id[:]) != tx.ID {
 		err = fmt.Errorf("wrong id")
+		return
 	}
 
 	signData, err := GetSignatureData(&tx)
