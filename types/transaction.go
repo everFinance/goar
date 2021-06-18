@@ -112,8 +112,42 @@ func (tx *Transaction) SignTransaction(pubKey *rsa.PublicKey, prvKey *rsa.Privat
 func GetSignatureData(tx *Transaction) ([]byte, error) {
 	switch tx.Format {
 	case 1:
-		// todo
-		return nil, errors.New("current do not support format is 1 tx")
+		tags := make([]byte, 0)
+		dcTags, err := TagsDecode(tx.Tags)
+		if err != nil {
+			return nil, err
+		}
+		for _, tag := range dcTags {
+			tags = append(tags, merkle.ConcatBuffer([]byte(tag.Name), []byte(tag.Value))...)
+		}
+
+		data, err := utils.Base64Decode(tx.Data)
+		if err != nil {
+			return nil, err
+		}
+		owner, err := utils.Base64Decode(tx.Owner)
+		if err != nil {
+			return nil, err
+		}
+		target, err := utils.Base64Decode(tx.Target)
+		if err != nil {
+			return nil, err
+		}
+
+		lastTx, err := utils.Base64Decode(tx.LastTx)
+		if err != nil {
+			return nil, err
+		}
+		return merkle.ConcatBuffer(
+			owner,
+			target,
+			data,
+			[]byte(tx.Quantity),
+			[]byte(tx.Reward),
+			lastTx,
+			tags,
+		), nil
+
 	case 2:
 		data, err := utils.Base64Decode(tx.Data)
 		if err != nil {
@@ -148,6 +182,7 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 	}
 }
 
+
 func (tx Transaction) VerifyTransaction() (err error) {
 	sig, err := utils.Base64Decode(tx.Signature)
 	if err != nil {
@@ -158,6 +193,7 @@ func (tx Transaction) VerifyTransaction() (err error) {
 	id := sha256.Sum256(sig)
 	if utils.Base64Encode(id[:]) != tx.ID {
 		err = fmt.Errorf("wrong id")
+		return
 	}
 
 	signData, err := GetSignatureData(&tx)
