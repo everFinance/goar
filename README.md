@@ -145,7 +145,7 @@ Package for Arweave develop toolkit.
 
 #### RSA Threshold Cryptography
 
-- [x] CreateTcKeyShares
+- [x] CreateTcKeyPair
 - [x] ThresholdSign
 - [x] AssembleSigShares
 - [x] VerifySigShare
@@ -153,10 +153,10 @@ Package for Arweave develop toolkit.
 Create RSA Threshold Cryptography:
 
 ```golang
-bitSize := 1024 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
+bitSize := 512 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
 l := 5
 k := 3
-keyShares, keyMeta, err := goar.CreateTcKeyShares(bitSize, k, l)
+keyShares, keyMeta, err := goar.CreateTcKeyPair(bitSize, k, l)
 ```
 
 New sign instance:
@@ -241,10 +241,12 @@ Simple example:
 		}
 	}
 ```
-##### Breakpoint continuingly
-You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
-```
 
+##### Breakpoint continuingly
+
+You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
+
+```golang
     uploaderBuf, err := ioutil.ReadFile("./jsonUploaderFile.json")
 	lastUploader := &txType.TransactionUploader{}
 	err = json.Unmarshal(uploaderBuf, lastUploader)
@@ -258,12 +260,14 @@ You can resume an upload from a saved uploader object, that you have persisted i
 		assert.NoError(t, err)
 	}
 ```
+
 When resuming the upload, you must provide the same data as the original upload. When you serialize the uploader object with json.marshal() to save it somewhere, it will not include the data.
+
 ##### Breakpoint retransmission
+
 You can also resume an upload from just the transaction ID and data, once it has been mined into a block. This can be useful if you didn't save the uploader somewhere but the upload got interrupted. This will re-upload all of the data from the beginning, since we don't know which parts have been uploaded:
 
 ```golang
-
     bigData, err := ioutil.ReadFile(filePath)
     txId := "myTxId"
 

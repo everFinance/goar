@@ -13,11 +13,11 @@ import (
 	tcrsa "github.com/everFinance/ttcrsa"
 )
 
-// CreateTcKeyShares
+// CreateTcKeyPair
 // bitSize: Is used to generate key shares with a security level equivalent to a RSA private of that size.
 // l: creates l key shares for a k-threshold signing scheme.
 // k: The generated key shares have a threshold parameter of k
-func CreateTcKeyShares(bitSize, k, l int) (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, err error) {
+func CreateTcKeyPair(bitSize, k, l int) (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, err error) {
 	if bitSize > 4096 || bitSize < 512 {
 		return nil, nil, errors.New(fmt.Sprintf("bitSize:%d parameter must in [512,4096]", bitSize))
 	}

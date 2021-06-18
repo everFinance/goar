@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestCreateKeyShares Secret key creation and threshold signature
-func TestCreateTcKeyShares(t *testing.T) {
+// TestCreateKeyPair Secret key creation and threshold signature
+func TestCreateTcKeyPair(t *testing.T) {
 	exampleData := []byte("aaabbbcccddd112233")
 	signHashed := sha256.Sum256(exampleData)
 
@@ -23,7 +23,7 @@ func TestCreateTcKeyShares(t *testing.T) {
 	l := 5
 	k := 3
 	// Keyshares are distributed to each signer, and KeyMeta stores publicKey, k, l and other public information, which should be sent to the signer together
-	keyShares, keyMeta, err := CreateTcKeyShares(bitSize, k, l)
+	keyShares, keyMeta, err := CreateTcKeyPair(bitSize, k, l)
 	if err != nil {
 		panic(err)
 	}
