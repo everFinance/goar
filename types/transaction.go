@@ -148,7 +148,7 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 	}
 }
 
-func VerifyTransaction(tx Transaction) (err error) {
+func (tx Transaction) VerifyTransaction() (err error) {
 	sig, err := utils.Base64Decode(tx.Signature)
 	if err != nil {
 		return

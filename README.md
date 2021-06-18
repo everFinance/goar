@@ -122,6 +122,41 @@ proxyUrl := "http://127.0.0.1:8001"
 arWallet := NewFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
 ```
 
+#### RSA Threshold Cryptography
+
+- [x] CreateKeyPair
+- [x] ThresholdSign
+- [x] AssembleSigShares
+- [x] VerifySigShare
+
+Create RSA Threshold Cryptography:
+```golang
+bitSize := 1024 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
+l := 5
+k := 3
+keyShares, keyMeta, err := CreateKeyPair(bitSize, k, l)
+```
+New sign instance:
+```golang
+exampleData := []byte("aaabbbcccddd112233") // need sign data
+ts, err := NewTcSign(keyMeta, exampleData)
+
+// signer threshold sign
+signer01 := keyShares[0]
+signedData01, err := ts.ThresholdSign(signer01)
+
+// assemble sign
+signedShares := tcrsa.SigShareList{
+signedData01,
+...
+}
+signature, err := ts.AssembleSigShares(signedShares)
+
+// verify share sign 
+err := ts.VerifySigShare(signer01)
+```
+
+
 ### Development
 
 #### Test
