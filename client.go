@@ -1,4 +1,4 @@
-package client
+package goar
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ type Client struct {
 	url    string
 }
 
-func New(nodeUrl string, proxyUrl ...string) *Client {
+func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 	httpClient := http.DefaultClient
 	// if exist proxy url
 	if len(proxyUrl) > 0 {

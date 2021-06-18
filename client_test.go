@@ -1,10 +1,10 @@
-package client
+package goar
 
 import (
-	"github.com/everFinance/goar/types"
+	"testing"
+
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // import (
@@ -16,12 +16,12 @@ import (
 // )
 
 // func TestGetTransactionByID(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	fmt.Println(client.GetTransactionByID("FgcKlptyDXSgEonYfy5cNBimq7GJ4h8h6L6pxuuYOBc"))
 // }
 
 // func TestGetTransactionPrice(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	target := ""
 // 	reward, err := client.GetTransactionPrice([]byte("123"), &target)
 // 	assert.NoError(t, err)
@@ -29,19 +29,19 @@ import (
 // }
 
 // func TestGetLastTransactionID(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	lastTx, err := client.GetLastTransactionID("dQzTM9hXV5MD1fRniOKI3MvPF_-8b2XDLmpfcMN9hi8")
 // 	assert.NoError(t, err)
 // 	fmt.Println(lastTx)
 // }
 
 // func TestGetTransactionAnchor(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	fmt.Println(client.GetTransactionAnchor())
 // }
 
 // func TestSubmitTransaction(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	fmt.Println(
 // 		client.SubmitTransaction(&types.Transaction{
 // 			ID: "n1iKT3trKn6Uvd1d8XyOqKBy8r-8SSBtGA62m3puK5k",
@@ -50,7 +50,7 @@ import (
 // }
 
 // func TestArql(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	fmt.Println(
 // 		client.Arql(`
 // 		{
@@ -71,7 +71,7 @@ import (
 // }
 
 // func TestGraphQL(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	data, err := client.GraphQL(`
 // 	{
 // 		transactions(
@@ -99,14 +99,14 @@ import (
 // }
 
 // func TestGetWalletBalance(t *testing.T) {
-// 	client := New("https://arweave.net")
+// 	client := NewClient("https://arweave.net")
 // 	fmt.Println(
 // 		client.GetWalletBalance("dQzTM9hXV5MD1fRniOKI3MvPF_-8b2XDLmpfcMN9hi8"),
 // 	)
 // }
 
 func TestClient_DownloadChunkData(t *testing.T) {
-	// client := New("https://arweave.net")
+	// client := NewClient("https://arweave.net")
 	// id := "ybEmme6TE3JKwnSYciPCjnAINwi_CWthomsxBes-kYk"
 	// data, err := client.GetTransactionData(id, "jpg")
 	// assert.NoError(t, err)
@@ -118,7 +118,7 @@ func TestClient_DownloadChunkData(t *testing.T) {
 
 func TestClient_GetTransactionData(t *testing.T) {
 	// proxy := "http://127.0.0.1:8001"
-	client := New("https://arweave.net")
+	client := NewClient("https://arweave.net")
 	id := "lSHWbAfjJsK0so08BTTmHO_n809fGW2DYOMySsXHNuI"
 	data, err := client.GetTransactionData(id, "json")
 	if err != nil {
@@ -137,12 +137,12 @@ func TestNew(t *testing.T) {
 func TestClient_VerifyTx(t *testing.T) {
 	// txId := "XOzxw5kaYJrt9Vljj23pA5_6b63kY2ydQ0lPfnhksMA"
 	txId := "_fVj-WyEtXV3URXlNkSnHVGupl7_DM1UWZ64WMdhPkU"
-	client := New("https://arweave.net")
+	client := NewClient("https://arweave.net")
 	tx, status, code, err := client.GetTransactionByID(txId)
 	assert.NoError(t, err)
 	t.Log(status, code)
 	t.Log(tx.Format)
-	t.Log(types.TagsDecode(tx.Tags))
-	err = types.VerifyTransaction(*tx)
+	t.Log(utils.TagsDecode(tx.Tags))
+	err = utils.VerifyTransaction(*tx)
 	assert.NoError(t, err)
 }
