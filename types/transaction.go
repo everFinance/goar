@@ -182,8 +182,8 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 	}
 }
 
-// VerifyTransaction notify: can not verify on chain data tx
-func VerifyTransaction(tx Transaction) (err error) {
+
+func (tx Transaction) VerifyTransaction() (err error) {
 	sig, err := utils.Base64Decode(tx.Signature)
 	if err != nil {
 		return

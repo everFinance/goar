@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/everFinance/goar/utils"
-	"github.com/niclabs/tcrsa"
+	tcrsa "github.com/everFinance/ttcrsa"
 	"github.com/stretchr/testify/assert"
 )
 

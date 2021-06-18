@@ -4,8 +4,9 @@ import (
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/json"
 	"github.com/everFinance/sandy_log/log"
-	"github.com/niclabs/tcrsa"
+	tcrsa "github.com/everFinance/ttcrsa"
 )
 
 type TcSign struct {
@@ -71,4 +72,14 @@ func (ts *TcSign) AssembleSigShares(signedShares tcrsa.SigShareList) ([]byte, er
 		return nil, err
 	}
 	return signature, nil
+}
+
+// VerifySigShare verify share sig
+func (ts *TcSign) VerifySigShare(sigShareData string) error {
+	// unmarshal share sig data
+	ss := &tcrsa.SigShare{}
+	if err := json.Unmarshal([]byte(sigShareData), ss); err != nil {
+		return err
+	}
+	return ss.Verify(ts.pssData, ts.keyMeta)
 }
