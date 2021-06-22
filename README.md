@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	id, stat, err := wallet.SendWinston(
+	id, err := wallet.SendWinston(
 		big.NewInt(1), // Winston amount
 		{{target}}, // target address
 		[]types.Tag{
@@ -38,7 +38,7 @@ func main() {
 		},
 	)
 
-	fmt.Println(id, stat, err) // {{id}}, Pending, nil
+	fmt.Println(id, err) // {{id}}, nil
 }
 
 ```
@@ -61,7 +61,7 @@ func main() {
 		panic(err)
 	}
 
-	id, stat, err := wallet.SendData(
+	id, err := wallet.SendData(
 		[]byte("123"), // Data bytes
 		[]types.Tag{
 			types.Tag{
@@ -71,7 +71,7 @@ func main() {
 		},
 	)
 
-	fmt.Println(id, stat, err) // {{id}}, Pending, nil
+	fmt.Println(id, err) // {{id}}, nil
 }
 ```
 
