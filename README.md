@@ -107,7 +107,9 @@ arClient := goar.NewClient("https://arweave.net", proxyUrl)
 #### Wallet
 
 - [x] SendAR
+- [x] SendARSpeedUp
 - [x] SendWinston
+- [x] SendWinstonSpeedUp
 - [x] SendData
 - [x] SendDataSpeedUp
 - [x] SendTransaction

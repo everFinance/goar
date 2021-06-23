@@ -66,10 +66,18 @@ func NewWallet(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err e
 }
 
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id string, err error) {
-	return w.SendWinston(utils.ARToWinston(amount), target, tags)
+	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, 0)
+}
+
+func (w *Wallet) SendARSpeedUp(amount *big.Float, target string, tags []types.Tag, speedFactor int64) (id string, err error) {
+	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, speedFactor)
 }
 
 func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (id string, err error) {
+	return w.SendWinstonSpeedUp(amount, target, tags, 0)
+}
+
+func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (id string, err error) {
 	reward, err := w.Client.GetTransactionPrice(nil, &target)
 	if err != nil {
 		return
@@ -82,10 +90,14 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 		Tags:     utils.TagsEncode(tags),
 		Data:     "",
 		DataSize: "0",
-		Reward:   fmt.Sprintf("%d", reward),
+		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
 	return w.SendTransaction(tx)
+}
+
+func (w *Wallet) SendData(data []byte, tags []types.Tag) (id string, err error) {
+	return w.SendDataSpeedUp(data, tags, 0)
 }
 
 // SendDataSpeedUp set speedFactor for speed up
@@ -104,25 +116,6 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		Data:     utils.Base64Encode(data),
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
-	return w.SendTransaction(tx)
-}
-
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (id string, err error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
-	if err != nil {
-		return
-	}
-
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   "",
-		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(data)),
-		Reward:   fmt.Sprintf("%d", reward),
 	}
 
 	return w.SendTransaction(tx)
