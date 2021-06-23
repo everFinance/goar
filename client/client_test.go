@@ -11,10 +11,6 @@ import (
 // 	"fmt"
 // 	"testing"
 
-// 	"github.com/everFinance/goar/types"
-// 	"github.com/stretchr/testify/assert"
-// )
-
 // func TestGetTransactionByID(t *testing.T) {
 // 	client := New("https://arweave.net")
 // 	fmt.Println(client.GetTransactionByID("FgcKlptyDXSgEonYfy5cNBimq7GJ4h8h6L6pxuuYOBc"))
@@ -143,6 +139,6 @@ func TestClient_VerifyTx(t *testing.T) {
 	t.Log(status, code)
 	t.Log(tx.Format)
 	t.Log(types.TagsDecode(tx.Tags))
-	err = types.VerifyTransaction(*tx)
+	err = tx.VerifyTransaction()
 	assert.NoError(t, err)
 }
