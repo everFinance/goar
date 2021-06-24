@@ -101,10 +101,10 @@ func (ts *TcSign) AssembleSigShares(signedShares tcrsa.SigShareList) ([]byte, er
 }
 
 // VerifySigShare verify share sig
-func (ts *TcSign) VerifySigShare(sigShareData string) error {
+func (ts *TcSign) VerifySigShare(sigShareData []byte) error {
 	// unmarshal share sig data
 	ss := &tcrsa.SigShare{}
-	if err := json.Unmarshal([]byte(sigShareData), ss); err != nil {
+	if err := json.Unmarshal(sigShareData, ss); err != nil {
 		return err
 	}
 	return ss.Verify(ts.pssData, ts.keyMeta)

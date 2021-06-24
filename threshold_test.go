@@ -341,129 +341,139 @@ func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, 
 // }
 
 // TestCreateKeyPair2 send ar tx by threshold signature keypair
-// func TestCreateKeyPair2(t *testing.T) {
-// 	cli := client.New("https://arweave.net")
-
-// 	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
-// 	reward, err := cli.GetTransactionPrice(nil, &target)
-// 	assert.NoError(t, err)
-// 	// anchor, err := cli.GetTransactionAnchor() // for test
-// 	anchor, err := cli.GetLastTransactionID("KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms")
-// 	assert.NoError(t, err)
-// 	t.Log("lastTx: ", anchor)
-// 	// read created threshold keypair for local file; need to be generated ahead of time;
-// 	keyMeta := &tcrsa.KeyMeta{}
-// 	keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
-// 	assert.NoError(t, err)
-// 	err = json.Unmarshal(keyMetaBy, keyMeta)
-// 	assert.NoError(t, err)
-
-// 	owner := utils.Base64Encode(keyMeta.PublicKey.N.Bytes())
-
-// 	amount := big.NewInt(140000) // transfer amount
-// 	tags := []types.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
-// 	tx := &types.Transaction{
-// 		Format:    2,
-// 		ID:        "",
-// 		LastTx:    anchor,
-// 		Owner:     owner,
-// 		Tags:      types.TagsEncode(tags),
-// 		Target:    target,
-// 		Quantity:  amount.String(),
-// 		Data:      "",
-// 		DataSize:  "0",
-// 		DataRoot:  "",
-// 		Reward:    fmt.Sprintf("%d", reward),
-// 		Signature: "",
-// 		Chunks:    nil,
-// 	}
-// 	signData, err := types.GetSignatureData(tx)
-// 	assert.NoError(t, err)
-// 	t.Log("signData: ", signData)
-
-// 	// signature
-// 	keyShares := tcrsa.KeyShareList{}
-// 	keySharesBy, err := ioutil.ReadFile("keyShares.json")
-// 	assert.NoError(t, err)
-// 	err = json.Unmarshal(keySharesBy, &keyShares)
-// 	assert.NoError(t, err)
-
-// 	ts, err := NewTcSign(keyMeta, signData)
-// 	assert.NoError(t, err)
-
-// 	/* --------------------------distribute keyShares to the signers ----------------------------*/
-// 	signer01 := keyShares[0]
-// 	signer02 := keyShares[1]
-// 	signer03 := keyShares[2]
-// 	signer04 := keyShares[3]
-// 	signer05 := keyShares[4]
-
-// 	/* -------------------------- signers to sign data ----------------------------*/
-// 	signedData01, err := ts.ThresholdSign(signer01)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log(signedData01.Id)
-
-// 	signedData02, err := ts.ThresholdSign(signer02)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log(signedData02.Id)
-
-// 	signedData03, err := ts.ThresholdSign(signer03)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log(signedData03.Id)
-
-// 	signedData04, err := ts.ThresholdSign(signer04)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log(signedData04.Id)
-
-// 	signedData05, err := ts.ThresholdSign(signer05)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	t.Log(signedData05.Id)
-
-// 	/* -------------------------- After receiving the signature data submitted by the signers, the server verifies the signature and assembles the signature ----------------------------*/
-// 	// Collect the signer's signature data into an array
-// 	signedShares := tcrsa.SigShareList{
-// 		// signedData01,
-// 		signedData02,
-// 		signedData03,
-// 		signedData04,
-// 		// signedData05,
-// 	}
-
-// 	// Verify the signature of each collected signer. And what happens in practice is that the server receives the signature submitted by the signer and then it verifies it and then it puts it in the array above
-// 	for _, sd := range signedShares {
-// 		err = sd.Verify(ts.pssData, keyMeta)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 	}
-
-// 	// assemble signatures
-// 	signature, err := ts.AssembleSigShares(signedShares)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	// Finally, RSA native PSS verification signature method is used to verify the aggregated signature
-// 	signHashed := sha256.Sum256(signData)
-// 	err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature, nil)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	// assemble tx and send to ar chain
-// 	tx.AddSignature(signature)
-// 	t.Log("txHash: ", tx.ID)
-
-// 	status, code, err := cli.SubmitTransaction(tx)
-// 	assert.NoError(t, err)
-// 	t.Log("status: ", status)
-// 	t.Log("code: ", code)
-// }
+func TestCreateKeyPair2(t *testing.T) {
+	// cli := client.New("https://arweave.net")
+	//
+	// target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
+	// reward, err := cli.GetTransactionPrice(nil, &target)
+	// assert.NoError(t, err)
+	// // anchor, err := cli.GetTransactionAnchor() // for test
+	// anchor, err := cli.GetLastTransactionID("KKzL8og7VFLNwxbwW6cpUY_WkE5jFjWL26cTvKfWYms")
+	// assert.NoError(t, err)
+	// t.Log("lastTx: ", anchor)
+	// // read created threshold keypair for local file; need to be generated ahead of time;
+	// keyMeta := &tcrsa.KeyMeta{}
+	// keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
+	// assert.NoError(t, err)
+	// err = json.Unmarshal(keyMetaBy, keyMeta)
+	// assert.NoError(t, err)
+	//
+	// owner := utils.Base64Encode(keyMeta.PublicKey.N.Bytes())
+	//
+	// amount := big.NewInt(140000) // transfer amount
+	// tags := []types.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
+	// tx := &types.Transaction{
+	// 	Format:    2,
+	// 	ID:        "",
+	// 	LastTx:    anchor,
+	// 	Owner:     owner,
+	// 	Tags:      types.TagsEncode(tags),
+	// 	Target:    target,
+	// 	Quantity:  amount.String(),
+	// 	Data:      "",
+	// 	DataSize:  "0",
+	// 	DataRoot:  "",
+	// 	Reward:    fmt.Sprintf("%d", reward),
+	// 	Signature: "",
+	// 	Chunks:    nil,
+	// }
+	// signData, err := types.GetSignatureData(tx)
+	// assert.NoError(t, err)
+	// t.Log("signData: ", signData)
+	//
+	// // signature
+	// keyShares := tcrsa.KeyShareList{}
+	// keySharesBy, err := ioutil.ReadFile("keyShares.json")
+	// assert.NoError(t, err)
+	// err = json.Unmarshal(keySharesBy, &keyShares)
+	// assert.NoError(t, err)
+	//
+	// ts, err := NewTcSign(keyMeta, signData)
+	// assert.NoError(t, err)
+	//
+	// /* --------------------------distribute keyShares to the signers ----------------------------*/
+	// signer01 := keyShares[0]
+	// signer02 := keyShares[1]
+	// signer03 := keyShares[2]
+	// signer04 := keyShares[3]
+	// signer05 := keyShares[4]
+	//
+	// /* -------------------------- signers to sign data ----------------------------*/
+	// signedData01, err := ts.ThresholdSign(signer01)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// t.Log(signedData01.Id)
+	// bb, _ := json.Marshal(signedData01)
+	// t.Log(hex.EncodeToString(bb))
+	//
+	// signedData02, err := ts.ThresholdSign(signer02)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// t.Log(signedData02.Id)
+	// bb, _ = json.Marshal(signedData02)
+	// t.Log(hex.EncodeToString(bb))
+	//
+	// signedData03, err := ts.ThresholdSign(signer03)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// t.Log(signedData03.Id)
+	// bb, _ = json.Marshal(signedData03)
+	// t.Log(hex.EncodeToString(bb))
+	//
+	// signedData04, err := ts.ThresholdSign(signer04)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// t.Log(signedData04.Id)
+	// bb, _ = json.Marshal(signedData04)
+	// t.Log(hex.EncodeToString(bb))
+	//
+	// signedData05, err := ts.ThresholdSign(signer05)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// t.Log(signedData05.Id)
+	// bb, _ = json.Marshal(signedData05)
+	// t.Log(hex.EncodeToString(bb))
+	//
+	// /* -------------------------- After receiving the signature data submitted by the signers, the server verifies the signature and assembles the signature ----------------------------*/
+	// // Collect the signer's signature data into an array
+	// signedShares := tcrsa.SigShareList{
+	// 	// signedData01,
+	// 	signedData02,
+	// 	signedData03,
+	// 	signedData04,
+	// 	// signedData05,
+	// }
+	//
+	// // Verify the signature of each collected signer. And what happens in practice is that the server receives the signature submitted by the signer and then it verifies it and then it puts it in the array above
+	// for _, sd := range signedShares {
+	// 	err = sd.Verify(ts.pssData, keyMeta)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+	//
+	// // assemble signatures
+	// signature, err := ts.AssembleSigShares(signedShares)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// // Finally, RSA native PSS verification signature method is used to verify the aggregated signature
+	// signHashed := sha256.Sum256(signData)
+	// err = rsa.VerifyPSS(keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature, nil)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// // assemble tx and send to ar chain
+	// tx.AddSignature(signature)
+	// t.Log("txHash: ", tx.ID)
+	//
+	// status, code, err := cli.SubmitTransaction(tx)
+	// assert.NoError(t, err)
+	// t.Log("status: ", status)
+	// t.Log("code: ", code)
+}

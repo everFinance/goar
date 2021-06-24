@@ -11,10 +11,6 @@ import (
 // 	"fmt"
 // 	"testing"
 
-// 	"github.com/everFinance/goar/types"
-// 	"github.com/stretchr/testify/assert"
-// )
-
 // func TestGetTransactionByID(t *testing.T) {
 // 	client := NewClient("https://arweave.net")
 // 	fmt.Println(client.GetTransactionByID("FgcKlptyDXSgEonYfy5cNBimq7GJ4h8h6L6pxuuYOBc"))
