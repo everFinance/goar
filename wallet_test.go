@@ -80,18 +80,21 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// proxyUrl := "http://127.0.0.1:8001"
 	// arNode := "https://arweave.net"
-	// w, err := NewWalletFromPath("./account1.json", arNode, proxyUrl) // your wallet private key
+	// w, err := NewWalletFromPath("./wallet/account1.json", arNode, proxyUrl) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data, err := ioutil.ReadFile("/Users/sandy/Downloads/3F.jpeg")
-	// assert.NoError(t, err)
-	// tags := []types.Tag{
-	// 	{Name: "Content-Type", Value: "jpeg"},
-	// 	{Name: "Sender", Value: "Sandy"},
-	// 	{Name: "Date-Size", Value: "11.3MB"},
-	// 	{Name: "Data-Introduce", Value: "Sandy Riely PeiJie"},
+	// data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/650.zip")
+	// if err != nil {
+	// 	panic(err)
 	// }
-	// id, err := w.SendDataSpeedUp(data, tags, 0)
+	// tags := []types.Tag{
+	// 	{Name: "Content-Type", Value: "zip"},
+	// 	{Name: "Sender", Value: "Sandy"},
+	// 	{Name: "Receiver", Value: "pangpang"},
+	// 	{Name: "Date-Size", Value: "16.6MB"},
+	// 	{Name: "Data-Introduce", Value: "College 650 dormitory photos from 2014 to 2018"},
+	// }
+	// id, err := w.SendDataSpeedUp(data, tags, 10)
 	// assert.NoError(t, err)
 	// t.Logf("tx hash: %s;", id)
 }
