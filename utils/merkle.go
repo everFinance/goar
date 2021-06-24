@@ -1,4 +1,4 @@
-package merkle
+package utils
 
 import (
 	"bytes"
@@ -6,51 +6,9 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/everFinance/goar/types"
 	"github.com/shopspring/decimal"
 )
-
-const (
-	MAX_CHUNK_SIZE = 256 * 1024
-	MIN_CHUNK_SIZE = 32 * 1024
-	NOTE_SIZE      = 32
-	HASH_SIZE      = 32
-
-	// number of bits in a big.Word
-	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
-	// number of bytes in a big.Word
-	wordBytes      = wordBits / 8
-	BranchNodeType = "branch"
-	LeafNodeType   = "leaf"
-)
-
-type Chunks struct {
-	DataRoot []byte   `json:"data_root"`
-	Chunks   []Chunk  `json:"chunks"`
-	Proofs   []*Proof `json:"proofs"`
-}
-
-type Chunk struct {
-	DataHash     []byte
-	MinByteRange int
-	MaxByteRange int
-}
-
-// Node include leaf node and branch node
-type Node struct {
-	ID           []byte
-	Type         string // "branch" or "leaf"
-	DataHash     []byte // only leaf node
-	MinByteRange int    // only leaf node
-	MaxByteRange int
-	ByteRange    int   // only branch node
-	LeftChild    *Node // only branch node
-	RightChild   *Node // only branch node
-}
-
-type Proof struct {
-	Offest int
-	Proof  []byte
-}
 
 /**
  * Generates the data_root, chunks & proofs
@@ -62,7 +20,7 @@ type Proof struct {
  *
  * @param data
  */
-func GenerateChunks(data []byte) Chunks {
+func GenerateChunks(data []byte) types.Chunks {
 	chunks := chunkData(data)
 	leaves := generateLeaves(chunks)
 	root := buildLayer(leaves, 0) // leaf node level == 0
@@ -75,23 +33,23 @@ func GenerateChunks(data []byte) Chunks {
 		proofs = proofs[:len(proofs)-1]
 	}
 
-	return Chunks{
+	return types.Chunks{
 		DataRoot: root.ID,
 		Chunks:   chunks,
 		Proofs:   proofs,
 	}
 }
 
-func chunkData(data []byte) (chunks []Chunk) {
+func chunkData(data []byte) (chunks []types.Chunk) {
 	cursor := 0
 	var rest = data
 	// if data length > max size
-	for len(rest) >= MAX_CHUNK_SIZE {
-		chunkSize := MAX_CHUNK_SIZE
+	for len(rest) >= types.MAX_CHUNK_SIZE {
+		chunkSize := types.MAX_CHUNK_SIZE
 
 		// 查看下一轮的chunkSize 是否小于最小的size，如果是则在这轮中调整chunk size 的大小
-		nextChunkSize := len(rest) - MAX_CHUNK_SIZE
-		if nextChunkSize > 0 && nextChunkSize < MIN_CHUNK_SIZE {
+		nextChunkSize := len(rest) - types.MAX_CHUNK_SIZE
+		if nextChunkSize > 0 && nextChunkSize < types.MIN_CHUNK_SIZE {
 			dec := decimal.NewFromFloat(math.Ceil(float64(len(rest) / 2)))
 			chunkSize = int(dec.IntPart())
 		}
@@ -99,7 +57,7 @@ func chunkData(data []byte) (chunks []Chunk) {
 		chunk := rest[:chunkSize]
 		dataHash := sha256.Sum256(chunk)
 		cursor += len(chunk)
-		chunks = append(chunks, Chunk{
+		chunks = append(chunks, types.Chunk{
 			DataHash:     dataHash[:],
 			MinByteRange: cursor - len(chunk),
 			MaxByteRange: cursor,
@@ -109,7 +67,7 @@ func chunkData(data []byte) (chunks []Chunk) {
 	}
 
 	hash := sha256.Sum256(rest)
-	chunks = append(chunks, Chunk{
+	chunks = append(chunks, types.Chunk{
 		DataHash:     hash[:],
 		MinByteRange: cursor,
 		MaxByteRange: cursor + len(rest),
@@ -117,12 +75,12 @@ func chunkData(data []byte) (chunks []Chunk) {
 	return
 }
 
-func generateLeaves(chunks []Chunk) (leafs []*Node) {
+func generateLeaves(chunks []types.Chunk) (leafs []*types.Node) {
 	for _, chunk := range chunks {
 		// hDataHash := sha256.Sum256(chunk.DataHash)
 		// hMaxByteRange := sha256.Sum256(PaddedBigBytes(big.NewInt(int64(chunk.MaxByteRange)), 32))
 
-		leafs = append(leafs, &Node{
+		leafs = append(leafs, &types.Node{
 			// ID: hashArray(
 			// 	[][]byte{hDataHash[:], hMaxByteRange[:]},
 			// ),
@@ -130,7 +88,7 @@ func generateLeaves(chunks []Chunk) (leafs []*Node) {
 				Hash([][]byte{chunk.DataHash}),
 				Hash([][]byte{intToBuffer(chunk.MaxByteRange)}),
 			}),
-			Type:         LeafNodeType,
+			Type:         types.LeafNodeType,
 			DataHash:     chunk.DataHash,
 			MinByteRange: chunk.MinByteRange,
 			MaxByteRange: chunk.MaxByteRange,
@@ -143,16 +101,16 @@ func generateLeaves(chunks []Chunk) (leafs []*Node) {
 }
 
 // buildLayer
-func buildLayer(nodes []*Node, level int) (root *Node) {
+func buildLayer(nodes []*types.Node, level int) (root *types.Node) {
 	if len(nodes) == 1 {
 		root = nodes[0]
 		return
 	}
 
-	nextLayer := make([]*Node, 0, len(nodes)/2)
+	nextLayer := make([]*types.Node, 0, len(nodes)/2)
 	for i := 0; i < len(nodes); i += 2 {
 		leftNode := nodes[i]
-		var rightNode *Node
+		var rightNode *types.Node
 		if i+1 < len(nodes) {
 			rightNode = nodes[i+1]
 		}
@@ -163,7 +121,7 @@ func buildLayer(nodes []*Node, level int) (root *Node) {
 }
 
 // hashBranch get branch node by child node
-func hashBranch(leftNode, rightNode *Node) (branchNode *Node) {
+func hashBranch(leftNode, rightNode *types.Node) (branchNode *types.Node) {
 	// 如果只有一个node，则该node 为branch node
 	if rightNode == nil {
 		return leftNode
@@ -174,8 +132,8 @@ func hashBranch(leftNode, rightNode *Node) (branchNode *Node) {
 	hLeafNodeMaxRange := sha256.Sum256(intToBuffer(leftNode.MaxByteRange))
 	// id := hashArray([][]byte{hLeafNodeId[:], hRightNodeId[:], hLeafNodeMaxRange[:]})
 	id := Hash([][]byte{hLeafNodeId[:], hRightNodeId[:], hLeafNodeMaxRange[:]})
-	branchNode = &Node{
-		Type:         BranchNodeType,
+	branchNode = &types.Node{
+		Type:         types.BranchNodeType,
 		ID:           id,
 		DataHash:     nil,
 		MinByteRange: 0,
@@ -188,15 +146,15 @@ func hashBranch(leftNode, rightNode *Node) (branchNode *Node) {
 	return
 }
 
-func generateProofs(rootNode *Node) []*Proof {
+func generateProofs(rootNode *types.Node) []*types.Proof {
 	return resolveBranchProofs(rootNode, []byte{}, 0)
 }
 
 // resolveBranchProofs 从root node 递归搜索叶子节点并为其生成证明
-func resolveBranchProofs(node *Node, proof []byte, depth int) (proofs []*Proof) {
+func resolveBranchProofs(node *types.Node, proof []byte, depth int) (proofs []*types.Proof) {
 
-	if node.Type == LeafNodeType {
-		p := &Proof{
+	if node.Type == types.LeafNodeType {
+		p := &types.Proof{
 			Offest: node.MaxByteRange - 1,
 			Proof: ConcatBuffer(
 				proof,
@@ -209,7 +167,7 @@ func resolveBranchProofs(node *Node, proof []byte, depth int) (proofs []*Proof) 
 		return
 	}
 
-	if node.Type == BranchNodeType {
+	if node.Type == types.BranchNodeType {
 		partialProof := ConcatBuffer(
 			proof,
 			node.LeftChild.ID,
@@ -249,7 +207,7 @@ func PaddedBigBytes(bigint *big.Int, n int) []byte {
 func ReadBits(bigint *big.Int, buf []byte) {
 	i := len(buf)
 	for _, d := range bigint.Bits() {
-		for j := 0; j < wordBytes && i > 0; j++ {
+		for j := 0; j < types.WordBytes && i > 0; j++ {
 			i--
 			buf[i] = byte(d)
 			d >>= 8
@@ -291,9 +249,9 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 	if dest < 0 {
 		return ValidatePath(id, 0, 0, rightBound, path)
 	}
-	if len(path) == HASH_SIZE+NOTE_SIZE {
-		pathData := path[0:HASH_SIZE]
-		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
+	if len(path) == types.HASH_SIZE+types.NOTE_SIZE {
+		pathData := path[0:types.HASH_SIZE]
+		endOffsetBuffer := path[len(pathData) : len(pathData)+types.NOTE_SIZE]
 
 		pathDataHash := Hash([][]byte{
 			Hash([][]byte{pathData}),
@@ -311,9 +269,9 @@ func ValidatePath(id []byte, dest, leftBound, rightBound int, path []byte) (*Val
 		return nil, false
 	}
 
-	left := path[0:HASH_SIZE]
-	right := path[len(left) : len(left)+HASH_SIZE]
-	offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
+	left := path[0:types.HASH_SIZE]
+	right := path[len(left) : len(left)+types.HASH_SIZE]
+	offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+types.NOTE_SIZE]
 	offset := bufferToInt(offsetBuffer)
 
 	remainder := path[len(left)+len(right)+len(offsetBuffer):]
@@ -343,7 +301,7 @@ func bufferToInt(buf []byte) int {
 }
 
 func intToBuffer(note int) []byte {
-	buffer := make([]byte, NOTE_SIZE)
+	buffer := make([]byte, types.NOTE_SIZE)
 
 	for i := len(buffer) - 1; i >= 0; i-- {
 		byt := note % 256

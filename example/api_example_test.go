@@ -1,16 +1,16 @@
 package example
 
 import (
-	"github.com/everFinance/goar/client"
-	wallet2 "github.com/everFinance/goar/wallet"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/everFinance/goar"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Client(t *testing.T) {
 	// create client
 	arNode := "https://arweave.net"
-	c := client.New(arNode)
+	c := goar.NewClient(arNode)
 	txId := "hKMMPNh_emBf8v_at1tFzNYACisyMQNcKzeeE1QE9p8"
 
 	// 1. getInfo
@@ -55,7 +55,7 @@ func Test_Client(t *testing.T) {
 
 func TestGetTransactionsStatus(t *testing.T) {
 	arNode := "https://arweave.net"
-	wallet, err := wallet2.NewFromPath("./testKey.json", arNode)
+	wallet, err := goar.NewWalletFromPath("./testKey.json", arNode)
 	assert.NoError(t, err)
 
 	status, code, err := wallet.Client.GetTransactionStatus("ggt-x5Q_niHifdNzMxZrhiibKf0KQ-cJun0UIBBa-yA")
@@ -80,7 +80,7 @@ func Test_Arq(t *testing.T) {
 		}`
 	// create client
 	arNode := "https://arweave.net"
-	c := client.New(arNode)
+	c := goar.NewClient(arNode)
 	ids, err := c.Arql(arqStr)
 	t.Log(len(ids))
 	assert.NoError(t, err)
@@ -103,7 +103,7 @@ func Test_Arq(t *testing.T) {
 
 func Test_SendFormat1Tx(t *testing.T) {
 	// arNode := "https://arweave.net"
-	// wallet, err := wallet2.NewFromPath("./testKey.json", arNode)
+	// wallet, err := goar.NewWalletFromPath("./testKey.json", arNode)
 	// assert.NoError(t, err)
 	//
 	// owner := utils.Base64Encode(wallet.PubKey.N.Bytes())

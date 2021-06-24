@@ -1,6 +1,6 @@
 module github.com/everFinance/goar
 
-go 1.14
+go 1.15
 
 require (
 	github.com/everFinance/gojwk v1.0.0

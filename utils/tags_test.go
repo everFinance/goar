@@ -1,27 +1,29 @@
-package types
+package utils
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/everFinance/goar/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTags(t *testing.T) {
-	tagsBase64 := []Tag{
-		Tag{
+	tagsBase64 := []types.Tag{
+		types.Tag{
 			Name:  "QXBwLU5hbWU",
 			Value: "U21hcnRXZWF2ZUFjdGlvbg",
 		},
-		Tag{
+		types.Tag{
 			Name:  "SW5wdXQ",
 			Value: "eyJmdW5jdGlvbiI6InRyYW5zZmVyIiwicXR5Ijo1MDAsInRhcmdldCI6Ilp5aGhBTHdxazhuMnVyV1Y0RTNqSEJjNzd3YWE1RnItcUhscl9jdGlIQk0ifQ",
 		},
 	}
-	tags := []Tag{
-		Tag{
+	tags := []types.Tag{
+		types.Tag{
 			Name:  "App-Name",
 			Value: "SmartWeaveAction",
 		},
-		Tag{
+		types.Tag{
 			Name:  "Input",
 			Value: `{"function":"transfer","qty":500,"target":"ZyhhALwqk8n2urWV4E3jHBc77waa5Fr-qHlr_ctiHBM"}`,
 		},
