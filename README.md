@@ -152,6 +152,8 @@ Package for Arweave develop toolkit.
 - [x] AssembleSigShares
 - [x] VerifySigShare
 
+[Threshold Signature Usage Guidelines](https://github.com/everFinance/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
+
 Create RSA Threshold Cryptography:
 
 ```golang
