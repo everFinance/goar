@@ -44,7 +44,7 @@ type TcSign struct {
 func NewTcSign(meta *tcrsa.KeyMeta, signData []byte, salt []byte) (*TcSign, error) {
 	signHashed := sha256.Sum256(signData)
 
-	signDataByPss, err := tcrsa.PreparePssDocumentHash(meta.PublicKey.N.BitLen(), crypto.SHA256, signHashed[:], salt, &rsa.PSSOptions{
+	signDataByPss, err := tcrsa.PreparePssDocumentHash(meta.PublicKey.N.BitLen(), signHashed[:], salt, &rsa.PSSOptions{
 		SaltLength: 0,
 		Hash:       crypto.SHA256,
 	})

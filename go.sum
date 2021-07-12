@@ -4,8 +4,8 @@ github.com/everFinance/gojwk v1.0.0 h1:le/oI2NgXlrqg3MHU6ka+V30EWcD7TD6+Ilh+go79
 github.com/everFinance/gojwk v1.0.0/go.mod h1:icXSXsIdpAczlpAtSljQlmABkMTRZENr73KHmo0GOGc=
 github.com/everFinance/sandy_log v1.0.3 h1:8aZgMOYuerTwTobWvwqi9JgsMvh9uOc5nqymTSLgKFE=
 github.com/everFinance/sandy_log v1.0.3/go.mod h1:Pzm6pXpGKLZxLjmPbQaKYQyD76O5JXaG8oVCiarI/Og=
-github.com/everFinance/ttcrsa v1.1.2 h1:/kBn+gzm0ko/uvgOcwrpI+BvZ+6R36kDgeiTyKZDyGY=
-github.com/everFinance/ttcrsa v1.1.2/go.mod h1:Ws7b/oDbYKaZlvyT17nm+zHmzVhGl51r/yPx/Ib5RQk=
+github.com/everFinance/ttcrsa v1.1.3 h1:RJl9UizbevHZUiWPHVKz1aM6yA8cmkZWaCbOGTD/L0I=
+github.com/everFinance/ttcrsa v1.1.3/go.mod h1:Ws7b/oDbYKaZlvyT17nm+zHmzVhGl51r/yPx/Ib5RQk=
 github.com/go-stack/stack v1.8.0 h1:5SgMzNM5HxrEjV0ww2lTmX6E2Izsfxas4+YHWRs3Lsk=
 github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/melR3HDY=
 github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac h1:n1DqxAo4oWPMvH1+v+DLYlMCecgumhhgnxAPdqDIFHI=
