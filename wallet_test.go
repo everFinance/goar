@@ -2,8 +2,6 @@ package goar
 
 import (
 	"encoding/base64"
-	"github.com/everFinance/goar/types"
-	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -80,20 +78,20 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 
 // test send big size file
 func TestWallet_SendDataSpeedUp02(t *testing.T) {
-	proxyUrl := "http://127.0.0.1:8001"
-	arNode := "https://arweave.net"
-	w, err := NewWalletFromPath("./wallet/account1.json", arNode, proxyUrl) // your wallet private key
-	assert.NoError(t, err)
-
-	data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/abc.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	tags := []types.Tag{
-		{Name: "Sender", Value: "Jie"},
-		{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
-	}
-	id, err := w.SendDataSpeedUp(data, tags, 10)
-	assert.NoError(t, err)
-	t.Logf("tx hash: %s", id)
+	// proxyUrl := "http://127.0.0.1:8001"
+	// arNode := "https://arweave.net"
+	// w, err := NewWalletFromPath("./wallet/account1.json", arNode, proxyUrl) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/abc.jpeg")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// tags := []types.Tag{
+	// 	{Name: "Sender", Value: "Jie"},
+	// 	{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
+	// }
+	// id, err := w.SendDataSpeedUp(data, tags, 10)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s", id)
 }
