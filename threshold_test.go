@@ -17,6 +17,7 @@ import (
 func TestCreateTcKeyPair(t *testing.T) {
 	exampleData := []byte("aaabbbcccddd112233")
 	signHashed := sha256.Sum256(exampleData)
+	salt := sha256.Sum256([]byte("everHash salt aaa"))
 
 	/* -------------------------- Key pair that generates RSA threshold signature on the server side ----------------------------*/
 	bitSize := 1024 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
@@ -28,7 +29,7 @@ func TestCreateTcKeyPair(t *testing.T) {
 		panic(err)
 	}
 
-	ts, err := NewTcSign(keyMeta, exampleData)
+	ts, err := NewTcSign(keyMeta, exampleData, salt[:])
 	if err != nil {
 		panic(err)
 	}
@@ -77,6 +78,8 @@ func TestCreateTcKeyPair(t *testing.T) {
 		signedData05,
 	}
 
+	ts, err = NewTcSign(keyMeta, exampleData, salt[:])
+	assert.NoError(t, err)
 	signature, err := ts.AssembleSigShares(signedShares)
 	if err != nil {
 		panic(err)

@@ -83,18 +83,15 @@ func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// w, err := NewWalletFromPath("./wallet/account1.json", arNode, proxyUrl) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/650.zip")
+	// data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/abc.jpeg")
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// tags := []types.Tag{
-	// 	{Name: "Content-Type", Value: "zip"},
-	// 	{Name: "Sender", Value: "Sandy"},
-	// 	{Name: "Receiver", Value: "pangpang"},
-	// 	{Name: "Date-Size", Value: "16.6MB"},
-	// 	{Name: "Data-Introduce", Value: "College 650 dormitory photos from 2014 to 2018"},
+	// 	{Name: "Sender", Value: "Jie"},
+	// 	{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
 	// }
 	// id, err := w.SendDataSpeedUp(data, tags, 10)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s;", id)
+	// t.Logf("tx hash: %s", id)
 }

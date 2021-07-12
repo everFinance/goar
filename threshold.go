@@ -41,10 +41,10 @@ type TcSign struct {
 	pssData  []byte
 }
 
-func NewTcSign(meta *tcrsa.KeyMeta, signData []byte) (*TcSign, error) {
+func NewTcSign(meta *tcrsa.KeyMeta, signData []byte, salt []byte) (*TcSign, error) {
 	signHashed := sha256.Sum256(signData)
 
-	signDataByPss, err := tcrsa.PreparePssDocumentHash(meta.PublicKey.N.BitLen(), crypto.SHA256, signHashed[:], &rsa.PSSOptions{
+	signDataByPss, err := tcrsa.PreparePssDocumentHash(meta.PublicKey.N.BitLen(), signHashed[:], salt, &rsa.PSSOptions{
 		SaltLength: 0,
 		Hash:       crypto.SHA256,
 	})
