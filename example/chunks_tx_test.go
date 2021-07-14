@@ -109,14 +109,13 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 
 	// 2. watcher this tx from ar chain and must be sure the tx on chain
 	getTxOnchain := func() bool {
-		_, body, statusCode, _ := wallet.Client.GetTransactionByID(tx.ID)
-		if statusCode/100 == 2 && string(body) == "Pending" {
+		_, err := wallet.Client.GetTransactionByID(tx.ID)
+		if err != nil {
 			t.Log("watcher tx status: ", string(body))
 			return false
-		} else if statusCode/100 == 2 {
+		} else {
 			return true
 		}
-		return false
 	}
 
 	// watcher tx

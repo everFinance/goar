@@ -19,9 +19,8 @@ func Test_Client(t *testing.T) {
 	t.Logf("%v", nodeInfo)
 
 	// 2. full transaction via Id
-	tx, state, _, err := c.GetTransactionByID(txId)
+	tx, err := c.GetTransactionByID(txId)
 	assert.NoError(t, err)
-	t.Logf("state: %s", state)
 	t.Log(tx)
 
 	// 3. get transaction field by id
@@ -51,17 +50,6 @@ func Test_Client(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(anchor)
 
-}
-
-func TestGetTransactionsStatus(t *testing.T) {
-	arNode := "https://arweave.net"
-	wallet, err := goar.NewWalletFromPath("./testKey.json", arNode)
-	assert.NoError(t, err)
-
-	status, code, err := wallet.Client.GetTransactionStatus("ggt-x5Q_niHifdNzMxZrhiibKf0KQ-cJun0UIBBa-yA")
-	assert.Equal(t, "Success", status)
-	assert.Equal(t, 200, code)
-	assert.NoError(t, err)
 }
 
 func Test_Arq(t *testing.T) {
