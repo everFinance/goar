@@ -262,9 +262,9 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
  * @param data
  */
 func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader, error) {
-	tx, state, code, err := tt.Client.GetTransactionByID(id)
-	if err != nil || state == "Pending" || code/100 != 2 {
-		return nil, errors.New(fmt.Sprintf("Tx %s not found: %d, error: %v", id, code, err))
+	tx, err := tt.Client.GetTransactionByID(id)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Tx %s not found; error: %v", id, err))
 	}
 	transaction := tx
 	transaction.Data = ""

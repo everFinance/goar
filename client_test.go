@@ -134,11 +134,42 @@ func TestClient_VerifyTx(t *testing.T) {
 	// txId := "XOzxw5kaYJrt9Vljj23pA5_6b63kY2ydQ0lPfnhksMA"
 	txId := "_fVj-WyEtXV3URXlNkSnHVGupl7_DM1UWZ64WMdhPkU"
 	client := NewClient("https://arweave.net")
-	tx, status, code, err := client.GetTransactionByID(txId)
+	tx, err := client.GetTransactionByID(txId)
 	assert.NoError(t, err)
-	t.Log(status, code)
 	t.Log(tx.Format)
 	t.Log(utils.TagsDecode(tx.Tags))
 	err = utils.VerifyTransaction(*tx)
 	assert.NoError(t, err)
+}
+
+func TestGetTransaction(t *testing.T) {
+	arNode := "https://arweave.net"
+	cli := NewClient(arNode)
+
+	// on chain tx
+	txId := "ggt-x5Q_niHifdNzMxZrhiibKf0KQ-cJun0UIBBa-yA"
+	txStatus, err := cli.GetTransactionStatus(txId)
+	assert.NoError(t, err)
+	assert.Equal(t, 575660, txStatus.BlockHeight)
+	tx, err := cli.GetTransactionByID(txId)
+	assert.NoError(t, err)
+	assert.Equal(t, "0pu7-Otb-AH6SSSX_rfUmpTkwh3Nmhpztd_IT8nYXDwBE6P3B-eJSBuaTBeLypx4", tx.LastTx)
+
+	// not exist tx
+	txId = "KPlEyCrcs2rDHBFn2f0UUn2NZQKfawGb_EnBfip8ayA"
+	txStatus, err = cli.GetTransactionStatus(txId)
+	assert.Equal(t, `{"status":404,"error":"Not Found"}`, err.Error())
+	assert.Nil(t, txStatus)
+	tx, err = cli.GetTransactionByID(txId)
+	assert.Equal(t, `{"status":404,"error":"Not Found"}`, err.Error())
+	assert.Nil(t, tx)
+
+	// // pending tx
+	// txId = "muANv_lsyZKC5C8fTxQaC2dCCyGDao8z35ECuGdIBP8" // need send a new tx create pending status
+	// txStatus, err = cli.GetTransactionStatus(txId)
+	// assert.Equal(t, "Pending",err.Error())
+	// assert.Nil(t, txStatus)
+	// tx, err = cli.GetTransactionByID(txId)
+	// assert.Equal(t, "Pending",err.Error())
+	// assert.Nil(t, txStatus)
 }

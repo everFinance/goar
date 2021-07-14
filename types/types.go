@@ -40,3 +40,9 @@ type TransactionOffset struct {
 	Size   string `json:"size"`
 	Offset string `json:"offset"`
 }
+
+type TxStatus struct {
+	BlockHeight           int    `json:"block_height"`
+	BlockIndepHash        string `json:"block_indep_hash"`
+	NumberOfConfirmations int    `json:"number_of_confirmations"`
+}
