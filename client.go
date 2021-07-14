@@ -51,16 +51,15 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	return
 }
 
-// status: Pending/Invalid hash/overspend
-func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, code int, err error) {
+// GetTransactionByID status: Pending/Invalid hash/overspend
+func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return
 	}
 
-	code = statusCode
 	if statusCode != 200 {
-		status = string(body)
+		err = errors.New(string(body))
 		return
 	}
 
@@ -71,15 +70,19 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status st
 }
 
 // GetTransactionStatus
-func (c *Client) GetTransactionStatus(id string) (status string, code int, err error) {
+func (c *Client) GetTransactionStatus(id string) (*types.TxStatus, error) {
 	body, code, err := c.httpGet(fmt.Sprintf("tx/%s/status", id))
-	if code == 200 {
-		return types.SuccessTxStatus, code, nil
-	} else if code == 202 {
-		return types.PendingTxStatus, code, nil
-	} else {
-		return string(body), code, err
+	if err != nil {
+		return nil, err
 	}
+	if code != 200 {
+		return nil, errors.New(string(body))
+	}
+
+	// json unmarshal
+	txStatus := &types.TxStatus{}
+	err = json.Unmarshal(body, txStatus)
+	return txStatus, err
 }
 
 func (c *Client) GetTransactionField(id string, field string) (f string, err error) {
