@@ -97,6 +97,23 @@ func (c *Client) GetTransactionField(id string, field string) (f string, err err
 	return
 }
 
+func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
+	jsTags, err := c.GetTransactionField(id, "tags")
+	if err != nil {
+		return nil, err
+	}
+
+	tags := make([]types.Tag, 0)
+	if err := json.Unmarshal([]byte(jsTags), &tags); err != nil {
+		return nil, err
+	}
+	tags, err = utils.TagsDecode(tags)
+	if err != nil {
+		return nil, err
+	}
+	return tags, nil
+}
+
 func (c *Client) GetTransactionData(id string, extension ...string) (body []byte, err error) {
 	url := fmt.Sprintf("tx/%v/%v", id, "data")
 	if extension != nil {

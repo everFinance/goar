@@ -25,9 +25,9 @@ type Block struct {
 	WalletList    string        `json:"wallet_list"`
 	RewardAddr    string        `json:"reward_addr"`
 	Tags          []interface{} `json:"tags"`
-	RewardPool    int           `json:"reward_pool"`
-	WeaveSize     int           `json:"weave_size"`
-	BlockSize     int           `json:"block_size"`
+	RewardPool    string        `json:"reward_pool"`
+	WeaveSize     string        `json:"weave_size"`
+	BlockSize     string        `json:"block_size"`
 }
 
 type TransactionChunk struct {
