@@ -112,22 +112,13 @@ func TestClient_DownloadChunkData(t *testing.T) {
 	// assert.NoError(t, err)
 }
 
-func TestClient_GetTransactionData(t *testing.T) {
-	// proxy := "http://127.0.0.1:8001"
-	client := NewClient("https://arweave.net")
-	id := "lSHWbAfjJsK0so08BTTmHO_n809fGW2DYOMySsXHNuI"
-	data, err := client.GetTransactionData(id, "json")
-	if err != nil {
-		t.Log(err.Error())
-	}
-
-	t.Log(string(data))
-}
-
-func TestNew(t *testing.T) {
-	data := []byte("this is a goar test small size file data")
-	a := utils.Base64Encode(data)
-	t.Log(a)
+func TestClient_Arql(t *testing.T) {
+	// client := NewClient("https://arweave.dev")
+	// id := "PvLGaQzn9MOwucO91uuMGRnq8pj1qlwbURPqhmW0UiM"
+	//
+	// status, err := client.GetTransactionStatus(id)
+	// assert.NoError(t, err)
+	// t.Log(status)
 }
 
 func TestClient_VerifyTx(t *testing.T) {
@@ -172,4 +163,23 @@ func TestGetTransaction(t *testing.T) {
 	// tx, err = cli.GetTransactionByID(txId)
 	// assert.Equal(t, "Pending",err.Error())
 	// assert.Nil(t, txStatus)
+}
+
+func TestClient_GetTransactionTags(t *testing.T) {
+	arNode := "https://arweave.net"
+	cli := NewClient(arNode)
+	id := "gdXUJuj9EZm99TmeES7zRHCJtnJoP3XgYo_7KJNV8Vw"
+	tags, err := cli.GetTransactionTags(id)
+	assert.NoError(t, err)
+	assert.Equal(t, "App", tags[0].Name)
+	assert.Equal(t, "Version", tags[1].Name)
+	assert.Equal(t, "Owner", tags[2].Name)
+}
+
+func TestClient_GetBlockByHeight(t *testing.T) {
+	arNode := "https://arweave.net"
+	cli := NewClient(arNode)
+	block, err := cli.GetBlockByHeight(737432)
+	assert.NoError(t, err)
+	assert.Equal(t, "7YeJpe53rFsEE03yKjGcBQAAw6efgVfSeGNLmPRGY4c", block.Nonce)
 }
