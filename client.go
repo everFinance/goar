@@ -90,6 +90,8 @@ func (c *Client) GetTransactionStatus(id string) (*types.TxStatus, error) {
 		txStatus := &types.TxStatus{}
 		err = json.Unmarshal(body, txStatus)
 		return txStatus, err
+	case 202:
+		return nil, ErrPendingTx
 	case 404:
 		return nil, ErrNotFound
 	default:
