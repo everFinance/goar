@@ -18,16 +18,16 @@ import (
 	"math/big"
 
 	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/wallet"
+	"github.com/everFinance/goar"
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
+	wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
 
-	id, stat, err := wallet.SendWinston(
+	id, err := wallet.SendWinston(
 		big.NewInt(1), // Winston amount
 		{{target}}, // target address
 		[]types.Tag{
@@ -38,7 +38,7 @@ func main() {
 		},
 	)
 
-	fmt.Println(id, stat, err) // {{id}}, Pending, nil
+	fmt.Println(id, err) // {{id}}, nil
 }
 
 ```
@@ -52,16 +52,16 @@ import (
 	"fmt"
 
 	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/wallet"
+	"github.com/everFinance/goar"
 )
 
 func main() {
-	wallet, err := wallet.NewFromPath("./test-keyfile.json", "https://arweave.net")
+	wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
 
-	id, stat, err := wallet.SendData(
+	id, err := wallet.SendData(
 		[]byte("123"), // Data bytes
 		[]types.Tag{
 			types.Tag{
@@ -71,13 +71,13 @@ func main() {
 		},
 	)
 
-	fmt.Println(id, stat, err) // {{id}}, Pending, nil
+	fmt.Println(id, err) // {{id}}, nil
 }
 ```
 
-### Golang Package
+### Components
 
-#### client
+#### Client
 
 - [x] GetInfo
 - [x] GetTransactionByID
@@ -97,17 +97,19 @@ func main() {
 Initialize the instance:
 
 ```golang
-arClient := New("https://arweave.net")
+arClient := goar.NewClient("https://arweave.net")
 
 // if your network is not good, you can config http proxy
 proxyUrl := "http://127.0.0.1:8001"
-arClient := New("https://arweave.net", proxyUrl)
+arClient := goar.NewClient("https://arweave.net", proxyUrl)
 ```
 
-#### wallet
+#### Wallet
 
 - [x] SendAR
+- [x] SendARSpeedUp
 - [x] SendWinston
+- [x] SendWinstonSpeedUp
 - [x] SendData
 - [x] SendDataSpeedUp
 - [x] SendTransaction
@@ -115,11 +117,71 @@ arClient := New("https://arweave.net", proxyUrl)
 Initialize the instance, use a keyfile.json:
 
 ```golang
-arWallet := NewFromPath("./keyfile.json")
+arWallet := goar.NewWalletFromPath("./keyfile.json")
 
 // if your network is not good, you can config http proxy
 proxyUrl := "http://127.0.0.1:8001"
-arWallet := NewFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
+arWallet := NewWalletFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
+```
+
+#### Utils
+
+Package for Arweave develop toolkit.
+
+- [x] Base64Encode
+- [x] Base64Decode
+- [x] Sign
+- [x] Verify
+- [x] DeepHash
+- [x] GenerateChunks
+- [x] ValidatePath
+- [x] OwnerToAddress
+- [x] OwnerToPubKey
+- [x] TagsEncode
+- [x] TagsDecode
+- [x] PrepareChunks
+- [x] GetChunk
+- [x] SignTransaction
+- [x] GetSignatureData
+- [x] VerifyTransaction
+
+#### RSA Threshold Cryptography
+
+- [x] CreateTcKeyPair
+- [x] ThresholdSign
+- [x] AssembleSigShares
+- [x] VerifySigShare
+
+[Threshold Signature Usage Guidelines](https://github.com/everFinance/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
+
+Create RSA Threshold Cryptography:
+
+```golang
+bitSize := 512 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
+l := 5
+k := 3
+keyShares, keyMeta, err := goar.CreateTcKeyPair(bitSize, k, l)
+```
+
+New sign instance:
+
+```golang
+exampleData := []byte("aaabbbcccddd112233") // need sign data
+ts, err := goar.NewTcSign(keyMeta, exampleData)
+
+// signer threshold sign
+signer01 := keyShares[0]
+signedData01, err := ts.ThresholdSign(signer01)
+
+// assemble sign
+signedShares := tcrsa.SigShareList{
+signedData01,
+...
+}
+signature, err := ts.AssembleSigShares(signedShares)
+
+// verify share sign 
+err := ts.VerifySigShare(signer01)
 ```
 
 ### Development
@@ -142,7 +204,7 @@ Simple example:
 
 ```golang
     arNode := "https://arweave.net"
-	w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	w, err := goar.NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
     anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return
@@ -161,18 +223,18 @@ Simple example:
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
-		Tags:     types.TagsEncode(tags),
-		Data:     data,
+		Tags:     utils.TagsEncode(tags),
+		Data:     utils.Base64Encode(data),
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
-	if err = tx.SignTransaction(w.PubKey, w.PrvKey); err != nil {
+	if err = utils.SignTransaction(tx, w.PubKey, w.PrvKey); err != nil {
 		return
 	}
 
 	id = tx.ID
 
-	uploader, err := uploader.CreateUploader(w.Client, tx, nil)
+	uploader, err := goar.CreateUploader(w.Client, tx, nil)
 	if err != nil {
 		return
 	}
@@ -183,10 +245,12 @@ Simple example:
 		}
 	}
 ```
-##### Breakpoint continuingly
-You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
-```
 
+##### Breakpoint continuingly
+
+You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
+
+```golang
     uploaderBuf, err := ioutil.ReadFile("./jsonUploaderFile.json")
 	lastUploader := &txType.TransactionUploader{}
 	err = json.Unmarshal(uploaderBuf, lastUploader)
@@ -200,17 +264,19 @@ You can resume an upload from a saved uploader object, that you have persisted i
 		assert.NoError(t, err)
 	}
 ```
+
 When resuming the upload, you must provide the same data as the original upload. When you serialize the uploader object with json.marshal() to save it somewhere, it will not include the data.
+
 ##### Breakpoint retransmission
+
 You can also resume an upload from just the transaction ID and data, once it has been mined into a block. This can be useful if you didn't save the uploader somewhere but the upload got interrupted. This will re-upload all of the data from the beginning, since we don't know which parts have been uploaded:
 
 ```golang
-
     bigData, err := ioutil.ReadFile(filePath)
     txId := "myTxId"
 
     // get uploader by txId and post big data by chunks
-	uploader, err := txType.CreateUploader(wallet.Client, txId, bigData)
+	uploader, err := goar.CreateUploader(wallet.Client, txId, bigData)
 	assert.NoError(t, err)
 	for !uploader.IsComplete() {
 		err := uploader.UploadChunk()

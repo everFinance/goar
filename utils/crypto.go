@@ -11,7 +11,7 @@ func Sign(msg []byte, prvKey *rsa.PrivateKey) ([]byte, error) {
 	hashed := sha256.Sum256(msg)
 
 	return rsa.SignPSS(rand.Reader, prvKey, crypto.SHA256, hashed[:], &rsa.PSSOptions{
-		SaltLength: 0,
+		SaltLength: rsa.PSSSaltLengthAuto,
 		Hash:       crypto.SHA256,
 	})
 }

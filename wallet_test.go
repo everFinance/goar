@@ -1,4 +1,4 @@
-package wallet
+package goar
 
 import (
 	"encoding/base64"
@@ -12,7 +12,7 @@ var err error
 
 func init() {
 	clientUrl := "https://arweave.net"
-	testWallet, err = New([]byte(`{ "kty": "RSA",
+	testWallet, err = NewWallet([]byte(`{ "kty": "RSA",
 	"n":
 	 "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E",
 	"e": "AQAB",
@@ -48,7 +48,7 @@ func TestAddress(t *testing.T) {
 // test sand ar without data
 func TestWallet_SendAR(t *testing.T) {
 	// arNode := "https://arweave.net"
-	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// w, err := NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
 	// assert.NoError(t, err)
 	//
 	// target := "Goueytjwney8mRqbWBwuxbk485svPUWxFQojteZpTx8"
@@ -56,46 +56,42 @@ func TestWallet_SendAR(t *testing.T) {
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},
 	// }
-	// id, status, err := w.SendAR(amount, target, tags)
+	// id,  err := w.SendAR(amount, target, tags)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; tx status: %s \n", id, status)
+	// t.Logf("tx hash: %s \n", id)
 }
 
 // test send small size file
 func TestWallet_SendDataSpeedUp01(t *testing.T) {
 	// arNode := "https://arweave.net"
-	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// w, err := NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data := []byte("this is a goar test small size file data") // small file
+	// data := []byte("aaa this is a goar test small size file data") // small file
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "SMDT"},
 	// }
-	// id, status, err := w.SendDataSpeedUp(data, tags, 0)
+	// id, err := w.SendDataSpeedUp(data, tags, 0)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; status: %s", id, status)
+	// t.Logf("tx hash: %s", id)
 }
 
 // test send big size file
 func TestWallet_SendDataSpeedUp02(t *testing.T) {
+	// proxyUrl := "http://127.0.0.1:8001"
 	// arNode := "https://arweave.net"
-	// w, err := NewFromPath("../example/testKey.json", arNode) // your wallet private key
+	// w, err := NewWalletFromPath("./wallet/account1.json", arNode, proxyUrl) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data, err := ioutil.ReadFile("./2.3MBPhoto.jpg")
-	// assert.NoError(t, err)
-	// tags := []types.Tag{
-	// 	{Name: "GOAR", Value: "BGDT"},
+	// data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/abc.jpeg")
+	// if err != nil {
+	// 	panic(err)
 	// }
-	// id, status, err := w.SendDataSpeedUp(data, tags, 0)
+	// tags := []types.Tag{
+	// 	{Name: "Sender", Value: "Jie"},
+	// 	{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
+	// }
+	// id, err := w.SendDataSpeedUp(data, tags, 10)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s; status: %s", id, status)
-}
-
-func TestNew(t *testing.T) {
-	// arNode := "https://arweave.net"
-	// proxyUrl := "http://127.0.0.1:8001"
-	// w, err := NewFromPath("../example/testKey.json", arNode)
-	// t.Log(w)
-	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s", id)
 }

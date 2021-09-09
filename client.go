@@ -1,4 +1,4 @@
-package client
+package goar
 
 import (
 	"bytes"
@@ -12,18 +12,20 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/zyjblockchain/sandy_log/log"
+	"github.com/everFinance/sandy_log/log"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 )
+
+// arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 
 type Client struct {
 	client *http.Client
 	url    string
 }
 
-func New(nodeUrl string, proxyUrl ...string) *Client {
+func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 	httpClient := http.DefaultClient
 	// if exist proxy url
 	if len(proxyUrl) > 0 {
@@ -43,7 +45,7 @@ func New(nodeUrl string, proxyUrl ...string) *Client {
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	body, _, err := c.httpGet("info")
 	if err != nil {
-		return
+		return nil, ErrBadGateway
 	}
 
 	info = &types.NetworkInfo{}
@@ -51,63 +53,109 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	return
 }
 
-// Transaction
-// status: Pending/Invalid hash/overspend
-func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, status string, code int, err error) {
+// GetTransactionByID status: Pending/Invalid hash/overspend
+func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
 	if err != nil {
-		return
+		return nil, ErrBadGateway
 	}
 
-	code = statusCode
-	if statusCode != 200 {
-		status = string(body)
+	switch statusCode {
+	case 200:
+		// json unmarshal
+		tx = &types.Transaction{}
+		err = json.Unmarshal(body, tx)
 		return
+	case 202:
+		return nil, ErrPendingTx
+	case 400:
+		return nil, ErrInvalidId
+	case 404:
+		return nil, ErrNotFound
+	default:
+		return nil, ErrBadGateway
 	}
-
-	tx = &types.Transaction{}
-	err = json.Unmarshal(body, tx)
-	return
 }
 
 // GetTransactionStatus
-func (c *Client) GetTransactionStatus(id string) (status string, code int, err error) {
+func (c *Client) GetTransactionStatus(id string) (*types.TxStatus, error) {
 	body, code, err := c.httpGet(fmt.Sprintf("tx/%s/status", id))
-	if code == 200 {
-		return types.SuccessTxStatus, code, nil
-	} else if code == 202 {
-		return types.PendingTxStatus, code, nil
-	} else {
-		return string(body), code, err
+	if err != nil {
+		return nil, ErrBadGateway
+	}
+
+	switch code {
+	case 200:
+		// json unmarshal
+		txStatus := &types.TxStatus{}
+		err = json.Unmarshal(body, txStatus)
+		return txStatus, err
+	case 202:
+		return nil, ErrPendingTx
+	case 404:
+		return nil, ErrNotFound
+	default:
+		return nil, ErrBadGateway
 	}
 }
 
-func (c *Client) GetTransactionField(id string, field string) (f string, err error) {
-	url := fmt.Sprintf("tx/%v/%v", id, field)
-
-	body, statusCode, err := c.httpGet(url)
-	if statusCode != 200 {
-		err = fmt.Errorf("not found data")
+func (c *Client) GetTransactionField(id string, field string) (string, error) {
+	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%v/%v", id, field))
+	if err != nil {
+		return "", ErrBadGateway
 	}
 
-	f = string(body)
-	return
+	switch statusCode {
+	case 200:
+		return string(body), nil
+	case 202:
+		return "", ErrPendingTx
+	case 400:
+		return "", ErrInvalidId
+	case 404:
+		return "", ErrNotFound
+	default:
+		return "", ErrBadGateway
+	}
+}
+
+func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
+	jsTags, err := c.GetTransactionField(id, "tags")
+	if err != nil {
+		return nil, err
+	}
+
+	tags := make([]types.Tag, 0)
+	if err := json.Unmarshal([]byte(jsTags), &tags); err != nil {
+		return nil, err
+	}
+	tags, err = utils.TagsDecode(tags)
+	if err != nil {
+		return nil, err
+	}
+	return tags, nil
 }
 
 func (c *Client) GetTransactionData(id string, extension ...string) (body []byte, err error) {
-	url := fmt.Sprintf("tx/%v/%v", id, "data")
+	urlPath := fmt.Sprintf("tx/%v/%v", id, "data")
 	if extension != nil {
-		url = url + "." + extension[0]
+		urlPath = urlPath + "." + extension[0]
 	}
-	body, statusCode, err := c.httpGet(url)
+	body, statusCode, err := c.httpGet(urlPath)
 
-	if statusCode == 400 {
+	// When data is bigger than 12MiB statusCode == 400 NOTE: Data bigger than that has to be downloaded chunk by chunk.
+	if statusCode == 400 || len(body) == 0 {
 		body, err = c.DownloadChunkData(id)
-	} else if statusCode != 200 {
-		err = fmt.Errorf("not found data")
+		return
+	} else if statusCode == 200 {
+		return body, nil
+	} else if statusCode == 202 {
+		return nil, ErrPendingTx
+	} else if statusCode == 404 {
+		return nil, ErrNotFound
+	} else {
+		return nil, ErrBadGateway
 	}
-
-	return
 }
 
 func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64, err error) {

@@ -1,43 +1,18 @@
-package uploader
+package goar
 
 import (
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/client"
-	"github.com/everFinance/goar/merkle"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/shopspring/decimal"
-	"github.com/zyjblockchain/sandy_log/log"
 	"math"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
+	"github.com/everFinance/sandy_log/log"
+	"github.com/shopspring/decimal"
 )
-
-// Maximum amount of chunks we will upload in the body.
-const MAX_CHUNKS_IN_BODY = 1
-
-// We assume these errors are intermitment and we can try again after a delay:
-// - not_joined
-// - timeout
-// - data_root_not_found (we may have hit a node that just hasn't seen it yet)
-// - exceeds_disk_pool_size_limit
-// We also try again after any kind of unexpected network errors
-
-// Errors from /chunk we should never try and continue on.
-var FATAL_CHUNK_UPLOAD_ERRORS = map[string]struct{}{
-	"invalid_json":                     struct{}{},
-	"chunk_too_big":                    struct{}{},
-	"data_path_too_big":                struct{}{},
-	"offset_too_big":                   struct{}{},
-	"data_size_too_big":                struct{}{},
-	"chunk_proof_ratio_not_attractive": struct{}{},
-	"invalid_proof":                    struct{}{},
-}
-
-// Amount we will delay on receiving an error response but do want to continue.
-const ERROR_DELAY = 1000 * 40
 
 type SerializedUploader struct {
 	chunkIndex         int
@@ -49,7 +24,7 @@ type SerializedUploader struct {
 }
 
 type TransactionUploader struct {
-	Client             *client.Client `json:"-"`
+	Client             *Client `json:"-"`
 	ChunkIndex         int
 	TxPosted           bool
 	Transaction        *types.Transaction
@@ -60,7 +35,7 @@ type TransactionUploader struct {
 	LastResponseError  string
 }
 
-func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUploader, error) {
+func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, error) {
 	if tt.ID == "" {
 		return nil, errors.New("Transaction is not signed.")
 	}
@@ -71,7 +46,13 @@ func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUplo
 	tu := &TransactionUploader{
 		Client: client,
 	}
-	tu.Data = tt.Data
+	da, err := utils.Base64Decode(tt.Data)
+	if err != nil {
+		log.Errorf("da, err := utils.Base64Decode(tt.Data) error: %v", err)
+		return nil, err
+
+	}
+	tu.Data = da
 	tu.Transaction = &types.Transaction{
 		Format:    tt.Format,
 		ID:        tt.ID,
@@ -80,7 +61,7 @@ func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUplo
 		Tags:      tt.Tags,
 		Target:    tt.Target,
 		Quantity:  tt.Quantity,
-		Data:      make([]byte, 0),
+		Data:      "",
 		DataSize:  tt.DataSize,
 		DataRoot:  tt.DataRoot,
 		Reward:    tt.Reward,
@@ -93,7 +74,7 @@ func newUploader(tt *types.Transaction, client *client.Client) (*TransactionUplo
 // CreateUploader
 // @param upload: Transaction | SerializedUploader | string,
 // @param Data the Data of the Transaction. Required when resuming an upload.
-func CreateUploader(api *client.Client, upload interface{}, data []byte) (*TransactionUploader, error) {
+func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionUploader, error) {
 	var (
 		uploader *TransactionUploader
 		err      error
@@ -184,7 +165,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 
 	var delay = 0.0
 	if tt.LastResponseError != "" {
-		delay = math.Max(float64(tt.LastRequestTimeEnd+ERROR_DELAY-time.Now().UnixNano()/1000000), float64(ERROR_DELAY))
+		delay = math.Max(float64(tt.LastRequestTimeEnd+types.ERROR_DELAY-time.Now().UnixNano()/1000000), float64(types.ERROR_DELAY))
 	}
 	if delay > 0.0 {
 		// Jitter delay bcoz networks, subtract up to 30% from 40 seconds
@@ -198,7 +179,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 		return tt.postTransaction()
 	}
 
-	chunk, err := tt.Transaction.GetChunk(tt.ChunkIndex, tt.Data)
+	chunk, err := utils.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
 	if err != nil {
 		return err
 	}
@@ -214,12 +195,12 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, chunkOk := merkle.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
+	_, chunkOk := utils.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d ", tt.ChunkIndex))
 	}
 	// Catch network errors and turn them into objects with status -1 and an error message.
-	gc, err := tt.Transaction.GetChunk(tt.ChunkIndex, tt.Data)
+	gc, err := utils.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
 	if err != nil {
 		return err
 	}
@@ -231,7 +212,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 		tt.ChunkIndex++
 	} else if err != nil {
 		tt.LastResponseError = err.Error()
-		if _, ok := FATAL_CHUNK_UPLOAD_ERRORS[err.Error()]; ok {
+		if _, ok := types.FATAL_CHUNK_UPLOAD_ERRORS[err.Error()]; ok {
 			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.ChunkIndex, err))
 		}
 	}
@@ -264,7 +245,7 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
 	upload.TxPosted = serialized.txPosted
 	upload.Data = data
 
-	upload.Transaction.PrepareChunks(data)
+	utils.PrepareChunks(upload.Transaction, data)
 
 	if upload.Transaction.DataRoot != serialized.transaction.DataRoot {
 		return nil, errors.New("Data mismatch: Uploader doesn't match provided Data.")
@@ -281,12 +262,12 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
  * @param data
  */
 func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader, error) {
-	tx, state, code, err := tt.Client.GetTransactionByID(id)
-	if err != nil || state == "Pending" || code/100 != 2 {
-		return nil, errors.New(fmt.Sprintf("Tx %s not found: %d, error: %v", id, code, err))
+	tx, err := tt.Client.GetTransactionByID(id)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Tx %s not found; error: %v", id, err))
 	}
 	transaction := tx
-	transaction.Data = make([]byte, 0)
+	transaction.Data = ""
 
 	serialized := &SerializedUploader{
 		chunkIndex:         0,
@@ -313,14 +294,14 @@ func (tt *TransactionUploader) FormatSerializedUploader() *SerializedUploader {
 
 // POST to /tx
 func (tt *TransactionUploader) postTransaction() error {
-	var uploadInBody = tt.TotalChunks() <= MAX_CHUNKS_IN_BODY
+	var uploadInBody = tt.TotalChunks() <= types.MAX_CHUNKS_IN_BODY
 	return tt.uploadTx(uploadInBody)
 }
 
 func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	if withBody {
 		// Post the Transaction with Data.
-		tt.Transaction.Data = tt.Data
+		tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	}
 	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	fmt.Printf("uplaodTx; body: %s, status: %d, txId: %s \n", body, statusCode, tt.Transaction.ID)
@@ -333,14 +314,14 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	tt.LastResponseStatus = statusCode
 
 	if withBody {
-		tt.Transaction.Data = make([]byte, 0)
+		tt.Transaction.Data = ""
 	}
 
 	if statusCode >= 200 && statusCode < 300 {
 		tt.TxPosted = true
 		if withBody {
 			// We are complete.
-			tt.ChunkIndex = MAX_CHUNKS_IN_BODY
+			tt.ChunkIndex = types.MAX_CHUNKS_IN_BODY
 		}
 		return nil
 	}

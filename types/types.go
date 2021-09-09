@@ -1,10 +1,5 @@
 package types
 
-const (
-	SuccessTxStatus = "Success"
-	PendingTxStatus = "Pending"
-)
-
 type NetworkInfo struct {
 	Network          string `json:"network"`
 	Version          int64  `json:"version"`
@@ -30,9 +25,9 @@ type Block struct {
 	WalletList    string        `json:"wallet_list"`
 	RewardAddr    string        `json:"reward_addr"`
 	Tags          []interface{} `json:"tags"`
-	RewardPool    int           `json:"reward_pool"`
-	WeaveSize     int           `json:"weave_size"`
-	BlockSize     int           `json:"block_size"`
+	RewardPool    string        `json:"reward_pool"`
+	WeaveSize     string        `json:"weave_size"`
+	BlockSize     string        `json:"block_size"`
 }
 
 type TransactionChunk struct {
@@ -44,4 +39,10 @@ type TransactionChunk struct {
 type TransactionOffset struct {
 	Size   string `json:"size"`
 	Offset string `json:"offset"`
+}
+
+type TxStatus struct {
+	BlockHeight           int    `json:"block_height"`
+	BlockIndepHash        string `json:"block_indep_hash"`
+	NumberOfConfirmations int    `json:"number_of_confirmations"`
 }
