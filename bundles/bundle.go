@@ -11,9 +11,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/goar/wallet"
 	slog "github.com/zyjblockchain/sandy_log/log"
 	"math/big"
 )
@@ -35,7 +35,7 @@ type DataItemJson struct {
 }
 
 func CreateDataItemJson(owner, target, nonce string, data []byte, tags []types.Tag) (DataItemJson, error) {
-	encTags := types.TagsEncode(tags)
+	encTags := utils.TagsEncode(tags)
 	dataItem := DataItemJson{
 		Owner:     owner,
 		Target:    target,
@@ -77,7 +77,7 @@ func (d DataItemJson) getSignatureData() []byte {
 	return deepHash
 }
 
-func (d *DataItemJson) Sign(w *wallet.Wallet) (DataItemJson, error) {
+func (d *DataItemJson) Sign(w *goar.Wallet) (DataItemJson, error) {
 	// sign item
 	signatureData := d.getSignatureData()
 	signatureBytes, err := utils.Sign(signatureData, w.PrvKey)
@@ -97,7 +97,7 @@ func (d *DataItemJson) AddTag(name, value string) {
 	}
 	oldTags := d.Tags
 
-	d.Tags = append(oldTags, types.TagsEncode([]types.Tag{newTag})...)
+	d.Tags = append(oldTags, utils.TagsEncode([]types.Tag{newTag})...)
 }
 
 func (d DataItemJson) Verify() bool {
@@ -143,7 +143,7 @@ func (d *DataItemJson) DecodeData() ([]byte, error) {
 }
 
 func (d DataItemJson) DecodeTag(tag types.Tag) (types.Tag, error) {
-	tags, err := types.TagsDecode([]types.Tag{tag})
+	tags, err := utils.TagsDecode([]types.Tag{tag})
 	if err != nil || len(tags) == 0 {
 		return types.Tag{}, errors.New(fmt.Sprintf("types.TagsDecode([]types.Tag{tag}) error: %v", err))
 	} else {

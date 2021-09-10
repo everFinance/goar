@@ -1,12 +1,12 @@
 package bundles
 
 import (
+	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/wallet"
 )
 
 type ArweaveBundles interface {
-	Sign(w *wallet.Wallet) (DataItemJson, error)
+	Sign(w *goar.Wallet) (DataItemJson, error)
 	AddTag(name, value string)
 	Verify() bool
 	DecodeData() ([]byte, error)

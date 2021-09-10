@@ -2,10 +2,9 @@ package bundles
 
 import (
 	"encoding/json"
-	client2 "github.com/everFinance/goar/client"
+	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	wallet2 "github.com/everFinance/goar/wallet"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -15,11 +14,11 @@ const (
 	arNode     = "https://arweave.net"
 )
 
-var w *wallet2.Wallet
+var w *goar.Wallet
 
 func init() {
 	var err error
-	w, err = wallet2.NewFromPath(privateKey, arNode)
+	w, err = goar.NewWalletFromPath(privateKey, arNode)
 	if err != nil {
 		panic(err)
 	}
@@ -52,16 +51,20 @@ func TestDataItemJson_BundleData(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 4. send transaction include bundle data to ar chain
-	id, state, err := w.SendData(bd, []types.Tag{{Name: "Bundle-Format", Value: "json"}, {Name: "Bundle-Version", Value: "1.0.0"}, {Name: "Content-Type", Value: "application/json"}})
+	id, err := w.SendData(bd, []types.Tag{
+		{Name: "Bundle-Type", Value: "ANS-102"},
+		{Name: "Bundle-Format", Value: "json"},
+		{Name: "Bundle-Version", Value: "1.0.0"},
+		{Name: "Content-Type", Value: "application/json"}})
 	assert.NoError(t, err)
-	t.Log(state)
 	t.Log(id)
 }
 
 // unBundle data test
 func TestDataItemJson_UnBundleData(t *testing.T) {
-	id := "toiw3oFbG3B8cxeRVoc8MXrp8Zv0LJYHp5dVyPkEVkk"
-	c := client2.New(arNode)
+	// id := "wbTkfK7LElWBGNCLV_P0JfccHLRPCgZuhSrTCFRdqo0"
+	id := "H-DLkoZnrVmbeJc57nbe0C6K7RD7PL78XDIV8MJe-3g"
+	c := goar.NewClient(arNode)
 	// 1. get bundle txData type transaction txData
 	txData, err := c.GetTransactionData(id, "json")
 	assert.NoError(t, err)
@@ -72,7 +75,7 @@ func TestDataItemJson_UnBundleData(t *testing.T) {
 	// decode tags for test
 	for i, item := range items {
 		tags := item.Tags
-		items[i].Tags, _ = types.TagsDecode(tags)
+		items[i].Tags, _ = utils.TagsDecode(tags)
 	}
 
 	assert.Equal(t, 2, len(items))
