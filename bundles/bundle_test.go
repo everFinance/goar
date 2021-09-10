@@ -28,19 +28,19 @@ func init() {
 func TestDataItemJson_BundleData(t *testing.T) {
 	// 1. new dataItem
 	owner := utils.Base64Encode(w.PubKey.N.Bytes())
-	item01, err := CreateDataItemJson(owner, "", "1", []byte("this is a data bundle tx test item03"), []types.Tag{{Name: "GOAR", Value: "test01-bundle"}})
+	item01, err := CreateDataItemJson(owner, "0", "", "1", []byte("this is a data bundle tx test item03"), []types.Tag{{Name: "GOAR", Value: "test01-bundle"}})
 	assert.NoError(t, err)
 	signedItem01, err := item01.Sign(w)
 	assert.NoError(t, err)
 
 	target := "Goueytjwney8mRqbWBwuxbk485svPUWxFQojteZpTx8"
-	item02, err := CreateDataItemJson(owner, target, "2", []byte("this is a data bundle tx test04"), []types.Tag{{Name: "GOAR", Value: "test02-bundle"}})
+	item02, err := CreateDataItemJson(owner, "0", target, "2", []byte("this is a data bundle tx test04"), []types.Tag{{Name: "GOAR", Value: "test02-bundle"}})
 	assert.NoError(t, err)
 	signedItem02, err := item02.Sign(w)
 	assert.NoError(t, err)
 
 	// 2. verify and assemble dataItem to BundleData
-	bundleData, err := (DataItemJson{}).BundleData(signedItem01, signedItem02)
+	bundleData, err := BundleDataItems(signedItem01, signedItem02)
 	if err != nil {
 		panic(err)
 		return
@@ -51,25 +51,20 @@ func TestDataItemJson_BundleData(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 4. send transaction include bundle data to ar chain
-	id, err := w.SendData(bd, []types.Tag{
-		{Name: "Bundle-Type", Value: "ANS-102"},
-		{Name: "Bundle-Format", Value: "json"},
-		{Name: "Bundle-Version", Value: "1.0.0"},
-		{Name: "Content-Type", Value: "application/json"}})
+	id, err := w.SendData(bd, BundleTags)
 	assert.NoError(t, err)
 	t.Log(id)
 }
 
 // unBundle data test
 func TestDataItemJson_UnBundleData(t *testing.T) {
-	// id := "wbTkfK7LElWBGNCLV_P0JfccHLRPCgZuhSrTCFRdqo0"
-	id := "H-DLkoZnrVmbeJc57nbe0C6K7RD7PL78XDIV8MJe-3g"
+	id := "A41r5OgQ2qwx0kkYEbbBQZJosnqY54Uz82O8W2upi6g"
 	c := goar.NewClient(arNode)
 	// 1. get bundle txData type transaction txData
 	txData, err := c.GetTransactionData(id, "json")
 	assert.NoError(t, err)
 	// 2. unBundle txData
-	items, err := (DataItemJson{}).UnBundleData(txData)
+	items, err := UnBundleDataItems(txData)
 	assert.NoError(t, err)
 
 	// decode tags for test
@@ -79,6 +74,5 @@ func TestDataItemJson_UnBundleData(t *testing.T) {
 	}
 
 	assert.Equal(t, 2, len(items))
-	assert.Equal(t, "1", items[0].Nonce)
-	assert.Equal(t, "2", items[1].Nonce)
+	t.Log(items)
 }

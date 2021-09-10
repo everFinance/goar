@@ -18,32 +18,40 @@ import (
 	"math/big"
 )
 
-var log = slog.NewLog("bundles", slog.LevelDebug, false)
+var (
+	log = slog.NewLog("bundles", slog.LevelDebug, false)
+
+	BundleTags = []types.Tag{
+		{Name: "Bundle-Format", Value: "binary"},
+		{Name: "Bundle-Version", Value: "2.0.0"}}
+)
 
 type BundleData struct {
 	Items []DataItemJson `json:"items"`
 }
 
 type DataItemJson struct {
-	Owner     string      `json:"owner"` //  utils.Base64Encode(wallet.PubKey.N.Bytes())
-	Target    string      `json:"target"`
-	Nonce     string      `json:"nonce"`
-	Tags      []types.Tag `json:"tags"`
-	Data      string      `json:"data"`
-	Signature string      `json:"signature"`
-	Id        string      `json:"id"`
+	SignatureType string      `json:"signatureType"`
+	Signature     string      `json:"signature"`
+	Owner         string      `json:"owner"`  //  utils.Base64Encode(wallet.PubKey.N.Bytes())
+	Target        string      `json:"target"` // optional
+	Anchor        string      `json:"anchor"` // optional
+	Tags          []types.Tag `json:"tags"`
+	Data          string      `json:"data"`
+	Id            string      `json:"id"`
 }
 
-func CreateDataItemJson(owner, target, nonce string, data []byte, tags []types.Tag) (DataItemJson, error) {
+func CreateDataItemJson(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) (DataItemJson, error) {
 	encTags := utils.TagsEncode(tags)
 	dataItem := DataItemJson{
-		Owner:     owner,
-		Target:    target,
-		Nonce:     nonce,
-		Tags:      encTags,
-		Data:      utils.Base64Encode(data),
-		Signature: "",
-		Id:        "",
+		SignatureType: signatureType,
+		Signature:     "",
+		Owner:         owner,
+		Target:        target,
+		Anchor:        anchor,
+		Tags:          encTags,
+		Data:          utils.Base64Encode(data),
+		Id:            "",
 	}
 
 	// verify tags
@@ -66,9 +74,10 @@ func (d DataItemJson) getSignatureData() []byte {
 	dataList := make([]interface{}, 0)
 	dataList = append(dataList, utils.Base64Encode([]byte("dataitem")))
 	dataList = append(dataList, utils.Base64Encode([]byte("1")))
+	dataList = append(dataList, utils.Base64Encode([]byte(d.SignatureType)))
 	dataList = append(dataList, d.Owner)
 	dataList = append(dataList, d.Target)
-	dataList = append(dataList, d.Nonce)
+	dataList = append(dataList, d.Anchor)
 	dataList = append(dataList, tags)
 	dataList = append(dataList, d.Data)
 
@@ -176,7 +185,7 @@ func (d DataItemJson) UnpackTags() (map[string][]string, error) {
 	return tagsMap, nil
 }
 
-func (d DataItemJson) BundleData(datas ...DataItemJson) (BundleData, error) {
+func BundleDataItems(datas ...DataItemJson) (BundleData, error) {
 	// verify
 	for _, data := range datas {
 		if !data.Verify() {
@@ -188,7 +197,7 @@ func (d DataItemJson) BundleData(datas ...DataItemJson) (BundleData, error) {
 	}, nil
 }
 
-func (d DataItemJson) UnBundleData(txData []byte) ([]DataItemJson, error) {
+func UnBundleDataItems(txData []byte) ([]DataItemJson, error) {
 	bundleData := BundleData{}
 	if err := json.Unmarshal(txData, &bundleData); err != nil {
 		return nil, errors.New(fmt.Sprintf("json.Unmarshal(txData, &bundleData) error: %v", err))
