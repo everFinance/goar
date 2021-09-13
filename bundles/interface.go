@@ -6,13 +6,13 @@ import (
 )
 
 type ArweaveBundles interface {
-	Sign(w *goar.Wallet) (DataItemJson, error)
+	Sign(w *goar.Wallet) (DataItem, error)
 	AddTag(name, value string)
 	Verify() bool
 	DecodeData() ([]byte, error)
 	DecodeTag(tag types.Tag) (types.Tag, error)
 	DecodeTagAt(index int) (types.Tag, error)
 	UnpackTags() (map[string][]string, error)
-	BundleData(datas ...DataItemJson) (BundleData, error)
-	UnBundleData(txData []byte) ([]DataItemJson, error)
+	BundleData(datas ...DataItem) (BundleData, error)
+	UnBundleData(txData []byte) ([]DataItem, error)
 }
