@@ -9,5 +9,4 @@ require (
 	github.com/hamba/avro v1.5.6
 	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.7.0
-	github.com/zyjblockchain/sandy_log v1.1.0
 )

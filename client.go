@@ -401,3 +401,37 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+// push to bundler gateway
+
+// SendToBundler send bundle dataItem to bundler gateway
+func (c *Client) SendToBundler(itemBinary []byte) (*types.BundlerResp, error) {
+	// post to bundler
+	resp, err := http.DefaultClient.Post(BUNDLER+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &types.BundlerResp{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
+}
+
+func (c *Client) GetBundleData(arId string) (*BundleData, error){
+	data, err := c.DownloadChunkData(arId)
+	if err != nil {
+		return nil, err
+	}
+	return RecoverBundleData(data)
+}

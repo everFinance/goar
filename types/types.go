@@ -46,3 +46,9 @@ type TxStatus struct {
 	BlockIndepHash        string `json:"block_indep_hash"`
 	NumberOfConfirmations int    `json:"number_of_confirmations"`
 }
+
+type BundlerResp struct {
+	Id        string `json:"id"`
+	Signature string `json:"signature"`
+	N         string `json:"n"`
+}

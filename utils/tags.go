@@ -1,6 +1,9 @@
 package utils
 
-import "github.com/everFinance/goar/types"
+import (
+	"github.com/everFinance/goar/types"
+	"github.com/hamba/avro"
+)
 
 func TagsEncode(tags []types.Tag) []types.Tag {
 	base64Tags := []types.Tag{}
@@ -36,4 +39,27 @@ func TagsDecode(base64Tags []types.Tag) ([]types.Tag, error) {
 	}
 
 	return tags, nil
+}
+
+func SerializeTags(tags []types.Tag) ([]byte, error) {
+	if len(tags) == 0 {
+		return make([]byte, 0), nil
+	}
+
+	tagsParser, err := avro.Parse(`{"type": "array", "items": {"type": "record", "name": "Tag", "fields": [{"name": "name", "type": "string"}, {"name": "value", "type": "string"}]}}`)
+	if err != nil {
+		return nil, err
+	}
+
+	return avro.Marshal(tagsParser, tags)
+}
+
+func DeserializeTags(data []byte) ([]types.Tag, error) {
+	tagsParser, err := avro.Parse(`{"type": "array", "items": {"type": "record", "name": "Tag", "fields": [{"name": "name", "type": "string"}, {"name": "value", "type": "string"}]}}`)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]types.Tag, 0)
+	err = avro.Unmarshal(tagsParser, data, &tags)
+	return tags, err
 }

@@ -122,7 +122,7 @@ func Test_SendFormat1Tx(t *testing.T) {
 	// }
 	// signData, err := types.GetSignatureData(tx)
 	//
-	// sig, err := utils.Sign(signData, wallet.PrvKey)
+	// sig, err := utils.sign(signData, wallet.PrvKey)
 	// assert.NoError(t, err)
 	// tx.AddSignature(sig)
 	//

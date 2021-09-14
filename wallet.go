@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"strconv"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -145,5 +146,93 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 			return
 		}
 	}
+	return
+}
+
+// about bundle tx
+
+func (w *Wallet) CreateBundleDataItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di DataItem, err error) {
+	targetBytes := []byte{}
+	if target != "" {
+		targetBytes, err = utils.Base64Decode(target)
+		if err != nil {
+			return
+		}
+	}
+
+	anchorBytes := []byte{}
+	if anchor != "" {
+		anchorBytes, err = utils.Base64Decode(anchor)
+		if err != nil {
+			return
+		}
+	}
+
+	tagsBytes, err := utils.SerializeTags(tags)
+	if err != nil {
+		return di, err
+	}
+
+	ownerByte := w.PubKey.N.Bytes()
+	dataItem, err := newDataItem(utils.Base64Encode(ownerByte), strconv.Itoa(signatureType), target, anchor, data, tags)
+	if err != nil {
+		return di, err
+	}
+	// sign
+	err = dataItem.Sign(w.PrvKey)
+	if err != nil {
+		return di, err
+	}
+	// Create array with set length
+	bytesArr := make([]byte, 0, 1044)
+	bytesArr = append(bytesArr, utils.ShortTo2ByteArray(signatureType)...)
+	// Push bytes for `signature`
+	sig, err := utils.Base64Decode(dataItem.Signature)
+	if err != nil {
+		return di, err
+	}
+	bytesArr = append(bytesArr, sig...)
+	// Push bytes for `ownerByte`
+	bytesArr = append(bytesArr, ownerByte...)
+	// Push `presence byte` and push `target` if present
+	// 64 + OWNER_LENGTH
+	if target != "" {
+		bytesArr = append(bytesArr, byte(1))
+		bytesArr = append(bytesArr, targetBytes...)
+	} else {
+		bytesArr = append(bytesArr, byte(0))
+	}
+
+	// Push `presence byte` and push `anchor` if present
+	// 64 + OWNER_LENGTH
+	if anchor != "" {
+		bytesArr = append(bytesArr, byte(1))
+		bytesArr = append(bytesArr, anchorBytes...)
+	} else {
+		bytesArr = append(bytesArr, byte(0))
+	}
+
+	// push tags
+	bytesArr = append(bytesArr, utils.LongTo8ByteArray(len(tags))...)
+	bytesArr = append(bytesArr, utils.LongTo8ByteArray(len(tagsBytes))...)
+
+	if tags != nil {
+		bytesArr = append(bytesArr, tagsBytes...)
+	}
+
+	// push data
+	bytesArr = append(bytesArr, data...)
+	dataItem.itemBinary = bytesArr
+	return *dataItem, nil
+}
+
+func (w *Wallet) SubmitBundleTx(bundleBinary []byte, tags []types.Tag, txSpeed int64) (txId string, err error){
+	bundleTags := []types.Tag{
+		{Name: "Bundle-Format", Value: "binary"},
+		{Name: "Bundle-Version", Value: "2.0.0"},
+	}
+	txTags := make([]types.Tag, 0)
+	txTags = append(bundleTags, tags...)
+	txId, err = w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
 	return
 }
