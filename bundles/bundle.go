@@ -6,16 +6,18 @@
 package bundles
 
 import (
-	"crypto/rsa"
+	"bytes"
 	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/hamba/avro"
 	slog "github.com/zyjblockchain/sandy_log/log"
-	"math/big"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 )
 
@@ -23,9 +25,14 @@ var (
 	log = slog.NewLog("bundles", slog.LevelDebug, false)
 )
 
+const (
+	BUNDLER         = "http://bundler.arweave.net:10000"
+	MIN_BINARY_SIZE = 1044
+)
+
 type BundleData struct {
-	Items  []DataItem `json:"items"`
-	binary []byte
+	Items        []DataItem `json:"items"`
+	bundleBinary []byte
 }
 
 type DataItem struct {
@@ -38,39 +45,35 @@ type DataItem struct {
 	Data          string      `json:"data"`
 	Id            string      `json:"id"`
 
-	binary []byte
+	itemBinary []byte
 }
 
-func newDataItemJson(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) (DataItem, error) {
-	encTags := utils.TagsEncode(tags)
+type BundlerResp struct {
+	Id        string `json:"id"`
+	Signature string `json:"signature"`
+	N         string `json:"n"`
+}
+
+func newDataItem(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) (DataItem, error) {
 	dataItem := DataItem{
 		SignatureType: signatureType,
 		Signature:     "",
 		Owner:         owner,
 		Target:        target,
 		Anchor:        anchor,
-		Tags:          encTags,
+		Tags:          tags,
 		Data:          utils.Base64Encode(data),
 		Id:            "",
-		binary:        make([]byte, 0),
+		itemBinary:    make([]byte, 0),
 	}
-
-	// verify tags
-	if !VerifyEncodedTags(encTags) {
-		return DataItem{}, errors.New("verify encoded tags failed")
-	} else {
-		return dataItem, nil
-	}
+	return dataItem, nil
 }
 
-func (d DataItem) getSignatureData() []byte {
-	tags := [][]string{}
-	for _, tag := range d.Tags {
-		tags = append(tags, []string{
-			tag.Name, tag.Value,
-		})
+func (d DataItem) getSignatureData() ([]byte, error) {
+	tagsBy, err := serializeTags(d.Tags)
+	if err != nil {
+		return nil, err
 	}
-
 	// deep hash
 	dataList := make([]interface{}, 0)
 	dataList = append(dataList, utils.Base64Encode([]byte("dataitem")))
@@ -79,17 +82,21 @@ func (d DataItem) getSignatureData() []byte {
 	dataList = append(dataList, d.Owner)
 	dataList = append(dataList, d.Target)
 	dataList = append(dataList, d.Anchor)
-	dataList = append(dataList, tags)
+	dataList = append(dataList, utils.Base64Encode(tagsBy))
 	dataList = append(dataList, d.Data)
 
 	hash := utils.DeepHash(dataList)
 	deepHash := hash[:]
-	return deepHash
+	return deepHash, nil
 }
 
 func (d *DataItem) Sign(w *goar.Wallet) (DataItem, error) {
 	// sign item
-	signatureData := d.getSignatureData()
+	signatureData, err := d.getSignatureData()
+	if err != nil {
+		return DataItem{}, err
+	}
+	fmt.Printf("signData: %s", hex.EncodeToString(signatureData))
 	signatureBytes, err := utils.Sign(signatureData, w.PrvKey)
 	if err != nil {
 		return DataItem{}, errors.New(fmt.Sprintf("signature error: %v", err))
@@ -100,127 +107,39 @@ func (d *DataItem) Sign(w *goar.Wallet) (DataItem, error) {
 	return *d, nil
 }
 
-func (d *DataItem) AddTag(name, value string) {
-	newTag := types.Tag{
-		Name:  name,
-		Value: value,
-	}
-	oldTags := d.Tags
-
-	d.Tags = append(oldTags, utils.TagsEncode([]types.Tag{newTag})...)
-}
-
-func (d DataItem) Verify() bool {
+func (d DataItem) Verify() error {
 	// Get signature data and signature present in di.
-	signatureData := d.getSignatureData()
+	signatureData, err := d.getSignatureData()
+	if err != nil {
+		return fmt.Errorf("signatureData, err := d.getSignatureData(); err : %v", err)
+	}
 	signatureBytes, err := utils.Base64Decode(d.Signature)
 	if err != nil {
-		log.Error("utils.Base64Decode(d.Signature) error", "error", err)
-		return false
+		return fmt.Errorf("utils.Base64Decode(d.Signature) error: %v", err)
 	}
 	// Verify Id is correct
 	idBytes := sha256.Sum256(signatureBytes)
-	if utils.Base64Encode(idBytes[:]) != d.Id {
-		log.Error("verify Id is not equal")
-		return false
+	id := utils.Base64Encode(idBytes[:])
+	if id != d.Id {
+		return fmt.Errorf("verify Id is not equal; id: %s, recId: %s", d.Id, id)
 	}
-
 	// Verify Signature is correct
-	owner, err := utils.Base64Decode(d.Owner)
+	pubKey, err := utils.OwnerToPubKey(d.Owner)
 	if err != nil {
-		log.Error(" utils.Base64Decode(d.Owner) error", "error", err)
-		return false
-	}
-	pubKey := &rsa.PublicKey{
-		N: new(big.Int).SetBytes(owner),
-		E: 65537, //"AQAB"
+		return fmt.Errorf("utils.OwnerToPubKey(d.Owner), err: %v", err)
 	}
 	if err := utils.Verify(signatureData, pubKey, signatureBytes); err != nil {
-		log.Error("utils.Verify(signatureData,pubKey,signatureBytes)", "error", err)
-		return false
+		return fmt.Errorf("utils.Verify(signatureData,pubKey,signatureBytes); err: %v", err)
 	}
-
-	// Verify tags array is valid.
-	if !VerifyEncodedTags(d.Tags) {
-		log.Error("VerifyEncodedTags(d.Tags) failed")
-		return false
-	}
-	return true
+	return nil
 }
-
-func (d *DataItem) DecodeData() ([]byte, error) {
-	return utils.Base64Decode(d.Data)
-}
-
-func (d DataItem) DecodeTag(tag types.Tag) (types.Tag, error) {
-	tags, err := utils.TagsDecode([]types.Tag{tag})
-	if err != nil || len(tags) == 0 {
-		return types.Tag{}, errors.New(fmt.Sprintf("types.TagsDecode([]types.Tag{tag}) error: %v", err))
-	} else {
-		return tags[0], nil
-	}
-}
-
-func (d DataItem) DecodeTagAt(index int) (types.Tag, error) {
-	if len(d.Tags) < index-1 {
-		return types.Tag{}, errors.New(fmt.Sprintf("Invalid index %d when tags array has %d tags", index, len(d.Tags)))
-	}
-	return d.DecodeTag(d.Tags[index])
-}
-
-func (d DataItem) UnpackTags() (map[string][]string, error) {
-	tagsMap := make(map[string][]string)
-	for _, tag := range d.Tags {
-		tt, err := d.DecodeTag(tag)
-		if err != nil {
-			return nil, err
-		}
-
-		name := tt.Name
-		val := tt.Value
-		if _, ok := tagsMap[name]; !ok {
-			tagsMap[name] = make([]string, 0)
-		}
-		tagsMap[name] = append(tagsMap[name], val)
-	}
-	return tagsMap, nil
-}
-
-// func BundleDataItems(datas ...DataItemJson) (BundleData, error) {
-// 	// verify
-// 	for _, data := range datas {
-// 		if !data.Verify() {
-// 			return BundleData{}, errors.New("verify dataItemJson error")
-// 		}
-// 	}
-// 	return BundleData{
-// 		Items: datas,
-// 	}, nil
-// }
-
-// func UnBundleDataItems(txData []byte) ([]DataItemJson, error) {
-// 	bundleData := BundleData{}
-// 	if err := json.Unmarshal(txData, &bundleData); err != nil {
-// 		return nil, errors.New(fmt.Sprintf("json.Unmarshal(txData, &bundleData) error: %v", err))
-// 	}
-//
-// 	itemsArray := bundleData.Items
-//
-// 	// verify
-// 	for index, item := range itemsArray {
-// 		if !item.Verify() {
-// 			return nil, errors.New(fmt.Sprintf("verify item faild; item index: %d", index))
-// 		}
-// 	}
-// 	return itemsArray, nil
-// }
 
 // ANS-104
 
-// CreateDataItem This will create a single DataItem in binary format (Uint8Array)
-func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int, target string, anchor string, tags []types.Tag) (di *DataItem, err error) {
+// CreateDataItem This will create a single DataItem in bundleBinary format (Uint8Array)
+func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int, target string, anchor string, tags []types.Tag) (di DataItem, err error) {
 	if len(owner) != 512 {
-		return nil, errors.New("public key is not correct length")
+		return di, errors.New("public key is not correct length")
 	}
 	targetBytes := []byte{}
 	if target != "" {
@@ -243,7 +162,7 @@ func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int
 
 	tagsBytes, err := serializeTags(tags)
 	if err != nil {
-		return nil, err
+		return di, err
 	}
 	tagsLength := 16 + len(tagsBytes)
 
@@ -251,14 +170,14 @@ func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int
 
 	length := 2 + 512 + len(owner) + targetLength + anchorLength + tagsLength + dataLenght
 
-	dataItemJs, err := newDataItemJson(utils.Base64Encode(owner), strconv.Itoa(signatureType), target, anchor, data, tags)
+	dataItemJs, err := newDataItem(utils.Base64Encode(owner), strconv.Itoa(signatureType), target, anchor, data, tags)
 	if err != nil {
-		return nil, err
+		return di, err
 	}
 	// sign
 	dataItemJs, err = dataItemJs.Sign(w)
 	if err != nil {
-		return nil, err
+		return di, err
 	}
 	// Create array with set length
 	bytesArr := make([]byte, 0, length)
@@ -266,7 +185,7 @@ func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int
 	// Push bytes for `signature`
 	sig, err := utils.Base64Decode(dataItemJs.Signature)
 	if err != nil {
-		return nil, err
+		return di, err
 	}
 	bytesArr = append(bytesArr, sig...)
 	// Push bytes for `owner`
@@ -299,8 +218,32 @@ func CreateDataItem(w *goar.Wallet, data []byte, owner []byte, signatureType int
 
 	// push data
 	bytesArr = append(bytesArr, data...)
-	dataItemJs.binary = bytesArr
-	return &dataItemJs, nil
+	dataItemJs.itemBinary = bytesArr
+	return dataItemJs, nil
+}
+
+// SendToBundler send bundle dataItem to bundler gateway
+func (d DataItem) SendToBundler() (*BundlerResp, error) {
+	// post to bundler
+	resp, err := http.DefaultClient.Post(BUNDLER+"/tx", "application/octet-stream", bytes.NewReader(d.itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &BundlerResp{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
 }
 
 func BundleDataItems(dataItems ...DataItem) (*BundleData, error) {
@@ -309,7 +252,7 @@ func BundleDataItems(dataItems ...DataItem) (*BundleData, error) {
 
 	for _, d := range dataItems {
 		header := make([]byte, 0, 64)
-		header = append(header, longTo32ByteArray(len(d.binary))...)
+		header = append(header, longTo32ByteArray(len(d.itemBinary))...)
 		id, err := utils.Base64Decode(d.Id)
 		if err != nil {
 			return nil, err
@@ -317,7 +260,7 @@ func BundleDataItems(dataItems ...DataItem) (*BundleData, error) {
 		header = append(header, id...)
 
 		headers = append(headers, header...)
-		binaries = append(binaries, d.binary...)
+		binaries = append(binaries, d.itemBinary...)
 	}
 
 	bdBinary := make([]byte, 0)
@@ -325,76 +268,109 @@ func BundleDataItems(dataItems ...DataItem) (*BundleData, error) {
 	bdBinary = append(bdBinary, headers...)
 	bdBinary = append(bdBinary, binaries...)
 	return &BundleData{
-		Items:  dataItems,
-		binary: bdBinary,
+		Items:        dataItems,
+		bundleBinary: bdBinary,
 	}, nil
 }
 
-func (b *BundleData) SubmitBundleTx(w *goar.Wallet, tags []types.Tag) (txId string, err error) {
+func (b *BundleData) SubmitBundleTx(w *goar.Wallet, tags []types.Tag, txSpeed int64) (txId string, err error) {
 	bundleTags := []types.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
 		{Name: "Bundle-Version", Value: "2.0.0"},
 	}
 	txTags := make([]types.Tag, 0)
 	txTags = append(bundleTags, tags...)
-	txId, err = w.SendDataSpeedUp(b.binary, txTags, 50)
+	txId, err = w.SendDataSpeedUp(b.bundleBinary, txTags, txSpeed)
 	return
 }
 
-func longTo8ByteArray(long int) []byte {
-	// we want to represent the input as a 8-bytes array
-	byteArray := []byte{0, 0, 0, 0, 0, 0, 0, 0}
-	for i := 0; i < len(byteArray); i++ {
-		byt := long & 0xff
-		byteArray[i] = byte(byt)
-		long = (long - byt) / 256
+func RecoverBundleData(bundleBinary []byte) (*BundleData, error) {
+	// length must more than 32
+	if len(bundleBinary) < 32 {
+		return nil, errors.New("binary length must more than 32")
 	}
-	return byteArray
+	dataItemsNum := byteArrayToLong(bundleBinary[:32])
+
+	if len(bundleBinary) < 32+dataItemsNum*64 {
+		return nil, errors.New("binary length incorrect")
+	}
+
+	bd := &BundleData{
+		Items:        make([]DataItem, 0),
+		bundleBinary: bundleBinary,
+	}
+	dataItemStart := 32 + dataItemsNum*64
+	for i := 0; i < dataItemsNum; i++ {
+		headerBegin := 32 + i*64
+		end := headerBegin + 64
+		headerByte := bundleBinary[headerBegin:end]
+		itemBinaryLength := byteArrayToLong(headerByte[:32])
+		id := utils.Base64Encode(headerByte[32:64])
+
+		dataItemBytes := bundleBinary[dataItemStart : dataItemStart+itemBinaryLength]
+		dataItem, err := recoverDataItem(dataItemBytes)
+		if err != nil {
+			return nil, err
+		}
+		if dataItem.Id != id {
+			return nil, fmt.Errorf("dataItem.Id != id, dataItem.Id: %s, id: %s", dataItem.Id, id)
+		}
+		bd.Items = append(bd.Items, *dataItem)
+		dataItemStart += itemBinaryLength
+	}
+	return bd, nil
 }
 
-func shortTo2ByteArray(long int) []byte {
-	byteArray := []byte{0, 0}
-	for i := 0; i < len(byteArray); i++ {
-		byt := long & 0xff
-		byteArray[i] = byte(byt)
-		long = (long - byt) / 256
+func recoverDataItem(itemBinary []byte) (*DataItem, error) {
+	if len(itemBinary) < MIN_BINARY_SIZE {
+		return nil, errors.New("itemBinary length incorrect")
 	}
-	return byteArray
-}
-
-func longTo32ByteArray(long int) []byte {
-	byteArray := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	for i := 0; i < len(byteArray); i++ {
-		byt := long & 0xff
-		byteArray[i] = byte(byt)
-		long = (long - byt) / 256
+	sigType := byteArrayToLong(itemBinary[:2])
+	signature := utils.Base64Encode(itemBinary[2:514])
+	idhash := sha256.Sum256(itemBinary[2:514])
+	id := utils.Base64Encode(idhash[:])
+	owner := utils.Base64Encode(itemBinary[514:1026])
+	target := ""
+	anchor := ""
+	tagsStart := 2 + 512 + 512 + 2
+	anchorPresentByte := 1027
+	targetPersent := itemBinary[1026] == 1
+	if targetPersent {
+		tagsStart += 32
+		anchorPresentByte += 32 // 1059
+		target = utils.Base64Encode(itemBinary[1027 : 1027+32])
 	}
-	return byteArray
-}
-
-func serializeTags(tags []types.Tag) ([]byte, error) {
-	if len(tags) == 0 {
-		return make([]byte, 0), nil
-	}
-
-	tagParser, err := avro.Parse(`{
-		  "type": "record",
-		  "name": "Tag",
-		  "fields": [
-			{ "name": "name", "type": "string" },
-			{ "name": "value", "type": "string" }
-		  ]
-		}`)
-	if err != nil {
-		return nil, err
+	anchorPersent := itemBinary[anchorPresentByte] == 1
+	if anchorPersent {
+		tagsStart += 32
+		anchor = utils.Base64Encode(itemBinary[anchorPresentByte+1 : anchorPresentByte+1+32])
 	}
 
-	tagsParser, err := avro.Parse(`{
-		  "type": "array",
-		  "items": ` + tagParser.String() + `
-		}`)
-	if err != nil {
-		return nil, err
+	numOfTags := byteArrayToLong(itemBinary[tagsStart : tagsStart+8])
+	tagsBytesLength := byteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
+
+	tags := []types.Tag{}
+	if numOfTags > 0 {
+		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
+		// parser tags
+		tgs, err := deserializeTags(tagsBytes)
+		if err != nil {
+			return nil, err
+		}
+		tags = tgs
 	}
-	return avro.Marshal(tagsParser, tags)
+
+	data := itemBinary[tagsStart+16+tagsBytesLength:]
+
+	return &DataItem{
+		SignatureType: fmt.Sprintf("%d", sigType),
+		Signature:     signature,
+		Owner:         owner,
+		Target:        target,
+		Anchor:        anchor,
+		Tags:          tags,
+		Data:          utils.Base64Encode(data),
+		Id:            id,
+		itemBinary:    itemBinary,
+	}, nil
 }

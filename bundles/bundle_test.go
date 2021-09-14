@@ -1,11 +1,15 @@
 package bundles
 
 import (
+	"bytes"
 	"encoding/hex"
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/hamba/avro"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"net/http"
 	"testing"
 )
 
@@ -28,13 +32,13 @@ func init() {
 // func TestDataItemJson_BundleData(t *testing.T) {
 // 	// 1. new dataItem
 // 	owner := utils.Base64Encode(w.PubKey.N.Bytes())
-// 	item01, err := newDataItemJson(owner, "0", "", "1", []byte("this is a data bundle tx test item03"), []types.Tag{{Name: "GOAR", Value: "test01-bundle"}})
+// 	item01, err := newDataItem(owner, "0", "", "1", []byte("this is a data bundle tx test item03"), []types.Tag{{Name: "GOAR", Value: "test01-bundle"}})
 // 	assert.NoError(t, err)
 // 	signedItem01, err := item01.Sign(w)
 // 	assert.NoError(t, err)
 //
 // 	target := "Goueytjwney8mRqbWBwuxbk485svPUWxFQojteZpTx8"
-// 	item02, err := newDataItemJson(owner, "0", target, "2", []byte("this is a data bundle tx test04"), []types.Tag{{Name: "GOAR", Value: "test02-bundle"}})
+// 	item02, err := newDataItem(owner, "0", target, "2", []byte("this is a data bundle tx test04"), []types.Tag{{Name: "GOAR", Value: "test02-bundle"}})
 // 	assert.NoError(t, err)
 // 	signedItem02, err := item02.Sign(w)
 // 	assert.NoError(t, err)
@@ -85,36 +89,28 @@ func TestBundleData_SubmitBundleTx(t *testing.T) {
 	}
 	itemData01, err := CreateDataItem(w, []byte("test02"), w.PubKey.N.Bytes(), 1, target, "", tags)
 	assert.NoError(t, err)
-	// itemData02, err := CreateDataItem(w,[]byte("sandy test goar bundle tx data02"),w.PubKey.N.Bytes(),1,target,"",tags)
-	// assert.NoError(t, err)
 
-	// bd, err := BundleDataItems(*itemData01,*itemData02)
-	// assert.NoError(t, err)
-	// txId, err := bd.SubmitBundleTx(w,nil)
-	// assert.NoError(t, err)
-	// t.Log(txId)
+	// post to bundler
+	BUNDLER := "http://bundler.arweave.net:10000"
+	resp, err := http.DefaultClient.Post(BUNDLER+"/tx", "application/octet-stream", bytes.NewReader(itemData01.itemBinary))
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
 
-	t.Log(len(itemData01.binary))
-	sig, _ := utils.Base64Decode(itemData01.Signature)
-	t.Log(hex.EncodeToString(sig))
-	t.Log(hex.EncodeToString(itemData01.binary))
+	statusCode := resp.StatusCode
+	t.Log(statusCode)
+	assert.Equal(t, 200, statusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	t.Log(string(body))
 
-	t.Log(hex.EncodeToString(w.PubKey.N.Bytes()))
+	bd, err := BundleDataItems(itemData01)
+	assert.NoError(t, err)
 
-	t.Log(itemData01.binary)
-
-	// BUNDLER := "http://bundler.arweave.net:10000"
-	// resp, err := http.DefaultClient.Post(BUNDLER + "/tx", "application/octet-stream", bytes.NewReader(itemData01.binary))
-	// if err != nil {
-	// 	return
-	// }
-	// defer resp.Body.Close()
-	//
-	// statusCode := resp.StatusCode
-	// t.Log(statusCode)
-	// body, err := ioutil.ReadAll(resp.Body)
-	// assert.NoError(t, err)
-	// t.Log(string(body))
+	txId, err := bd.SubmitBundleTx(w, nil, 50)
+	assert.NoError(t, err)
+	t.Log(txId)
 }
 
 func TestBundleDataItems(t *testing.T) {
@@ -125,11 +121,36 @@ func TestBundleDataItems(t *testing.T) {
 	bb, err := serializeTags(tags)
 	assert.NoError(t, err)
 	t.Log(hex.EncodeToString(bb))
-	t.Log(bb)
+	t.Log(utils.Base64Encode(bb))
 
 	aa := "04104170702d4e616d650a6d79417070164170702d56657273696f6e0a312e302e3000"
 	aaBy, err := hex.DecodeString(aa)
 	assert.NoError(t, err)
-	t.Log(aaBy)
+	t.Log(utils.Base64Encode(aaBy))
+	tagsParser, err := avro.Parse(`{"type": "array", "items": {"type": "record", "name": "Tag", "fields": [{"name": "name", "type": "string"}, {"name": "value", "type": "string"}]}}`)
+	assert.NoError(t, err)
+	tt := make([]types.Tag, 0)
+	err = avro.Unmarshal(tagsParser, aaBy, &tt)
+	assert.NoError(t, err)
+	t.Log(tt)
 
+	ttbb := make([]types.Tag, 0)
+	err = avro.Unmarshal(tagsParser, bb, &ttbb)
+	assert.NoError(t, err)
+	t.Log(ttbb)
+}
+
+func TestCreateDataItem(t *testing.T) {
+	cli := goar.NewClient("https://arweave.net")
+	// id := "ipVFFrAkLosTtk-M3J6wYq3MKpfE6zK75nMIC-oLVXw"
+	id := "mTm5-TtpsfJvUCPXflFe-P7HO6kOy4E2pGbt6-DUs40"
+	body, err := cli.DownloadChunkData(id)
+	assert.NoError(t, err)
+	t.Log("body: ", len(body))
+	bd, err := RecoverBundleData(body)
+	assert.NoError(t, err)
+	for _, item := range bd.Items {
+		err = item.Verify()
+		assert.NoError(t, err)
+	}
 }
