@@ -16,7 +16,6 @@ package main
 import (
 	"fmt"
 	"math/big"
-
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar"
 )
@@ -50,7 +49,6 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar"
 )
@@ -75,6 +73,36 @@ func main() {
 }
 ```
 
+Send Data SpeedUp
+
+```golang
+package main
+
+import (
+	"fmt"
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar"
+)
+
+func main() {
+	wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
+	if err != nil {
+		panic(err)
+	}
+
+	speedUp := int64(50) // means reward = reward * 150%
+	id, err := wallet.SendDataSpeedUp(
+		[]byte("123"), // Data bytes
+		[]types.Tag{
+			types.Tag{
+				Name:  "testSendData",
+				Value: "123",
+			},
+		},speedUp)
+
+	fmt.Println(id, err) // {{id}}, nil
+}
+```
 ### Components
 
 #### Client
@@ -144,6 +172,7 @@ Package for Arweave develop toolkit.
 - [x] SignTransaction
 - [x] GetSignatureData
 - [x] VerifyTransaction
+- [x] NewBundleData
 
 #### RSA Threshold Cryptography
 

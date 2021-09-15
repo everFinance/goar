@@ -67,6 +67,10 @@ func NewWallet(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err e
 	return
 }
 
+func (w *Wallet) Owner() string {
+	return utils.Base64Encode(w.PubKey.N.Bytes())
+}
+
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id string, err error) {
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, 0)
 }
@@ -130,8 +134,8 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 		return
 	}
 	tx.LastTx = anchor
-
-	if err = utils.SignTransaction(tx, w.PubKey, w.PrvKey); err != nil {
+	tx.Owner = w.Owner()
+	if err = utils.SignTransaction(tx, w.PrvKey); err != nil {
 		return
 	}
 
@@ -152,11 +156,10 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 
 // about bundle tx
 
-func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.DataItem, err error) {
-	owner := utils.Base64Encode(w.PubKey.N.Bytes())
-	dataItem := utils.NewDataItem(owner, strconv.Itoa(signatureType), target, anchor, data, tags)
+func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.BundleItem, err error) {
+	dataItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
 	// sign
-	err = utils.SignDataItem(dataItem, w.PrvKey)
+	err = utils.SignBundleItem(dataItem, w.PrvKey)
 	if err != nil {
 		return di, err
 	}
@@ -167,7 +170,7 @@ func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target 
 	return *dataItem, nil
 }
 
-func (w *Wallet) SubmitBundleTx(bundleBinary []byte, tags []types.Tag, txSpeed int64) (txId string, err error) {
+func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSpeed int64) (txId string, err error) {
 	bundleTags := []types.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
 		{Name: "Bundle-Version", Value: "2.0.0"},
@@ -187,4 +190,8 @@ func (w *Wallet) SubmitBundleTx(bundleBinary []byte, tags []types.Tag, txSpeed i
 	txTags = append(bundleTags, tags...)
 	txId, err = w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
 	return
+}
+
+func (w *Wallet) SendBundleTx(bundleBinary []byte, tags []types.Tag) (txId string, err error) {
+	return w.SendBundleTxSpeedUp(bundleBinary, tags, 0)
 }

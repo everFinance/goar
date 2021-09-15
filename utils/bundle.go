@@ -14,7 +14,7 @@ import (
 	"strconv"
 )
 
-func NewBundleData(dataItems ...types.DataItem) (*types.BundleData, error) {
+func NewBundle(dataItems ...types.BundleItem) (*types.Bundle, error) {
 	headers := make([]byte, 0) // length is 64 * len(dataItems)
 	binaries := make([]byte, 0)
 
@@ -35,13 +35,13 @@ func NewBundleData(dataItems ...types.DataItem) (*types.BundleData, error) {
 	bdBinary = append(bdBinary, LongTo32ByteArray(len(dataItems))...)
 	bdBinary = append(bdBinary, headers...)
 	bdBinary = append(bdBinary, binaries...)
-	return &types.BundleData{
+	return &types.Bundle{
 		Items:        dataItems,
 		BundleBinary: bdBinary,
 	}, nil
 }
 
-func DecodeBundleData(bundleBinary []byte) (*types.BundleData, error) {
+func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 	// length must more than 32
 	if len(bundleBinary) < 32 {
 		return nil, errors.New("binary length must more than 32")
@@ -52,8 +52,8 @@ func DecodeBundleData(bundleBinary []byte) (*types.BundleData, error) {
 		return nil, errors.New("binary length incorrect")
 	}
 
-	bd := &types.BundleData{
-		Items:        make([]types.DataItem, 0),
+	bd := &types.Bundle{
+		Items:        make([]types.BundleItem, 0),
 		BundleBinary: bundleBinary,
 	}
 	dataItemStart := 32 + dataItemsNum*64
@@ -65,7 +65,7 @@ func DecodeBundleData(bundleBinary []byte) (*types.BundleData, error) {
 		id := Base64Encode(headerByte[32:64])
 
 		dataItemBytes := bundleBinary[dataItemStart : dataItemStart+itemBinaryLength]
-		dataItem, err := DecodeDataItem(dataItemBytes)
+		dataItem, err := DecodeBundleItem(dataItemBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -78,8 +78,8 @@ func DecodeBundleData(bundleBinary []byte) (*types.BundleData, error) {
 	return bd, nil
 }
 
-func DecodeDataItem(itemBinary []byte) (*types.DataItem, error) {
-	if len(itemBinary) < types.MIN_BINARY_SIZE {
+func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
+	if len(itemBinary) < types.MIN_BUNDLE_BINARY_SIZE {
 		return nil, errors.New("ItemBinary length incorrect")
 	}
 	sigType := ByteArrayToLong(itemBinary[:2])
@@ -119,7 +119,7 @@ func DecodeDataItem(itemBinary []byte) (*types.DataItem, error) {
 
 	data := itemBinary[tagsStart+16+tagsBytesLength:]
 
-	return &types.DataItem{
+	return &types.BundleItem{
 		SignatureType: fmt.Sprintf("%d", sigType),
 		Signature:     signature,
 		Owner:         owner,
@@ -132,8 +132,8 @@ func DecodeDataItem(itemBinary []byte) (*types.DataItem, error) {
 	}, nil
 }
 
-func NewDataItem(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) *types.DataItem {
-	return &types.DataItem{
+func NewBundleItem(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) *types.BundleItem {
+	return &types.BundleItem{
 		SignatureType: signatureType,
 		Signature:     "",
 		Owner:         owner,
@@ -144,12 +144,11 @@ func NewDataItem(owner, signatureType, target, anchor string, data []byte, tags 
 		Id:            "",
 		ItemBinary:    make([]byte, 0),
 	}
-
 }
 
-func SignDataItem(d *types.DataItem, prvKey *rsa.PrivateKey) error {
+func SignBundleItem(d *types.BundleItem, prvKey *rsa.PrivateKey) error {
 	// sign item
-	signatureData, err := GetItemSignatureData(*d)
+	signatureData, err := BundleItemSignData(*d)
 	if err != nil {
 		return err
 	}
@@ -163,11 +162,11 @@ func SignDataItem(d *types.DataItem, prvKey *rsa.PrivateKey) error {
 	return nil
 }
 
-func GetItemSignatureData(d types.DataItem) ([]byte, error) {
+func BundleItemSignData(d types.BundleItem) ([]byte, error) {
 	var err error
 	tagsBy := make([]byte, 0)
 	if len(d.ItemBinary) > 0 { // verify logic
-		tagsBy = GetItemTagsBytes(d.ItemBinary)
+		tagsBy = GetBundleItemTagsBytes(d.ItemBinary)
 	} else {
 		tagsBy, err = SerializeTags(d.Tags)
 		if err != nil {
@@ -191,9 +190,9 @@ func GetItemSignatureData(d types.DataItem) ([]byte, error) {
 	return deepHash, nil
 }
 
-func VerifyDataItem(d types.DataItem) error {
+func VerifyBundleItem(d types.BundleItem) error {
 	// Get signature data and signature present in di.
-	signatureData, err := GetItemSignatureData(d)
+	signatureData, err := BundleItemSignData(d)
 	if err != nil {
 		return fmt.Errorf("signatureData, err := d.GetSignatureData(); err : %v", err)
 	}
@@ -218,7 +217,7 @@ func VerifyDataItem(d types.DataItem) error {
 	return nil
 }
 
-func GetItemTagsBytes(itemBinary []byte) []byte {
+func GetBundleItemTagsBytes(itemBinary []byte) []byte {
 	tagsStart := 2 + 512 + 512 + 2
 	anchorPresentByte := 1027
 	if len(itemBinary) < anchorPresentByte {
@@ -245,7 +244,7 @@ func GetItemTagsBytes(itemBinary []byte) []byte {
 	}
 }
 
-func GenerateItemBinary(d *types.DataItem) (err error) {
+func GenerateItemBinary(d *types.BundleItem) (err error) {
 	if len(d.Signature) == 0 {
 		return errors.New("must be sign")
 	}

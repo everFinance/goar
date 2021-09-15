@@ -1,11 +1,11 @@
 package types
 
-type BundleData struct {
-	Items        []DataItem `json:"items"`
+type Bundle struct {
+	Items        []BundleItem `json:"items"`
 	BundleBinary []byte
 }
 
-type DataItem struct {
+type BundleItem struct {
 	SignatureType string `json:"signatureType"`
 	Signature     string `json:"signature"`
 	Owner         string `json:"owner"`  //  utils.Base64Encode(wallet.PubKey.N.Bytes())

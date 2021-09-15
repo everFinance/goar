@@ -1,19 +1,17 @@
-package goar
+package example
 
 import (
+	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-const (
-	privateKey = "./example/testKey.json" // your private key file
-	arNode     = "https://arweave.net"
-)
-
 func TestBundleData_SubmitBundleTx(t *testing.T) {
-	w, err := NewWalletFromPath(privateKey, arNode)
+	privateKey := "./testKey.json" // your private key file
+	arNode := "https://arweave.net"
+	w, err := goar.NewWalletFromPath(privateKey, arNode)
 	if err != nil {
 		panic(err)
 	}
@@ -45,15 +43,15 @@ func TestBundleData_SubmitBundleTx(t *testing.T) {
 	item10, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 10"), 1, target, "", tags)
 	assert.NoError(t, err)
 
-	items := []types.DataItem{item01, item02, item03, item04, item05, item06, item07, item08, item09, item10}
+	items := []types.BundleItem{item01, item02, item03, item04, item05, item06, item07, item08, item09, item10}
 
 	// // send item to bundler gateway
 	// for _, item := range items {
-	// 	resp, err := w.Client.SendToBundler(item.ItemBinary)
+	// 	resp, err := w.Client.SendItemToBundler(item.ItemBinary)
 	// 	assert.NoError(t, err)
 	// 	t.Log(resp.Id)
 	// }
-	resp, err := w.Client.BatchSendToBundler(items)
+	resp, err := w.Client.BatchSendItemToBundler(items)
 	assert.NoError(t, err)
 	t.Log(resp)
 
@@ -62,27 +60,28 @@ func TestBundleData_SubmitBundleTx(t *testing.T) {
 		{Name: "GOAR", Value: "bundleTx"},
 		{Name: "ACTION", Value: "test tx"},
 	}
-	bd, err := utils.NewBundleData(items...)
+	bd, err := utils.NewBundle(items...)
 	assert.NoError(t, err)
 
-	txId, err := w.SubmitBundleTx(bd.BundleBinary, arTxtags, 50)
+	txId, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
 	assert.NoError(t, err)
 	t.Log(txId)
 }
 
 func TestVerifyDataItem(t *testing.T) {
-	cli := NewClient("https://arweave.net")
+	cli := goar.NewClient("https://arweave.net")
 	// id := "K0JskpURZ-zZ7m01txR7hArvsBDDi08S6-6YIVQoc_Y" // big size data
 	// id := "mTm5-TtpsfJvUCPXflFe-P7HO6kOy4E2pGbt6-DUs40"
 
 	// goar test tx
 	// id := "ipVFFrAkLosTtk-M3J6wYq3MKpfE6zK75nMIC-oLVXw"
 	// id := "2ZFhlTJlFbj8XVmBtnBHS-y6Clg68trcRgIKBNemTM8"
+	// id := "WNGKdWsGqyhh7Y4vMcQL0GHFzNiyeqASIJn-Z1IjJE0"
 	id := "lt24bnUGms5XLZeVamSPHePl4M2ClpLQyRxZI7weH1k"
-	bd, err := cli.GetBundleData(id)
+	bd, err := cli.GetBundle(id)
 	assert.NoError(t, err)
 	for _, item := range bd.Items {
-		err = utils.VerifyDataItem(item)
+		err = utils.VerifyBundleItem(item)
 		assert.NoError(t, err)
 	}
 }

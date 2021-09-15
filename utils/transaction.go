@@ -54,9 +54,7 @@ func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, erro
 	}, nil
 }
 
-func SignTransaction(tx *types.Transaction, pubKey *rsa.PublicKey, prvKey *rsa.PrivateKey) error {
-	tx.Owner = Base64Encode(pubKey.N.Bytes())
-
+func SignTransaction(tx *types.Transaction, prvKey *rsa.PrivateKey) error {
 	signData, err := GetSignatureData(tx)
 	if err != nil {
 		return err
