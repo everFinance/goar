@@ -172,7 +172,6 @@ Package for Arweave develop toolkit.
 - [x] SignTransaction
 - [x] GetSignatureData
 - [x] VerifyTransaction
-- [x] NewBundleData
 
 #### RSA Threshold Cryptography
 

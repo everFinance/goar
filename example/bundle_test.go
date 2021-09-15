@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestBundleData_SubmitBundleTx(t *testing.T) {
+func TestBundle_SendBundleTx(t *testing.T) {
 	privateKey := "./testKey.json" // your private key file
 	arNode := "https://arweave.net"
 	w, err := goar.NewWalletFromPath(privateKey, arNode)
@@ -68,7 +68,7 @@ func TestBundleData_SubmitBundleTx(t *testing.T) {
 	t.Log(txId)
 }
 
-func TestVerifyDataItem(t *testing.T) {
+func TestVerifyBundleItem(t *testing.T) {
 	cli := goar.NewClient("https://arweave.net")
 	// id := "K0JskpURZ-zZ7m01txR7hArvsBDDi08S6-6YIVQoc_Y" // big size data
 	// id := "mTm5-TtpsfJvUCPXflFe-P7HO6kOy4E2pGbt6-DUs40"

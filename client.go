@@ -404,7 +404,7 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 
 // push to bundler gateway
 
-// SendItemToBundler send bundle dataItem to bundler gateway
+// SendItemToBundler send bundle bundleItem to bundler gateway
 func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error) {
 	// post to bundler
 	resp, err := http.DefaultClient.Post(types.BUNDLER_HOST+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
@@ -428,9 +428,9 @@ func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error
 	return br, nil
 }
 
-func (c *Client) BatchSendItemToBundler(dataItems []types.BundleItem) ([]*types.BundlerResp, error) {
-	respList := make([]*types.BundlerResp, 0, len(dataItems))
-	for _, item := range dataItems {
+func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem) ([]*types.BundlerResp, error) {
+	respList := make([]*types.BundlerResp, 0, len(bundleItems))
+	for _, item := range bundleItems {
 		itemBinary := item.ItemBinary
 		if len(itemBinary) == 0 {
 			if err := utils.GenerateItemBinary(&item); err != nil {

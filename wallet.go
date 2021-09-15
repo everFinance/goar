@@ -157,17 +157,17 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 // about bundle tx
 
 func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.BundleItem, err error) {
-	dataItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
+	bundleItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
 	// sign
-	err = utils.SignBundleItem(dataItem, w.PrvKey)
+	err = utils.SignBundleItem(bundleItem, w.PrvKey)
 	if err != nil {
 		return di, err
 	}
-	err = utils.GenerateItemBinary(dataItem)
+	err = utils.GenerateItemBinary(bundleItem)
 	if err != nil {
 		return di, err
 	}
-	return *dataItem, nil
+	return *bundleItem, nil
 }
 
 func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSpeed int64) (txId string, err error) {
