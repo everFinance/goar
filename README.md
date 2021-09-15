@@ -3,7 +3,7 @@
 ### Install
 
 ```
-    go get github.com/everFinance/goar
+go get github.com/everFinance/goar
 ```
 
 ### Example
@@ -323,7 +323,7 @@ You can also resume an upload from just the transaction ID and data, once it has
 ---
 ### About Arweave Bundles
 1. `goar` implemented creating,editing,reading and verifying bundles tx
-2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement.
+2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement
 3. more example can be viewed in path `./example/bundle_test.go`
 
 #### CreateBundle
