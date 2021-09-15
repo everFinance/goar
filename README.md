@@ -3,7 +3,7 @@
 ### Install
 
 ```
-go get github.com/everFinance/goar
+    go get github.com/everFinance/goar
 ```
 
 ### Example
@@ -121,15 +121,17 @@ func main() {
 - [x] GetLastTransactionID
 - [x] GetBlockByID
 - [x] GetBlockByHeight
+- [x] BatchSendItemToBundler
+- [x] GetBundle
 
 Initialize the instance:
 
 ```golang
-arClient := goar.NewClient("https://arweave.net")
-
-// if your network is not good, you can config http proxy
-proxyUrl := "http://127.0.0.1:8001"
-arClient := goar.NewClient("https://arweave.net", proxyUrl)
+    arClient := goar.NewClient("https://arweave.net")
+    
+    // if your network is not good, you can config http proxy
+    proxyUrl := "http://127.0.0.1:8001"
+    arClient := goar.NewClient("https://arweave.net", proxyUrl)
 ```
 
 #### Wallet
@@ -141,15 +143,18 @@ arClient := goar.NewClient("https://arweave.net", proxyUrl)
 - [x] SendData
 - [x] SendDataSpeedUp
 - [x] SendTransaction
+- [x] CreateAndSignBundleItem
+- [x] SendBundleTxSpeedUp
+- [x] SendBundleTx
 
 Initialize the instance, use a keyfile.json:
 
 ```golang
-arWallet := goar.NewWalletFromPath("./keyfile.json")
-
-// if your network is not good, you can config http proxy
-proxyUrl := "http://127.0.0.1:8001"
-arWallet := NewWalletFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
+    arWallet := goar.NewWalletFromPath("./keyfile.json")
+    
+    // if your network is not good, you can config http proxy
+    proxyUrl := "http://127.0.0.1:8001"
+    arWallet := NewWalletFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
 ```
 
 #### Utils
@@ -172,6 +177,7 @@ Package for Arweave develop toolkit.
 - [x] SignTransaction
 - [x] GetSignatureData
 - [x] VerifyTransaction
+- [x] NewBundle
 
 #### RSA Threshold Cryptography
 
@@ -185,31 +191,31 @@ Package for Arweave develop toolkit.
 Create RSA Threshold Cryptography:
 
 ```golang
-bitSize := 512 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
-l := 5
-k := 3
-keyShares, keyMeta, err := goar.CreateTcKeyPair(bitSize, k, l)
+    bitSize := 512 // If the values are 2048 and 4096, then the generation functions below will perform minute-level times, and we need 4096 bits as the maximum safety level for production environments.
+    l := 5
+    k := 3
+    keyShares, keyMeta, err := goar.CreateTcKeyPair(bitSize, k, l)
 ```
 
 New sign instance:
 
 ```golang
-exampleData := []byte("aaabbbcccddd112233") // need sign data
-ts, err := goar.NewTcSign(keyMeta, exampleData)
-
-// signer threshold sign
-signer01 := keyShares[0]
-signedData01, err := ts.ThresholdSign(signer01)
-
-// assemble sign
-signedShares := tcrsa.SigShareList{
-signedData01,
-...
-}
-signature, err := ts.AssembleSigShares(signedShares)
-
-// verify share sign 
-err := ts.VerifySigShare(signer01)
+    exampleData := []byte("aaabbbcccddd112233") // need sign data
+    ts, err := goar.NewTcSign(keyMeta, exampleData)
+    
+    // signer threshold sign
+    signer01 := keyShares[0]
+    signedData01, err := ts.ThresholdSign(signer01)
+    
+    // assemble sign
+    signedShares := tcrsa.SigShareList{
+    signedData01,
+    ...
+    }
+    signature, err := ts.AssembleSigShares(signedShares)
+    
+    // verify share sign 
+    err := ts.VerifySigShare(signer01)
 ```
 
 ### Development
@@ -217,7 +223,7 @@ err := ts.VerifySigShare(signer01)
 #### Test
 
 ```
-make test
+    make test
 ```
 ---
 ### About chunks
@@ -313,4 +319,54 @@ You can also resume an upload from just the transaction ID and data, once it has
 ```
 
 ##### NOTE: About all chunk transfer full example can be viewed in path `./example/chunks_tx_test.go`
+
+---
+### About Arweave Bundles
+1. `goar` implemented creating,editing,reading and verifying bundles tx
+2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement.
+3. more example can be viewed in path `./example/bundle_test.go`
+
+#### CreateBundle
+```go
+    w, err := goar.NewWalletFromPath(privateKey, arNode)
+        if err != nil {
+            panic(err)
+        }
+    data := []byte("upload update...")   
+    signatureType := 1 // currently only supply type 1
+    target := "" // option 
+    anchor := "" // option
+    tags := []types.Tags{}{} // bundle item tags
+    item01, err := w.CreateAndSignBundleItem(data, 1, target, anchor, tags)    
+    item02
+    item03
+    ....
+    	
+    items := []types.BundleItem{item01, item02, item03 ...}	
+	
+    bundle, err := utils.NewBundle(items...)
+	
+```
+
+#### Send Item to Bundler
+```go
+    resp, err := w.Client.BatchSendItemToBundler(items)
+```
+
+#### Send Bundle Tx
+```go
+    txId, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
+```
+
+#### Get Bundle and Verify
+```go
+    id := "lt24bnUGms5XLZeVamSPHePl4M2ClpLQyRxZI7weH1k"
+    bundle, err := cli.GetBundle(id)
+
+    // verify
+    for _, item := range bundle.Items {
+        err = utils.VerifyBundleItem(item)
+        assert.NoError(t, err)
+    }
+```
 ---
