@@ -41,6 +41,7 @@ func TagsDecode(base64Tags []types.Tag) ([]types.Tag, error) {
 	return tags, nil
 }
 
+// using bundle tx, avro serialize
 func SerializeTags(tags []types.Tag) ([]byte, error) {
 	if len(tags) == 0 {
 		return make([]byte, 0), nil

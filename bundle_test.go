@@ -2,6 +2,7 @@ package goar
 
 import (
 	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -23,45 +24,48 @@ func TestBundleData_SubmitBundleTx(t *testing.T) {
 		{Name: "App-Version", Value: "2.0.0"},
 	}
 
-	item01 , err := w.CreateBundleDataItem([]byte("goar bundle tx 01"), 1, target, "", tags)
+	item01, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 01"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item02 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 02"),  1, target, "", tags)
+	item02, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 02"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item03 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 03"),  1, target, "", tags)
+	item03, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 03"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item04 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 04"),  1, target, "", tags)
+	item04, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 04"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item05 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 05"),  1, target, "", tags)
+	item05, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 05"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item06 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 06"), 1, target, "", tags)
+	item06, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 06"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item07 , err :=  w.CreateBundleDataItem( []byte("goar bundle tx 07"), 1, target, "", tags)
+	item07, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 07"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item08 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 08"), 1, target, "", tags)
+	item08, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 08"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item09 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 09"),  1, target, "", tags)
+	item09, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 09"), 1, target, "", tags)
 	assert.NoError(t, err)
-	item10 , err :=  w.CreateBundleDataItem([]byte("goar bundle tx 10"), 1, target, "", tags)
+	item10, err := w.CreateAndSignBundleItem([]byte("goar bundle tx 10"), 1, target, "", tags)
 	assert.NoError(t, err)
 
-	items := []DataItem{item01,item02,item03,item04,item05,item06,item07,item08,item09,item10}
+	items := []types.DataItem{item01, item02, item03, item04, item05, item06, item07, item08, item09, item10}
 
-	// send item to bundler gateway
-	for _, item := range items {
-		resp, err := w.Client.SendToBundler(item.itemBinary)
-		assert.NoError(t, err)
-		t.Log(resp.Id)
-	}
+	// // send item to bundler gateway
+	// for _, item := range items {
+	// 	resp, err := w.Client.SendToBundler(item.ItemBinary)
+	// 	assert.NoError(t, err)
+	// 	t.Log(resp.Id)
+	// }
+	resp, err := w.Client.BatchSendToBundler(items)
+	assert.NoError(t, err)
+	t.Log(resp)
 
 	// assemble items
 	arTxtags := []types.Tag{
 		{Name: "GOAR", Value: "bundleTx"},
 		{Name: "ACTION", Value: "test tx"},
 	}
-	bd, err := NewBundleData(items...)
+	bd, err := utils.NewBundleData(items...)
 	assert.NoError(t, err)
 
-	txId, err := w.SubmitBundleTx(bd.bundleBinary, arTxtags, 50)
+	txId, err := w.SubmitBundleTx(bd.BundleBinary, arTxtags, 50)
 	assert.NoError(t, err)
 	t.Log(txId)
 }
@@ -78,7 +82,7 @@ func TestVerifyDataItem(t *testing.T) {
 	bd, err := cli.GetBundleData(id)
 	assert.NoError(t, err)
 	for _, item := range bd.Items {
-		err = item.Verify()
+		err = utils.VerifyDataItem(item)
 		assert.NoError(t, err)
 	}
 }
