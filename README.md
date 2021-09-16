@@ -320,6 +320,7 @@ bundle, err := utils.NewBundle(items...)
 ```
 
 #### Send Item to Bundler
+It is not necessary, The purpose is to create an index for the Bundler gateway
 ```go
 resp, err := w.Client.BatchSendItemToBundler(items)
 ```
