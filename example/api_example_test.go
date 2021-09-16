@@ -78,7 +78,6 @@ func Test_Arq(t *testing.T) {
 		t.Log(val)
 	}
 
-	// 冒泡排序
 	for i := 0; i < len(ids); i++ {
 		for j := 1; j < len(ids)-i; j++ {
 			if ids[j] > ids[j-1] {
@@ -122,7 +121,7 @@ func Test_SendFormat1Tx(t *testing.T) {
 	// }
 	// signData, err := types.GetSignatureData(tx)
 	//
-	// sig, err := utils.Sign(signData, wallet.PrvKey)
+	// sig, err := utils.sign(signData, wallet.PrvKey)
 	// assert.NoError(t, err)
 	// tx.AddSignature(sig)
 	//

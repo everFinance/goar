@@ -158,6 +158,26 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	}
 }
 
+// GetTransactionDataByGateway
+func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error) {
+	urlPath := fmt.Sprintf("/%v/%v", id, "data")
+	body, statusCode, err := c.httpGet(urlPath)
+	switch statusCode {
+	case 200:
+		return body, nil
+	case 400:
+		return c.DownloadChunkData(id)
+	case 202:
+		return nil, ErrPendingTx
+	case 404:
+		return nil, ErrNotFound
+	case 410:
+		return nil, ErrInvalidId
+	default:
+		return nil, ErrBadGateway
+	}
+}
+
 func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64, err error) {
 	url := fmt.Sprintf("price/%d", len(data))
 	if target != nil {
@@ -400,4 +420,57 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 		i += len(chunkData)
 	}
 	return data, nil
+}
+
+// push to bundler gateway
+
+// SendItemToBundler send bundle bundleItem to bundler gateway
+func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error) {
+	// post to bundler
+	resp, err := http.DefaultClient.Post(types.BUNDLER_HOST+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &types.BundlerResp{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
+}
+
+func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem) ([]*types.BundlerResp, error) {
+	respList := make([]*types.BundlerResp, 0, len(bundleItems))
+	for _, item := range bundleItems {
+		itemBinary := item.ItemBinary
+		if len(itemBinary) == 0 {
+			if err := utils.GenerateItemBinary(&item); err != nil {
+				return nil, err
+			}
+			itemBinary = item.ItemBinary
+		}
+		resp, err := c.SendItemToBundler(itemBinary)
+		if err != nil {
+			return nil, err
+		}
+		respList = append(respList, resp)
+	}
+	return respList, nil
+}
+
+func (c *Client) GetBundle(arId string) (*types.Bundle, error) {
+	data, err := c.DownloadChunkData(arId)
+	if err != nil {
+		return nil, err
+	}
+	return utils.DecodeBundle(data)
 }

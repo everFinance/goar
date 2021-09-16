@@ -42,3 +42,9 @@ var FATAL_CHUNK_UPLOAD_ERRORS = map[string]struct{}{
 	"chunk_proof_ratio_not_attractive": struct{}{},
 	"invalid_proof":                    struct{}{},
 }
+
+// about bundle
+const (
+	BUNDLER_HOST           = "http://bundler.arweave.net:10000"
+	MIN_BUNDLE_BINARY_SIZE = 1044
+)
