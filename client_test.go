@@ -149,10 +149,10 @@ func TestGetTransaction(t *testing.T) {
 	// not exist tx
 	txId = "KPlEyCrcs2rDHBFn2f0UUn2NZQKfawGb_EnBfip8ayA"
 	txStatus, err = cli.GetTransactionStatus(txId)
-	assert.Equal(t, `{"status":404,"error":"Not Found"}`, err.Error())
+	assert.Equal(t, ErrNotFound, err)
 	assert.Nil(t, txStatus)
 	tx, err = cli.GetTransactionByID(txId)
-	assert.Equal(t, `{"status":404,"error":"Not Found"}`, err.Error())
+	assert.Equal(t, ErrNotFound, err)
 	assert.Nil(t, tx)
 
 	// // pending tx
