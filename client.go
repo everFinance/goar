@@ -159,11 +159,8 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 }
 
 // GetTransactionDataByGateway
-func (c *Client) GetTransactionDataByGateway(id string, extension ...string) (body []byte, err error) {
+func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error) {
 	urlPath := fmt.Sprintf("/%v/%v", id, "data")
-	if extension != nil {
-		urlPath = urlPath + "." + extension[0]
-	}
 	body, statusCode, err := c.httpGet(urlPath)
 	switch statusCode {
 	case 200:
