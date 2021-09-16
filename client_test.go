@@ -183,3 +183,12 @@ func TestClient_GetBlockByHeight(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "7YeJpe53rFsEE03yKjGcBQAAw6efgVfSeGNLmPRGY4c", block.Nonce)
 }
+
+func TestClient_GetTransactionDataByGateway(t *testing.T) {
+	arNode := "https://arweave.net"
+	cli := NewClient(arNode)
+	id := "3S44SVxPWAqtadjehWR3bW1gP4B6Qsii4bnx9yz0_0s"
+	data, err := cli.GetTransactionDataByGateway(id)
+	assert.NoError(t, err)
+	t.Log(len(data))
+}

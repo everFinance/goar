@@ -158,6 +158,29 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	}
 }
 
+// GetTransactionDataByGateway
+func (c *Client) GetTransactionDataByGateway(id string, extension ...string) (body []byte, err error) {
+	urlPath := fmt.Sprintf("/%v/%v", id, "data")
+	if extension != nil {
+		urlPath = urlPath + "." + extension[0]
+	}
+	body, statusCode, err := c.httpGet(urlPath)
+	switch statusCode {
+	case 200:
+		return body, nil
+	case 400:
+		return c.DownloadChunkData(id)
+	case 202:
+		return nil, ErrPendingTx
+	case 404:
+		return nil, ErrNotFound
+	case 410:
+		return nil, ErrInvalidId
+	default:
+		return nil, ErrBadGateway
+	}
+}
+
 func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64, err error) {
 	url := fmt.Sprintf("price/%d", len(data))
 	if target != nil {
