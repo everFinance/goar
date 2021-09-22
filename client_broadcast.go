@@ -42,18 +42,11 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64) error
 			continue
 		}
 
-	Loop:
-		for !uploader.IsComplete() {
-			if err := uploader.UploadChunk(); err != nil {
-				break Loop
-			}
-			if uploader.LastResponseStatus != 200 {
-				break Loop
-			}
+		if err = uploader.Once(); err != nil {
+			continue
 		}
-		if uploader.IsComplete() { // upload success
-			count++
-		}
+
+		count++
 		if count >= numOfNodes {
 			return nil
 		}

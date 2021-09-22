@@ -83,10 +83,7 @@ func Test_PostBigDataByChunks(t *testing.T) {
 	// uploader Transaction
 	uploader, err := goar.CreateUploader(wallet.Client, tx, nil)
 	assert.NoError(t, err)
-	for !uploader.IsComplete() {
-		err := uploader.UploadChunk()
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, uploader.Once())
 }
 
 // test retry upload(断点重传) post big size data by tx id
@@ -127,10 +124,7 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 	// get uploader by txId and post big data by chunks
 	uploader, err := goar.CreateUploader(wallet.Client, tx.ID, bigData)
 	assert.NoError(t, err)
-	for !uploader.IsComplete() {
-		err := uploader.UploadChunk()
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, uploader.Once())
 }
 
 // test continue upload(断点续传) big size data by last time uploader
@@ -171,10 +165,7 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	// new uploader object by last time uploader
 	newUploader, err := goar.CreateUploader(wallet.Client, lastUploader.FormatSerializedUploader(), bigData)
 	assert.NoError(t, err)
-	for !newUploader.IsComplete() {
-		err := newUploader.UploadChunk()
-		assert.NoError(t, err)
-	}
+	assert.NoError(t, newUploader.Once())
 
 	// end remove jsonUploaderFile.json file
 	_ = os.Remove("./jsonUploaderFile.json")
