@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/everFinance/sandy_log/log"
 
@@ -51,6 +52,17 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	info = &types.NetworkInfo{}
 	err = json.Unmarshal(body, info)
 	return
+}
+
+func (c *Client) Peers() ([]string, error) {
+	body, _, err := c.httpGet("peers")
+	if err != nil {
+		return nil, ErrBadGateway
+	}
+
+	peers := make([]string, 0)
+	err = json.Unmarshal(body, &peers)
+	return peers, err
 }
 
 // GetTransactionByID status: Pending/Invalid hash/overspend
@@ -420,6 +432,62 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 		i += len(chunkData)
 	}
 	return data, nil
+}
+
+func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
+	peers, err := c.Peers()
+	if err != nil {
+		return nil, err
+	}
+	for _, peer := range peers {
+		if strings.Contains(peer, "127.0") {
+			continue
+		}
+		arNode := NewClient("http://" + peer)
+		data, err := arNode.GetTransactionData(txId)
+		if err != nil {
+			fmt.Printf("get tx data error:%v, peer: %s\n", err, peer)
+			continue
+		}
+		return data, nil
+	}
+	return nil, errors.New("get tx data from peers failed")
+}
+
+func (c *Client) UploadTxDataToPeers(txId string, data []byte) error {
+	peers, err := c.Peers()
+	if err != nil {
+		return err
+	}
+
+	count := 0
+	for _, peer := range peers {
+		if strings.Contains(peer, "127.0") {
+			continue
+		}
+		fmt.Printf("upload peer: %s, count: %d\n", peer, count)
+		arNode := NewClient("http://" + peer)
+		uploader, err := CreateUploader(arNode, txId, data)
+		if err != nil {
+			continue
+		}
+	Loop:
+		for !uploader.IsComplete() {
+			if err := uploader.UploadChunk(); err != nil {
+				break Loop
+			}
+			if uploader.LastResponseStatus != 200 {
+				break Loop
+			}
+		}
+		if uploader.IsComplete() { // upload success
+			count++
+		}
+		if count > 20 {
+			return nil
+		}
+	}
+	return fmt.Errorf("upload tx data to peers failed, txId: %s", txId)
 }
 
 // push to bundler gateway
