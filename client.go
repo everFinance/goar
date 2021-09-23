@@ -54,7 +54,7 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	return
 }
 
-func (c *Client) Peers() ([]string, error) {
+func (c *Client) GetPeers() ([]string, error) {
 	body, _, err := c.httpGet("peers")
 	if err != nil {
 		return nil, ErrBadGateway
@@ -62,7 +62,20 @@ func (c *Client) Peers() ([]string, error) {
 
 	peers := make([]string, 0)
 	err = json.Unmarshal(body, &peers)
-	return peers, err
+	if err != nil {
+		return nil, err
+	}
+
+	// filter local
+	fpeers := make([]string, 0)
+	for _, p := range peers {
+		if strings.Contains(p, "127.0.0.") {
+			continue
+		}
+		fpeers = append(fpeers, p)
+	}
+
+	return peers[:], nil
 }
 
 // GetTransactionByID status: Pending/Invalid hash/overspend
@@ -432,114 +445,4 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 		i += len(chunkData)
 	}
 	return data, nil
-}
-
-func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
-	peers, err := c.Peers()
-	if err != nil {
-		return nil, err
-	}
-	for _, peer := range peers {
-		if strings.Contains(peer, "127.0") {
-			continue
-		}
-		arNode := NewClient("http://" + peer)
-		data, err := arNode.DownloadChunkData(txId)
-		if err != nil {
-			fmt.Printf("get tx data error:%v, peer: %s\n", err, peer)
-			continue
-		}
-		fmt.Printf("success get tx data; peer: %s\n", peer)
-		return data, nil
-	}
-	return nil, errors.New("get tx data from peers failed")
-}
-
-func (c *Client) UploadTxDataToPeers(txId string, data []byte) error {
-	peers, err := c.Peers()
-	if err != nil {
-		return err
-	}
-
-	count := 0
-	for _, peer := range peers {
-		if strings.Contains(peer, "127.0") {
-			continue
-		}
-		fmt.Printf("upload peer: %s, count: %d\n", peer, count)
-		arNode := NewClient("http://" + peer)
-		uploader, err := CreateUploader(arNode, txId, data)
-		if err != nil {
-			continue
-		}
-	Loop:
-		for !uploader.IsComplete() {
-			if err := uploader.UploadChunk(); err != nil {
-				break Loop
-			}
-			if uploader.LastResponseStatus != 200 {
-				break Loop
-			}
-		}
-		if uploader.IsComplete() { // upload success
-			count++
-		}
-		if count > 20 {
-			return nil
-		}
-	}
-	return fmt.Errorf("upload tx data to peers failed, txId: %s", txId)
-}
-
-// push to bundler gateway
-
-// SendItemToBundler send bundle bundleItem to bundler gateway
-func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error) {
-	// post to bundler
-	resp, err := http.DefaultClient.Post(types.BUNDLER_HOST+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-	// json unmarshal
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
-	}
-	br := &types.BundlerResp{}
-	if err := json.Unmarshal(body, br); err != nil {
-		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
-	}
-	return br, nil
-}
-
-func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem) ([]*types.BundlerResp, error) {
-	respList := make([]*types.BundlerResp, 0, len(bundleItems))
-	for _, item := range bundleItems {
-		itemBinary := item.ItemBinary
-		if len(itemBinary) == 0 {
-			if err := utils.GenerateItemBinary(&item); err != nil {
-				return nil, err
-			}
-			itemBinary = item.ItemBinary
-		}
-		resp, err := c.SendItemToBundler(itemBinary)
-		if err != nil {
-			return nil, err
-		}
-		respList = append(respList, resp)
-	}
-	return respList, nil
-}
-
-func (c *Client) GetBundle(arId string) (*types.Bundle, error) {
-	data, err := c.DownloadChunkData(arId)
-	if err != nil {
-		return nil, err
-	}
-	return utils.DecodeBundle(data)
 }

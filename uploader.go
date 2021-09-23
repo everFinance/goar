@@ -108,6 +108,20 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 	return uploader, err
 }
 
+func (tt *TransactionUploader) Once() (err error) {
+	for !tt.IsComplete() {
+		if err = tt.UploadChunk(); err != nil {
+			return
+		}
+
+		if tt.LastResponseStatus != 200 {
+			return
+		}
+	}
+
+	return
+}
+
 func (tt *TransactionUploader) IsComplete() bool {
 	tChunks := tt.Transaction.Chunks
 	if tChunks == nil {

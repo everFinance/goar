@@ -196,26 +196,33 @@ func TestClient_GetTransactionDataByGateway(t *testing.T) {
 func TestClient_GetPeers(t *testing.T) {
 	arNode := "https://arweave.net"
 	cli := NewClient(arNode)
-	peers, err := cli.Peers()
+	peers, err := cli.GetPeers()
 	assert.NoError(t, err)
 	t.Log(len(peers))
 }
 
-func Test_UploadTxDataToPeers(t *testing.T) {
-	data := make([]byte, 1103732)
-	data[0] = byte('z')
-	data[1] = byte('y')
-	data[2] = byte('j')
-	for i := 3; i < len(data); i++ {
-		data[i] = byte('a')
-	}
+// func Test_BroadcastData(t *testing.T) {
+// 	data := make([]byte, 1103732)
+// 	data[0] = byte('z')
+// 	data[1] = byte('y')
+// 	data[2] = byte('j')
+// 	for i := 3; i < len(data); i++ {
+// 		data[i] = byte('a')
+// 	}
 
-	cli := NewClient("https://arweave.net")
-	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
-	err = cli.UploadTxDataToPeers(txId, data)
-	assert.NoError(t, err)
-}
+// 	cli := NewClient("https://arweave.net")
+// 	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
+// 	err = cli.BroadcastData(txId, data, 1)
+// 	assert.NoError(t, err)
+// }
 
+// func Test_GetTxDataFromPeers(t *testing.T) {
+// 	cli := NewClient("https://arweave.net")
+// 	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
+// 	data, err := cli.GetTxDataFromPeers(txId)
+// 	assert.NoError(t, err)
+// 	assert.Equal(t, 1471643, len(data))
+// }
 func Test_GetTxDataFromPeers(t *testing.T) {
 	cli := NewClient("https://arweave.net")
 	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
