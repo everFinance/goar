@@ -218,8 +218,28 @@ func Test_UploadTxDataToPeers(t *testing.T) {
 
 func Test_GetTxDataFromPeers(t *testing.T) {
 	cli := NewClient("https://arweave.net")
-	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
+	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
 	data, err := cli.GetTxDataFromPeers(txId)
+
 	assert.NoError(t, err)
-	assert.Equal(t, 1471643, len(data))
+
+	assert.NoError(t, err)
+	t.Log(len(data))
+
+	// verify data root
+	chunks := utils.GenerateChunks(data)
+	dataRoot := utils.Base64Encode(chunks.DataRoot)
+	tx, err := cli.GetTransactionByID(txId)
+	assert.NoError(t, err)
+	assert.Equal(t, tx.DataRoot, dataRoot)
+}
+
+func TestClient_UploadTxDataToPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
+	data, err := cli.GetTransactionData(txId, "json")
+	assert.NoError(t, err)
+
+	err = cli.UploadTxDataToPeers(txId, data)
+	assert.NoError(t, err)
 }

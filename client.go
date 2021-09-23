@@ -444,11 +444,12 @@ func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
 			continue
 		}
 		arNode := NewClient("http://" + peer)
-		data, err := arNode.GetTransactionData(txId)
+		data, err := arNode.DownloadChunkData(txId)
 		if err != nil {
 			fmt.Printf("get tx data error:%v, peer: %s\n", err, peer)
 			continue
 		}
+		fmt.Printf("success get tx data; peer: %s\n", peer)
 		return data, nil
 	}
 	return nil, errors.New("get tx data from peers failed")
