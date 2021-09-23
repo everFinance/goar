@@ -75,7 +75,7 @@ func (c *Client) GetPeers() ([]string, error) {
 		fpeers = append(fpeers, p)
 	}
 
-	return peers[:], nil
+	return fpeers, nil
 }
 
 // GetTransactionByID status: Pending/Invalid hash/overspend
@@ -169,10 +169,13 @@ func (c *Client) GetTransactionData(id string, extension ...string) (body []byte
 	body, statusCode, err := c.httpGet(urlPath)
 
 	// When data is bigger than 12MiB statusCode == 400 NOTE: Data bigger than that has to be downloaded chunk by chunk.
-	if statusCode == 400 || len(body) == 0 {
+	if statusCode == 400 {
 		body, err = c.DownloadChunkData(id)
 		return
 	} else if statusCode == 200 {
+		if len(body) == 0 {
+			return c.DownloadChunkData(id)
+		}
 		return body, nil
 	} else if statusCode == 202 {
 		return nil, ErrPendingTx
@@ -189,6 +192,9 @@ func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error)
 	body, statusCode, err := c.httpGet(urlPath)
 	switch statusCode {
 	case 200:
+		if len(body) == 0 {
+			return c.DownloadChunkData(id)
+		}
 		return body, nil
 	case 400:
 		return c.DownloadChunkData(id)

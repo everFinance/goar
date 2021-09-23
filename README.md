@@ -91,6 +91,8 @@ fmt.Println(id, err) // {{id}}, nil
 - [x] GetBlockByHeight
 - [x] BatchSendItemToBundler
 - [x] GetBundle
+- [x] GetTxDataFromPeers
+- [x] BroadcastData
 
 Initialize the instance:
 
