@@ -64,14 +64,18 @@ func TestWallet_SendAR(t *testing.T) {
 // test send small size file
 func TestWallet_SendDataSpeedUp01(t *testing.T) {
 	// arNode := "https://arweave.net"
-	// w, err := NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
+	// w, err := NewWalletFromPath("./example/testKey.json", arNode) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// data := []byte("aaa this is a goar test small size file data") // small file
+	// // data := []byte("aaa this is a goar test small size file data") // small file
+	// data := make([]byte, 255*1024)
+	// for i := 0; i < len(data); i++ {
+	// 	data[i] = byte('b' + i)
+	// }
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "SMDT"},
 	// }
-	// id, err := w.SendDataSpeedUp(data, tags, 0)
+	// id, err := w.SendDataSpeedUp(data, tags, 50)
 	// assert.NoError(t, err)
 	// t.Logf("tx hash: %s", id)
 }

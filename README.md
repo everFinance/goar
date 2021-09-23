@@ -91,6 +91,8 @@ fmt.Println(id, err) // {{id}}, nil
 - [x] GetBlockByHeight
 - [x] BatchSendItemToBundler
 - [x] GetBundle
+- [x] GetTxDataFromPeers
+- [x] BroadcastData
 
 Initialize the instance:
 
@@ -240,11 +242,10 @@ uploader, err := goar.CreateUploader(w.Client, tx, nil)
 if err != nil {
   return
 }
-for !uploader.IsComplete() {
-  err = uploader.UploadChunk()
-  if err != nil {
-    return
-  }
+
+err = uploader.Once()
+if err != nil {
+  return
 }
 ```
 
@@ -280,10 +281,7 @@ txId := "myTxId"
 // get uploader by txId and post big data by chunks
 uploader, err := goar.CreateUploader(wallet.Client, txId, bigData)
 assert.NoError(t, err)
-for !uploader.IsComplete() {
-  err := uploader.UploadChunk()
-  assert.NoError(t, err)
-}
+assert.NoError(t, uploader.Once())
 ```
 
 ##### NOTE: About all chunk transfer full example can be viewed in path `./example/chunks_tx_test.go`

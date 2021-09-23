@@ -3,8 +3,6 @@ package goar
 import (
 	"errors"
 	"fmt"
-
-	"github.com/everFinance/sandy_log/log"
 )
 
 func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
@@ -15,11 +13,12 @@ func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
 
 	for _, peer := range peers {
 		pNode := NewClient("http://" + peer)
-		data, err := pNode.GetTransactionData(txId)
+		data, err := pNode.DownloadChunkData(txId)
 		if err != nil {
-			log.Error("get tx data failed", "error", err, "peer", peer)
+			fmt.Printf("get tx data error:%v, peer: %s\n", err, peer)
 			continue
 		}
+		fmt.Printf("success get tx data; peer: %s\n", peer)
 		return data, nil
 	}
 
@@ -34,7 +33,6 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64) error
 
 	count := int64(0)
 	for _, peer := range peers {
-
 		fmt.Printf("upload peer: %s, count: %d\n", peer, count)
 		arNode := NewClient("http://" + peer)
 		uploader, err := CreateUploader(arNode, txId, data)
@@ -42,18 +40,11 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64) error
 			continue
 		}
 
-	Loop:
-		for !uploader.IsComplete() {
-			if err := uploader.UploadChunk(); err != nil {
-				break Loop
-			}
-			if uploader.LastResponseStatus != 200 {
-				break Loop
-			}
+		if err = uploader.Once(); err != nil {
+			continue
 		}
-		if uploader.IsComplete() { // upload success
-			count++
-		}
+
+		count++
 		if count >= numOfNodes {
 			return nil
 		}

@@ -201,25 +201,30 @@ func TestClient_GetPeers(t *testing.T) {
 	t.Log(len(peers))
 }
 
-// func Test_BroadcastData(t *testing.T) {
-// 	data := make([]byte, 1103732)
-// 	data[0] = byte('z')
-// 	data[1] = byte('y')
-// 	data[2] = byte('j')
-// 	for i := 3; i < len(data); i++ {
-// 		data[i] = byte('a')
-// 	}
+func Test_GetTxDataFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
+	data, err := cli.GetTxDataFromPeers(txId)
 
-// 	cli := NewClient("https://arweave.net")
-// 	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
-// 	err = cli.BroadcastData(txId, data, 1)
-// 	assert.NoError(t, err)
-// }
+	assert.NoError(t, err)
 
-// func Test_GetTxDataFromPeers(t *testing.T) {
-// 	cli := NewClient("https://arweave.net")
-// 	txId := "D3GOny9cItUEc8qAl1oLUtnoLOB3OfSB-wKbw8TUIRc"
-// 	data, err := cli.GetTxDataFromPeers(txId)
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, 1471643, len(data))
-// }
+	assert.NoError(t, err)
+	t.Log(len(data))
+
+	// verify data root
+	chunks := utils.GenerateChunks(data)
+	dataRoot := utils.Base64Encode(chunks.DataRoot)
+	tx, err := cli.GetTransactionByID(txId)
+	assert.NoError(t, err)
+	assert.Equal(t, tx.DataRoot, dataRoot)
+}
+
+func TestClient_BroadcastData(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
+	data, err := cli.GetTransactionData(txId, "json")
+	assert.NoError(t, err)
+
+	err = cli.BroadcastData(txId, data, 20)
+	assert.NoError(t, err)
+}

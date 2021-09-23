@@ -143,11 +143,6 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	if err != nil {
 		return
 	}
-	for !uploader.IsComplete() {
-		err = uploader.UploadChunk()
-		if err != nil {
-			return
-		}
-	}
+	err = uploader.Once()
 	return
 }
