@@ -217,7 +217,7 @@ data, err := ioutil.ReadFile("./2.3MBPhoto.jpg")
 if err != nil {
   return
 }
-tx.LastTx = anchor
+
 reward, err := w.Client.GetTransactionPrice(data, nil)
 if err != nil {
   return
@@ -232,6 +232,10 @@ tx := &types.Transaction{
   DataSize: fmt.Sprintf("%d", len(data)),
   Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 }
+
+tx.LastTx = anchor
+tx.Owner = utils.Base64Encode(w.PubKey.N.Bytes())
+
 if err = utils.SignTransaction(tx, w.PubKey, w.PrvKey); err != nil {
   return
 }
