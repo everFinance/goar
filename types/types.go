@@ -21,13 +21,13 @@ type Block struct {
 	Height        int64         `json:"height"`
 	Hash          string        `json:"hash"`
 	IndepHash     string        `json:"indep_hash"`
-	Txs           []interface{} `json:"txs"`
+	Txs           []string      `json:"txs"`
 	WalletList    string        `json:"wallet_list"`
 	RewardAddr    string        `json:"reward_addr"`
 	Tags          []interface{} `json:"tags"`
-	RewardPool    string        `json:"reward_pool"`
-	WeaveSize     string        `json:"weave_size"`
-	BlockSize     string        `json:"block_size"`
+	RewardPool    interface{}   `json:"reward_pool"`
+	WeaveSize     interface{}   `json:"weave_size"`
+	BlockSize     interface{}   `json:"block_size"`
 }
 
 type TransactionChunk struct {
