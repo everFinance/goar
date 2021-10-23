@@ -179,7 +179,7 @@ func TestClient_GetTransactionTags(t *testing.T) {
 func TestClient_GetBlockByHeight(t *testing.T) {
 	arNode := "https://arweave.net"
 	cli := NewClient(arNode)
-	block, err := cli.GetBlockByHeight(737432)
+	block, err := cli.GetBlockByHeight(793791)
 	assert.NoError(t, err)
 	assert.Equal(t, "7YeJpe53rFsEE03yKjGcBQAAw6efgVfSeGNLmPRGY4c", block.Nonce)
 }
