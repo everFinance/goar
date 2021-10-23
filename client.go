@@ -452,3 +452,23 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+func (c *Client) GetBlockFromPeers(height int64) (*types.Block, error) {
+	peers, err := c.GetPeers()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, peer := range peers {
+		pNode := NewClient("http://" + peer)
+		block, err := pNode.GetBlockByHeight(height)
+		if err != nil {
+			fmt.Printf("get block error:%v, peer: %s\n", err, peer)
+			continue
+		}
+		fmt.Printf("success get block; peer: %s\n", peer)
+		return block, nil
+	}
+
+	return nil, errors.New("get block from peers failed")
+}

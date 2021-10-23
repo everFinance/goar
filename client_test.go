@@ -228,3 +228,10 @@ func TestClient_BroadcastData(t *testing.T) {
 	err = cli.BroadcastData(txId, data, 20)
 	assert.NoError(t, err)
 }
+
+func TestClient_GetBlockFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	block, err := cli.GetBlockFromPeers(793755)
+	assert.NoError(t, err)
+	t.Log(block.Txs)
+}
