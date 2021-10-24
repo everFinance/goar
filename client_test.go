@@ -235,3 +235,11 @@ func TestClient_GetBlockFromPeers(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(block.Txs)
 }
+
+func TestClient_GetTxFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	arId := "uOm8Br0Phc1c2X8xIPFVZXbeSgDAoNlVhwdHEutbaP4"
+	tx, err := cli.GetTxFromPeers(arId)
+	assert.NoError(t, err)
+	t.Log(tx)
+}

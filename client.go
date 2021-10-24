@@ -472,3 +472,23 @@ func (c *Client) GetBlockFromPeers(height int64) (*types.Block, error) {
 
 	return nil, errors.New("get block from peers failed")
 }
+
+func (c *Client) GetTxFromPeers(arId string) (*types.Transaction, error) {
+	peers, err := c.GetPeers()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, peer := range peers {
+		pNode := NewClient("http://" + peer)
+		tx, err := pNode.GetTransactionByID(arId)
+		if err != nil {
+			fmt.Printf("get tx error:%v, peer: %s\n", err, peer)
+			continue
+		}
+		fmt.Printf("success get tx; peer: %s\n", peer)
+		return tx, nil
+	}
+
+	return nil, errors.New("get tx from peers failed")
+}
