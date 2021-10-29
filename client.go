@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/inconshreveable/log15"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -13,11 +14,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/everFinance/sandy_log/log"
-
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 )
+
+var log = log15.New("module", "goar")
 
 // arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 
@@ -33,7 +34,7 @@ func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 		pUrl := proxyUrl[0]
 		proxyUrl, err := url.Parse(pUrl)
 		if err != nil {
-			log.Errorf("url parse error: %v", err)
+			log.Error("url parse", "error", err)
 			panic(err)
 		}
 		tr := &http.Transport{Proxy: http.ProxyURL(proxyUrl)}

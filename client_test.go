@@ -181,7 +181,7 @@ func TestClient_GetBlockByHeight(t *testing.T) {
 	cli := NewClient(arNode)
 	block, err := cli.GetBlockByHeight(793791)
 	assert.NoError(t, err)
-	assert.Equal(t, "7YeJpe53rFsEE03yKjGcBQAAw6efgVfSeGNLmPRGY4c", block.Nonce)
+	assert.Equal(t, "ci2uJhYmdldgkHbScDClCwAA0eqn7dCduAEpLfRorSA", block.Nonce)
 }
 
 func TestClient_GetTransactionDataByGateway(t *testing.T) {

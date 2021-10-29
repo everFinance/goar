@@ -15,10 +15,9 @@ func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
 		pNode := NewClient("http://" + peer)
 		data, err := pNode.DownloadChunkData(txId)
 		if err != nil {
-			fmt.Printf("get tx data error:%v, peer: %s\n", err, peer)
+			log.Error("get tx data", "err", err, "peer", peer)
 			continue
 		}
-		fmt.Printf("success get tx data; peer: %s\n", peer)
 		return data, nil
 	}
 
@@ -33,7 +32,6 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64) error
 
 	count := int64(0)
 	for _, peer := range peers {
-		fmt.Printf("upload peer: %s, count: %d\n", peer, count)
 		arNode := NewClient("http://" + peer)
 		uploader, err := CreateUploader(arNode, txId, data)
 		if err != nil {

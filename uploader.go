@@ -10,7 +10,6 @@ import (
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/sandy_log/log"
 	"github.com/shopspring/decimal"
 )
 
@@ -40,7 +39,7 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 		return nil, errors.New("Transaction is not signed.")
 	}
 	if tt.Chunks == nil {
-		log.Warnf("Transaction chunks not perpared.")
+		log.Warn("Transaction chunks not perpared")
 	}
 	// Make a copy of Transaction, zeroing the Data so we can serialize.
 	tu := &TransactionUploader{
@@ -48,7 +47,7 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 	}
 	da, err := utils.Base64Decode(tt.Data)
 	if err != nil {
-		log.Errorf("da, err := utils.Base64Decode(tt.Data) error: %v", err)
+		log.Error("utils.Base64Decode(tt.Data)", "err", err)
 		return nil, err
 
 	}
@@ -92,7 +91,7 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 		// upload 返回为 SerializedUploader 类型
 		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
 		if err != nil {
-			log.Errorf("(&TransactionUploader{Client: api}).FromTransactionId(id) error: %v", err)
+			log.Error("(&TransactionUploader{Client: api}).FromTransactionId(id)", "err", err)
 			return nil, err
 		}
 	} else {
@@ -158,7 +157,7 @@ func (tt *TransactionUploader) PctComplete() float64 {
 func (tt *TransactionUploader) UploadChunk() error {
 	defer func() {
 		if tt.TotalChunks() > 0 {
-			fmt.Printf("%f%% completes, %d/%d \n", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks())
+			log.Debug("chunks", "uploads", fmt.Sprintf("%f%% completes, %d/%d", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks()))
 		}
 	}()
 	if tt.IsComplete() {
@@ -218,8 +217,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	body, statusCode, err := tt.Client.SubmitChunks(gc)
-	fmt.Println("post tx chunk body: ", body)
+	_, statusCode, err := tt.Client.SubmitChunks(gc)
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
@@ -317,8 +315,7 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 		// Post the Transaction with Data.
 		tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	}
-	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
-	fmt.Printf("uplaodTx; body: %s, status: %d, txId: %s \n", body, statusCode, tt.Transaction.ID)
+	_, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	if err != nil {
 		tt.LastResponseError = err.Error()
 		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v", statusCode, err))

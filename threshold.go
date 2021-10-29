@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/everFinance/sandy_log/log"
 	tcrsa "github.com/everFinance/ttcrsa"
 )
 
@@ -28,10 +27,10 @@ func CreateTcKeyPair(bitSize, k, l int) (shares tcrsa.KeyShareList, meta *tcrsa.
 	now := time.Now()
 	keyShares, keyMeta, err := tcrsa.NewKey(bitSize, uint16(k), uint16(l), nil)
 	if err != nil {
-		log.Errorf("tcrsa newKey error; bitSize: %d, k: %d, l: %d; err: %v", bitSize, k, l, err)
+		log.Error("tcrsa newKey", "err", err, "bitSize", bitSize, "k", k, "l", l)
 		return nil, nil, err
 	}
-	log.Debugf("Create bit size = %d rsa threshold keyPair spend time: %s", bitSize, time.Since(now).String())
+	log.Debug("Create rsa threshold keyPair success", "bitSize", bitSize, "spendTime", time.Since(now).String())
 	return keyShares, keyMeta, nil
 }
 
@@ -81,20 +80,20 @@ func (ts *TcSign) AssembleSigShares(signedShares tcrsa.SigShareList) ([]byte, er
 	// verify each signer share
 	for _, sd := range signedShares {
 		if err := sd.Verify(ts.pssData, ts.keyMeta); err != nil {
-			log.Errorf("verify signer %d sign failed; err: %v", sd.Id, err)
+			log.Error("verify signer sign failed", "err", err, "signer", sd.Id)
 			return nil, err
 		}
 	}
 	signature, err := signedShares.Join(ts.pssData, ts.keyMeta)
 	if err != nil {
-		log.Errorf("signedShares.Join(signDataByPss, meta) error: %v", err)
+		log.Error("signedShares.Join(signDataByPss, meta)", "err", err)
 		return nil, err
 	}
 
 	// verify
 	signHashed := sha256.Sum256(ts.signData)
 	if err := rsa.VerifyPSS(ts.keyMeta.PublicKey, crypto.SHA256, signHashed[:], signature, nil); err != nil {
-		log.Errorf("verify signature error; %v", err)
+		log.Error("verify signature", "err", err)
 		return nil, err
 	}
 	return signature, nil
