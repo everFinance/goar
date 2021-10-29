@@ -156,11 +156,6 @@ func (tt *TransactionUploader) PctComplete() float64 {
  * next chunk until it completes.
  */
 func (tt *TransactionUploader) UploadChunk() error {
-	defer func() {
-		if tt.TotalChunks() > 0 {
-			fmt.Printf("%f%% completes, %d/%d \n", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks())
-		}
-	}()
 	if tt.IsComplete() {
 		return errors.New("Upload is already complete.")
 	}
@@ -218,8 +213,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	body, statusCode, err := tt.Client.SubmitChunks(gc)
-	fmt.Println("post tx chunk body: ", body)
+	_, statusCode, err := tt.Client.SubmitChunks(gc)
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
@@ -317,8 +311,7 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 		// Post the Transaction with Data.
 		tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	}
-	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
-	fmt.Printf("uplaodTx; body: %s, status: %d, txId: %s \n", body, statusCode, tt.Transaction.ID)
+	_, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	if err != nil {
 		tt.LastResponseError = err.Error()
 		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v", statusCode, err))
