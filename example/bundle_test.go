@@ -47,11 +47,11 @@ func TestBundle_SendBundleTx(t *testing.T) {
 
 	// // send item to bundler gateway
 	// for _, item := range items {
-	// 	resp, err := w.Client.SendItemToBundler(item.ItemBinary)
+	// 	resp, err := w.Client.SendItemToBundler(item.ItemBinary,"")
 	// 	assert.NoError(t, err)
 	// 	t.Log(resp.Id)
 	// }
-	resp, err := w.Client.BatchSendItemToBundler(items)
+	resp, err := w.Client.BatchSendItemToBundler(items, "")
 	assert.NoError(t, err)
 	t.Log(resp)
 

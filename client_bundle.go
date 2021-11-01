@@ -20,9 +20,12 @@ func (c *Client) GetBundle(arId string) (*types.Bundle, error) {
 }
 
 // SendItemToBundler send bundle bundleItem to bundler gateway
-func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error) {
+func (c *Client) SendItemToBundler(itemBinary []byte, gateway string) (*types.BundlerResp, error) {
+	if gateway == "" {
+		gateway = types.BUNDLER_HOST
+	}
 	// post to bundler
-	resp, err := http.DefaultClient.Post(types.BUNDLER_HOST+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
+	resp, err := http.DefaultClient.Post(gateway+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +46,7 @@ func (c *Client) SendItemToBundler(itemBinary []byte) (*types.BundlerResp, error
 	return br, nil
 }
 
-func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem) ([]*types.BundlerResp, error) {
+func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem, gateway string) ([]*types.BundlerResp, error) {
 	respList := make([]*types.BundlerResp, 0, len(bundleItems))
 	for _, item := range bundleItems {
 		itemBinary := item.ItemBinary
@@ -53,7 +56,7 @@ func (c *Client) BatchSendItemToBundler(bundleItems []types.BundleItem) ([]*type
 			}
 			itemBinary = item.ItemBinary
 		}
-		resp, err := c.SendItemToBundler(itemBinary)
+		resp, err := c.SendItemToBundler(itemBinary, gateway)
 		if err != nil {
 			return nil, err
 		}
