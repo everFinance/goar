@@ -29,7 +29,7 @@ func PrepareChunks(tx *types.Transaction, data []byte) {
 			Chunks:   make([]types.Chunk, 0),
 			Proofs:   make([]*types.Proof, 0),
 		}
-		tx.DataRoot = ""
+		// tx.DataRoot = ""
 	}
 	return
 }
