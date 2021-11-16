@@ -1,10 +1,9 @@
 package goar
 
 import (
-	"testing"
-
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 // import (
@@ -238,7 +237,7 @@ func TestClient_GetBlockFromPeers(t *testing.T) {
 
 func TestClient_GetTxFromPeers(t *testing.T) {
 	cli := NewClient("https://arweave.net")
-	arId := "uOm8Br0Phc1c2X8xIPFVZXbeSgDAoNlVhwdHEutbaP4"
+	arId := "kPKtoTyn-HVvLQ9ml12YLqrYbpbzVpp2wk_bqxUtXQs"
 	tx, err := cli.GetTxFromPeers(arId)
 	assert.NoError(t, err)
 	t.Log(tx)
