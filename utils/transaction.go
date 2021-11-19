@@ -16,7 +16,6 @@ func PrepareChunks(tx *types.Transaction, data []byte) {
 	// This function computes the chunks for the Data passed in and
 	// assigns the result to this Transaction. It should not read the
 	// Data *from* this Transaction.
-	fmt.Printf("Tx data size: %fMB \n", float64(len(data))/1024.0/1024.0)
 	if tx.Chunks == nil && len(data) > 0 {
 		chunks := GenerateChunks(data)
 		tx.Chunks = &chunks
