@@ -150,14 +150,13 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	return
 }
 
-func (w *Wallet) SendPstTransfer(contractId string, target string, qty int64, customTags []types.Tag, speedFactor int64) (string, error) {
+func (w *Wallet) SendPst(contractId string, target string, qty int64, customTags []types.Tag, speedFactor int64) (string, error) {
 	// assemble tx tags
-	txTags := make([]types.Tag, 0)
 	swcTags, err := utils.PstTransferTags(contractId, target, qty)
 	if err != nil {
 		return "", err
 	}
-	txTags = append(txTags, swcTags...)
+
 	if len(customTags) > 0 {
 		// customTags can not include pstTags
 		mmap := map[string]struct{}{
@@ -171,13 +170,13 @@ func (w *Wallet) SendPstTransfer(contractId string, target string, qty int64, cu
 				return "", errors.New("custom tags can not include smartweave tags")
 			}
 		}
-		txTags = append(txTags, customTags...)
+		swcTags = append(swcTags, customTags...)
 	}
 
 	// rand data
 	data := strconv.Itoa(rand.Intn(9999))
 	// send data tx
-	txId, err := w.SendDataSpeedUp([]byte(data), txTags, speedFactor)
+	txId, err := w.SendDataSpeedUp([]byte(data), swcTags, speedFactor)
 	if err != nil {
 		return "", err
 	}

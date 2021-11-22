@@ -116,6 +116,7 @@ arClient := goar.NewClient("https://arweave.net", proxyUrl)
 - [x] CreateAndSignBundleItem
 - [x] SendBundleTxSpeedUp
 - [x] SendBundleTx
+- [x] SendPst
 
 Initialize the instance, use a keyfile.json:
 
