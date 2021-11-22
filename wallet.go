@@ -150,9 +150,14 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	return
 }
 
-func (w *Wallet) SendPst(contractId string, target string, qty int64, customTags []types.Tag, speedFactor int64) (string, error) {
+func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (string, error) {
+	maxQty := big.NewInt(9007199254740991) // swc support max js integer
+	if qty.Cmp(maxQty) > 0 {
+		return "", fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
+	}
+
 	// assemble tx tags
-	swcTags, err := utils.PstTransferTags(contractId, target, qty)
+	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64())
 	if err != nil {
 		return "", err
 	}
