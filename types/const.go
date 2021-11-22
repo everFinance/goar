@@ -45,6 +45,6 @@ var FATAL_CHUNK_UPLOAD_ERRORS = map[string]struct{}{
 
 // about bundle
 const (
-	BUNDLER_HOST           = "http://bundler.arweave.net:10000"
+	BUNDLER_HOST           = "https://node1.bundlr.network"
 	MIN_BUNDLE_BINARY_SIZE = 1044
 )

@@ -116,6 +116,7 @@ arClient := goar.NewClient("https://arweave.net", proxyUrl)
 - [x] CreateAndSignBundleItem
 - [x] SendBundleTxSpeedUp
 - [x] SendBundleTx
+- [x] SendPst
 
 Initialize the instance, use a keyfile.json:
 
@@ -324,7 +325,7 @@ bundle, err := utils.NewBundle(items...)
 #### Send Item to Bundler
 Bundler network provides guaranteed data seeding and instant data accessibility
 ```go
-resp, err := w.Client.BatchSendItemToBundler(items)
+resp, err := w.Client.BatchSendItemToBundler(items,"") // The second parameter is the bundler gateway url，"" means use default url
 ```
 
 #### Send Bundle Tx
@@ -343,4 +344,36 @@ for _, item := range bundle.Items {
   assert.NoError(t, err)
 }
 ```
+
+### notice
+if you call `w.Client.BatchSendItemToBundler(items,"")` 
+and return `panic: send to bundler request failed; http code: 402`        
+means that you have to pay ar to the bundler service address    
+must use item signature address to transfer funds   
+
+##### how to get bundler service address?
+```go
+curl --location --request GET 'https://node1.bundlr.network/info'
+
+response:
+{
+"uptime": 275690.552536824,
+"address": "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs",
+"gateway": "arweave.net"
+}
+```
+This "address" is the bundler service receive ar address.    
+You need to transfer a certain amount of ar to this address    
+and wait for 25 blocks to confirm the transaction before you can use the bundler service.    
+
+You can also use the following api to query the balance in the bundler service.   
+```
+curl --location --request GET 'https://node1.bundlr.network/account/balance?address=Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck'
+
+response:
+{
+    "balance": 1000000000
+}
+```
+
 ---

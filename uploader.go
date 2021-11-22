@@ -10,7 +10,6 @@ import (
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/sandy_log/log"
 	"github.com/shopspring/decimal"
 )
 
@@ -40,7 +39,7 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 		return nil, errors.New("Transaction is not signed.")
 	}
 	if tt.Chunks == nil {
-		log.Warnf("Transaction chunks not perpared.")
+		log.Warn("Transaction chunks not perpared")
 	}
 	// Make a copy of Transaction, zeroing the Data so we can serialize.
 	tu := &TransactionUploader{
@@ -48,7 +47,7 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 	}
 	da, err := utils.Base64Decode(tt.Data)
 	if err != nil {
-		log.Errorf("da, err := utils.Base64Decode(tt.Data) error: %v", err)
+		log.Error("utils.Base64Decode(tt.Data)", "err", err)
 		return nil, err
 
 	}
@@ -92,7 +91,7 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 		// upload 返回为 SerializedUploader 类型
 		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
 		if err != nil {
-			log.Errorf("(&TransactionUploader{Client: api}).FromTransactionId(id) error: %v", err)
+			log.Error("(&TransactionUploader{Client: api}).FromTransactionId(id)", "err", err)
 			return nil, err
 		}
 	} else {
@@ -156,6 +155,11 @@ func (tt *TransactionUploader) PctComplete() float64 {
  * next chunk until it completes.
  */
 func (tt *TransactionUploader) UploadChunk() error {
+	defer func() {
+		if tt.TotalChunks() > 0 {
+			log.Debug("chunks", "uploads", fmt.Sprintf("%f%% completes, %d/%d", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks()))
+		}
+	}()
 	if tt.IsComplete() {
 		return errors.New("Upload is already complete.")
 	}

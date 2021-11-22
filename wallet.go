@@ -3,9 +3,12 @@ package goar
 import (
 	"crypto/rsa"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"math/rand"
+	"strconv"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -145,4 +148,42 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	}
 	err = uploader.Once()
 	return
+}
+
+func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (string, error) {
+	maxQty := big.NewInt(9007199254740991) // swc support max js integer
+	if qty.Cmp(maxQty) > 0 {
+		return "", fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
+	}
+
+	// assemble tx tags
+	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64())
+	if err != nil {
+		return "", err
+	}
+
+	if len(customTags) > 0 {
+		// customTags can not include pstTags
+		mmap := map[string]struct{}{
+			"App-Name":    {},
+			"App-Version": {},
+			"Contract":    {},
+			"Input":       {},
+		}
+		for _, tag := range customTags {
+			if _, ok := mmap[tag.Name]; ok {
+				return "", errors.New("custom tags can not include smartweave tags")
+			}
+		}
+		swcTags = append(swcTags, customTags...)
+	}
+
+	// rand data
+	data := strconv.Itoa(rand.Intn(9999))
+	// send data tx
+	txId, err := w.SendDataSpeedUp([]byte(data), swcTags, speedFactor)
+	if err != nil {
+		return "", err
+	}
+	return txId, nil
 }

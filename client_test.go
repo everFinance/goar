@@ -1,10 +1,9 @@
 package goar
 
 import (
-	"testing"
-
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 // import (
@@ -179,9 +178,9 @@ func TestClient_GetTransactionTags(t *testing.T) {
 func TestClient_GetBlockByHeight(t *testing.T) {
 	arNode := "https://arweave.net"
 	cli := NewClient(arNode)
-	block, err := cli.GetBlockByHeight(737432)
+	block, err := cli.GetBlockByHeight(793791)
 	assert.NoError(t, err)
-	assert.Equal(t, "7YeJpe53rFsEE03yKjGcBQAAw6efgVfSeGNLmPRGY4c", block.Nonce)
+	assert.Equal(t, "ci2uJhYmdldgkHbScDClCwAA0eqn7dCduAEpLfRorSA", block.Nonce)
 }
 
 func TestClient_GetTransactionDataByGateway(t *testing.T) {
@@ -227,4 +226,19 @@ func TestClient_BroadcastData(t *testing.T) {
 
 	err = cli.BroadcastData(txId, data, 20)
 	assert.NoError(t, err)
+}
+
+func TestClient_GetBlockFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	block, err := cli.GetBlockFromPeers(793755)
+	assert.NoError(t, err)
+	t.Log(block.Txs)
+}
+
+func TestClient_GetTxFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	arId := "kPKtoTyn-HVvLQ9ml12YLqrYbpbzVpp2wk_bqxUtXQs"
+	tx, err := cli.GetTxFromPeers(arId)
+	assert.NoError(t, err)
+	t.Log(tx)
 }

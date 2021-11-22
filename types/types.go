@@ -17,7 +17,7 @@ type Block struct {
 	PreviousBlock string        `json:"previous_block"`
 	Timestamp     int64         `json:"timestamp"`
 	LastRetarget  int64         `json:"last_retarget"`
-	Diff          string        `json:"diff"`
+	Diff          interface{}   `json:"diff"`
 	Height        int64         `json:"height"`
 	Hash          string        `json:"hash"`
 	IndepHash     string        `json:"indep_hash"`
