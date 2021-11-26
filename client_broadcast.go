@@ -13,9 +13,10 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64) error
 	}
 
 	count := int64(0)
+	pNode := newShortConn()
 	for _, peer := range peers {
-		arNode := NewClient("http://" + peer)
-		uploader, err := CreateUploader(arNode, txId, data)
+		pNode.setShortConnUrl("http://" + peer)
+		uploader, err := CreateUploader(pNode, txId, data)
 		if err != nil {
 			continue
 		}
@@ -38,9 +39,9 @@ func (c *Client) GetTxDataFromPeers(txId string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	pNode := newShortConn()
 	for _, peer := range peers {
-		pNode := NewClient("http://" + peer)
+		pNode.setShortConnUrl("http://" + peer)
 		data, err := pNode.DownloadChunkData(txId)
 		if err != nil {
 			log.Error("get tx data", "err", err, "peer", peer)
@@ -58,11 +59,12 @@ func (c *Client) GetBlockFromPeers(height int64) (*types.Block, error) {
 		return nil, err
 	}
 
+	pNode := newShortConn()
 	for _, peer := range peers {
-		pNode := NewClient("http://" + peer)
+		pNode.setShortConnUrl("http://" + peer)
 		block, err := pNode.GetBlockByHeight(height)
 		if err != nil {
-			fmt.Printf("get block error:%v, peer: %s\n", err, peer)
+			fmt.Printf("get block error:%v, peer: %s, height: %d\n", err, peer, height)
 			continue
 		}
 		fmt.Printf("success get block; peer: %s\n", peer)
@@ -78,14 +80,15 @@ func (c *Client) GetTxFromPeers(arId string) (*types.Transaction, error) {
 		return nil, err
 	}
 
+	pNode := newShortConn()
 	for _, peer := range peers {
-		pNode := NewClient("http://" + peer)
+		pNode.setShortConnUrl("http://" + peer)
 		tx, err := pNode.GetTransactionByID(arId)
 		if err != nil {
-			fmt.Printf("get tx error:%v, peer: %s\n", err, peer)
+			fmt.Printf("get tx error:%v, peer: %s, arTx: %s\n", err, peer, arId)
 			continue
 		}
-		fmt.Printf("success get tx; peer: %s\n", peer)
+		fmt.Printf("success get tx; peer: %s, arTx: %s\n", peer, arId)
 		return tx, nil
 	}
 

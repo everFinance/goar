@@ -44,6 +44,16 @@ func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 	return &Client{client: httpClient, url: nodeUrl}
 }
 
+func newShortConn() *Client {
+	transport := http.Transport{DisableKeepAlives: true}
+	cli := &http.Client{Transport: &transport}
+	return &Client{client: cli}
+}
+
+func (c *Client) setShortConnUrl(url string) {
+	c.url = url
+}
+
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	body, _, err := c.httpGet("info")
 	if err != nil {
