@@ -44,13 +44,13 @@ func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 	return &Client{client: httpClient, url: nodeUrl}
 }
 
-func newShortConn() *Client {
+func NewShortConn() *Client {
 	transport := http.Transport{DisableKeepAlives: true}
 	cli := &http.Client{Transport: &transport}
 	return &Client{client: cli}
 }
 
-func (c *Client) setShortConnUrl(url string) {
+func (c *Client) SetShortConnUrl(url string) {
 	c.url = url
 }
 
@@ -462,4 +462,20 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 		i += len(chunkData)
 	}
 	return data, nil
+}
+
+func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {
+	_path := fmt.Sprintf("unconfirmed_tx/%s", arId)
+	body, statusCode, err := c.httpGet(_path)
+	if statusCode != 200 {
+		return nil, errors.New("not found unconfirmed tx")
+	}
+	if err != nil {
+		return nil, err
+	}
+	tx := &types.Transaction{}
+	if err := json.Unmarshal(body, tx); err != nil {
+		return nil, err
+	}
+	return tx, nil
 }

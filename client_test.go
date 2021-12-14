@@ -237,8 +237,24 @@ func TestClient_GetBlockFromPeers(t *testing.T) {
 
 func TestClient_GetTxFromPeers(t *testing.T) {
 	cli := NewClient("https://arweave.net")
-	arId := "kPKtoTyn-HVvLQ9ml12YLqrYbpbzVpp2wk_bqxUtXQs"
+	arId := "5MiJDf2gFh4w3RXs1iXRrM9V8UwtnxX6xFATgxUqUN4"
 	tx, err := cli.GetTxFromPeers(arId)
+	assert.NoError(t, err)
+	t.Log(tx)
+}
+
+func TestClient_GetUnconfirmedTx(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	arId := "5MiJDf2gFh4w3RXs1iXRrM9V8UwtnxX6xFATgxUqUN4"
+	tx, err := cli.GetUnconfirmedTx(arId)
+	assert.NoError(t, err)
+	t.Log(tx)
+}
+
+func TestClient_GetUnconfirmedTxFromPeers(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	arId := "5MiJDf2gFh4w3RXs1iXRrM9V8UwtnxX6xFATgxUqUN4"
+	tx, err := cli.GetUnconfirmedTxFromPeers(arId)
 	assert.NoError(t, err)
 	t.Log(tx)
 }
