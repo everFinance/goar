@@ -114,7 +114,7 @@ func (tt *TransactionUploader) Once() (err error) {
 		}
 
 		if tt.LastResponseStatus != 200 {
-			return
+			return errors.New(tt.LastResponseError)
 		}
 	}
 
