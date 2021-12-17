@@ -217,15 +217,16 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, statusCode, err := tt.Client.SubmitChunks(gc)
+	body, statusCode, err := tt.Client.SubmitChunks(gc) // always body is errMsg
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
 		tt.ChunkIndex++
-	} else if err != nil {
-		tt.LastResponseError = err.Error()
-		if _, ok := types.FATAL_CHUNK_UPLOAD_ERRORS[err.Error()]; ok {
-			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.ChunkIndex, err))
+	} else {
+		errStr := fmt.Sprintf("%s,%v,%d", body, err, statusCode)
+		tt.LastResponseError = errStr
+		if _, ok := types.FATAL_CHUNK_UPLOAD_ERRORS[body]; ok {
+			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.ChunkIndex, body))
 		}
 	}
 	return nil
@@ -315,10 +316,11 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 		// Post the Transaction with Data.
 		tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	}
-	_, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
-	if err != nil {
-		tt.LastResponseError = err.Error()
-		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v", statusCode, err))
+	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
+	if err != nil || statusCode >= 400 {
+		tt.LastResponseError = fmt.Sprintf("%v,%s", err, body)
+		tt.LastResponseStatus = statusCode
+		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v, %s", statusCode, err, body))
 	}
 
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
@@ -328,6 +330,7 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 		tt.Transaction.Data = ""
 	}
 
+	// tx already processed
 	if statusCode >= 200 && statusCode < 300 {
 		tt.TxPosted = true
 		if withBody {
