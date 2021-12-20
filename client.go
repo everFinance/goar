@@ -479,3 +479,18 @@ func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {
 	}
 	return tx, nil
 }
+
+func (c *Client) GetPendingTxIds() ([]string, error) {
+	body, statusCode, err := c.httpGet("/tx/pending")
+	if statusCode != 200 {
+		return nil, errors.New("get pending txIds failed")
+	}
+	if err != nil {
+		return nil, err
+	}
+	res := make([]string, 0)
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}

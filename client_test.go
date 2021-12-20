@@ -258,3 +258,10 @@ func TestClient_GetUnconfirmedTxFromPeers(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(tx)
 }
+
+func TestNewClient(t *testing.T) {
+	cli := NewClient("https://arweave.net")
+	res, err := cli.GetPendingTxIds()
+	assert.NoError(t, err)
+	t.Log("pending tx number:", len(res))
+}
