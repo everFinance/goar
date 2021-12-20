@@ -55,9 +55,12 @@ func (c *Client) SetShortConnUrl(url string) {
 }
 
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
-	body, _, err := c.httpGet("info")
+	body, code, err := c.httpGet("info")
 	if err != nil {
 		return nil, ErrBadGateway
+	}
+	if code != 200 {
+		return nil, fmt.Errorf("get info error: %s", string(body))
 	}
 
 	info = &types.NetworkInfo{}
@@ -66,9 +69,12 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 }
 
 func (c *Client) GetPeers() ([]string, error) {
-	body, _, err := c.httpGet("peers")
+	body, code, err := c.httpGet("peers")
 	if err != nil {
 		return nil, ErrBadGateway
+	}
+	if code != 200 {
+		return nil, fmt.Errorf("get peers error: %s", string(body))
 	}
 
 	peers := make([]string, 0)
@@ -226,18 +232,33 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 		url = fmt.Sprintf("%v/%v", url, *target)
 	}
 
-	body, _, err := c.httpGet(url)
+	body, code, err := c.httpGet(url)
+	if err != nil {
+		return
+	}
+	if code != 200 {
+		return 0, fmt.Errorf("get reward error: %s", string(body))
+	}
+
+	reward, err = strconv.ParseInt(string(body), 10, 64)
 	if err != nil {
 		return
 	}
 
-	return strconv.ParseInt(string(body), 10, 64)
+	// reward can not be 0
+	if reward <= 0 {
+		err = errors.New("reward must more than 0")
+	}
+	return
 }
 
 func (c *Client) GetTransactionAnchor() (anchor string, err error) {
-	body, _, err := c.httpGet("tx_anchor")
+	body, code, err := c.httpGet("tx_anchor")
 	if err != nil {
 		return
+	}
+	if code != 200 {
+		return "", fmt.Errorf("get tx anchor err: %s", string(body))
 	}
 
 	anchor = string(body)
@@ -308,9 +329,12 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 
 // Wallet
 func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
+	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
 	if err != nil {
 		return
+	}
+	if code != 200 {
+		return nil, fmt.Errorf("get balance error: %s", string(body))
 	}
 
 	winstomStr := string(body)
@@ -325,9 +349,12 @@ func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err erro
 }
 
 func (c *Client) GetLastTransactionID(address string) (id string, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("wallet/%s/last_tx", address))
+	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/last_tx", address))
 	if err != nil {
 		return
+	}
+	if code != 200 {
+		return "", fmt.Errorf("get last id error: %s", string(body))
 	}
 
 	id = string(body)
@@ -336,22 +363,28 @@ func (c *Client) GetLastTransactionID(address string) (id string, err error) {
 
 // Block
 func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("block/hash/%s", id))
+	body, code, err := c.httpGet(fmt.Sprintf("block/hash/%s", id))
 	if err != nil {
 		return
 	}
 
+	if code != 200 {
+		return nil, fmt.Errorf("get block by id error: %s", string(body))
+	}
 	block = &types.Block{}
 	err = json.Unmarshal(body, block)
 	return
 }
 
 func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) {
-	body, _, err := c.httpGet(fmt.Sprintf("block/height/%d", height))
+	body, code, err := c.httpGet(fmt.Sprintf("block/height/%d", height))
 	if err != nil {
 		return
 	}
 
+	if code != 200 {
+		return nil, fmt.Errorf("get block by height error: %s", string(body))
+	}
 	block = &types.Block{}
 	err = json.Unmarshal(body, block)
 	return
