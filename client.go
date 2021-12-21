@@ -44,7 +44,7 @@ func NewClient(nodeUrl string, proxyUrl ...string) *Client {
 	return &Client{client: httpClient, url: nodeUrl}
 }
 
-func NewShortConn() *Client {
+func NewTempConn() *Client {
 	transport := http.Transport{DisableKeepAlives: true}
 	cli := &http.Client{Transport: &transport}
 	return &Client{client: cli}

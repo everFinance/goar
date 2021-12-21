@@ -16,7 +16,7 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers
 	}
 
 	count := int64(0)
-	pNode := NewShortConn()
+	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetShortConnUrl("http://" + peer)
 		uploader, err := CreateUploader(pNode, txId, data)
@@ -46,7 +46,7 @@ func (c *Client) GetTxDataFromPeers(txId string, peers ...string) ([]byte, error
 		}
 	}
 
-	pNode := NewShortConn()
+	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetShortConnUrl("http://" + peer)
 		data, err := pNode.DownloadChunkData(txId)
@@ -69,7 +69,7 @@ func (c *Client) GetBlockFromPeers(height int64, peers ...string) (*types.Block,
 		}
 	}
 
-	pNode := NewShortConn()
+	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetShortConnUrl("http://" + peer)
 		block, err := pNode.GetBlockByHeight(height)
@@ -93,7 +93,7 @@ func (c *Client) GetTxFromPeers(arId string, peers ...string) (*types.Transactio
 		}
 	}
 
-	pNode := NewShortConn()
+	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetShortConnUrl("http://" + peer)
 		tx, err := pNode.GetTransactionByID(arId)
@@ -117,7 +117,7 @@ func (c *Client) GetUnconfirmedTxFromPeers(arId string, peers ...string) (*types
 		}
 	}
 
-	pNode := NewShortConn()
+	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetShortConnUrl("http://" + peer)
 		tx, err := pNode.GetUnconfirmedTx(arId)
