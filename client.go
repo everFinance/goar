@@ -50,7 +50,7 @@ func NewTempConn() *Client {
 	return &Client{client: cli}
 }
 
-func (c *Client) SetShortConnUrl(url string) {
+func (c *Client) SetTempConnUrl(url string) {
 	c.url = url
 }
 
