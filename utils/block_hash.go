@@ -61,7 +61,7 @@ func generateBlockDataSegmentBase(b types.Block) []byte {
 	} else {
 		props = append(props, b.RewardAddr)
 	}
-	props = append(props, b.Tags) // todo tags need encode_tags
+	props = append(props, b.Tags)
 
 	endProps := make([]interface{}, 0)
 	if b.Height >= height_2_4 {
