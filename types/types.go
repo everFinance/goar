@@ -1,5 +1,9 @@
 package types
 
+import (
+	"encoding/json"
+)
+
 type NetworkInfo struct {
 	Network          string `json:"network"`
 	Version          int64  `json:"version"`
@@ -39,6 +43,23 @@ type Block struct {
 	ScheduledUsdToArRate     []string      `json:"scheduled_usd_to_ar_rate"`
 	Packing25Threshold       string        `json:"packing_2_5_threshold"`
 	StrictDataSplitThreshold string        `json:"strict_data_split_threshold"`
+}
+
+func (b *Block) Format() {
+	if _, ok := b.RewardPool.(string); !ok {
+		by, _ := json.Marshal(b.RewardPool)
+		b.RewardPool = string(by)
+	}
+
+	if _, ok := b.WeaveSize.(string); !ok {
+		by, _ := json.Marshal(b.WeaveSize)
+		b.WeaveSize = string(by)
+	}
+
+	if _, ok := b.BlockSize.(string); !ok {
+		by, _ := json.Marshal(b.BlockSize)
+		b.BlockSize = string(by)
+	}
 }
 
 type POA struct {

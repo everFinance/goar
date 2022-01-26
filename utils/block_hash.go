@@ -1,16 +1,23 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"github.com/everFinance/goar/types"
 )
 
 const (
+	height_2_0 = int64(422250)
 	height_2_4 = int64(633720)
 	height_2_5 = int64(812970)
 )
 
-func IndepHash(b types.Block) []byte {
+func IndepHash(b types.Block) ([]byte, error) {
+	if b.Height < height_2_0 {
+		return nil, errors.New("block height must more than 422250(arweave_2.0)")
+	}
+
+	b.Format()
 	bds := generateBlockDataSegment(b)
 	list := make([]interface{}, 0)
 	list = append(list, Base64Encode(bds))
@@ -20,7 +27,7 @@ func IndepHash(b types.Block) []byte {
 		list = append(list, poaToList(b.Poa))
 	}
 	hash := DeepHash(list)
-	return hash[:]
+	return hash[:], nil
 }
 
 func generateBlockDataSegment(b types.Block) []byte {
