@@ -51,7 +51,6 @@ func (c *Client) GetTxDataFromPeers(txId string, peers ...string) ([]byte, error
 		pNode.SetTempConnUrl("http://" + peer)
 		data, err := pNode.DownloadChunkData(txId)
 		if err != nil {
-			log.Error("get tx data", "err", err, "peer", peer)
 			continue
 		}
 		return data, nil
@@ -74,7 +73,6 @@ func (c *Client) GetBlockFromPeers(height int64, peers ...string) (*types.Block,
 		pNode.SetTempConnUrl("http://" + peer)
 		block, err := pNode.GetBlockByHeight(height)
 		if err != nil {
-			fmt.Printf("get block error:%v, peer: %s, height: %d\n", err, peer, height)
 			continue
 		}
 		fmt.Printf("success get block; peer: %s\n", peer)
@@ -98,7 +96,6 @@ func (c *Client) GetTxFromPeers(arId string, peers ...string) (*types.Transactio
 		pNode.SetTempConnUrl("http://" + peer)
 		tx, err := pNode.GetTransactionByID(arId)
 		if err != nil {
-			fmt.Printf("get tx error:%v, peer: %s, arTx: %s\n", err, peer, arId)
 			continue
 		}
 		fmt.Printf("success get tx; peer: %s, arTx: %s\n", peer, arId)
@@ -122,7 +119,6 @@ func (c *Client) GetUnconfirmedTxFromPeers(arId string, peers ...string) (*types
 		pNode.SetTempConnUrl("http://" + peer)
 		tx, err := pNode.GetUnconfirmedTx(arId)
 		if err != nil {
-			fmt.Printf("get tx error:%v, peer: %s, arTx: %s\n", err, peer, arId)
 			continue
 		}
 		fmt.Printf("success get unconfirmed tx; peer: %s, arTx: %s\n", peer, arId)
