@@ -527,3 +527,19 @@ func (c *Client) GetPendingTxIds() ([]string, error) {
 	}
 	return res, nil
 }
+
+func (c *Client) GetBlockHashList() ([]string, error) {
+	body, statusCode, err := c.httpGet("/hash_list")
+	if statusCode != 200 {
+		return nil, errors.New("get block hash list failed")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]string, 0)
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
