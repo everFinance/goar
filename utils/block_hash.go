@@ -12,7 +12,7 @@ const (
 	height_2_5 = int64(812970)
 )
 
-func IndepHash(b types.Block) ([]byte, error) {
+func GenerateIndepHash(b types.Block) ([]byte, error) {
 	if b.Height < height_2_0 {
 		return nil, errors.New("block height must more than 422250(arweave_2.0)")
 	}
