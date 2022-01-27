@@ -1,7 +1,6 @@
 package example
 
 import (
-	"encoding/json"
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
@@ -48,15 +47,4 @@ func TestIndepHash(t *testing.T) {
 	assert.NoError(t, err)
 	indepHash = utils.GenerateIndepHash(*b)
 	assert.Equal(t, "R58RTTzEKmSyaqhRik4fvl9AkN3g98QEntvZuoly02uwm8J4fZbcvgv9wEEgN5Ne", indepHash)
-}
-
-func Test_aaa(t *testing.T) {
-	cli := goar.NewClient("https://arweave.net", "http://127.0.0.1:8001")
-	list, err := cli.GetBlockHashList()
-	assert.NoError(t, err)
-	t.Log(len(list))
-	t.Log(list[0])
-	by, err := json.Marshal(list)
-	assert.NoError(t, err)
-	t.Log(len(by))
 }
