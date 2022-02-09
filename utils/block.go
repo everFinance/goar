@@ -12,7 +12,7 @@ const (
 )
 
 func GenerateIndepHash(b types.Block) string {
-	if b.Height < height_2_0 {
+	if b.Height < height_2_0 { // not support arweave v1.0
 		return b.IndepHash
 	}
 

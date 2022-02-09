@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strings"
 )
 
 type NetworkInfo struct {
@@ -60,6 +61,13 @@ func (b *Block) Format() {
 		by, _ := json.Marshal(b.BlockSize)
 		b.BlockSize = string(by)
 	}
+}
+
+func (b *Block) Unmarshal(body string) error {
+	// json unmarshal exist number precision problem
+	decoder := json.NewDecoder(strings.NewReader(body))
+	decoder.UseNumber()
+	return decoder.Decode(b)
 }
 
 type POA struct {

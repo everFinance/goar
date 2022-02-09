@@ -372,10 +372,7 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 		return nil, fmt.Errorf("get block by id error: %s", string(body))
 	}
 	block = &types.Block{}
-	// json unmarshal exist number precision problem
-	decoder := json.NewDecoder(strings.NewReader(string(body)))
-	decoder.UseNumber()
-	err = decoder.Decode(block)
+	err = block.Unmarshal(string(body))
 	return
 }
 
@@ -389,10 +386,7 @@ func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) 
 		return nil, fmt.Errorf("get block by height error: %s", string(body))
 	}
 	block = &types.Block{}
-	// json unmarshal exist number precision problem
-	decoder := json.NewDecoder(strings.NewReader(string(body)))
-	decoder.UseNumber()
-	err = decoder.Decode(block)
+	err = block.Unmarshal(string(body))
 	return
 }
 
