@@ -371,8 +371,7 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 	if code != 200 {
 		return nil, fmt.Errorf("get block by id error: %s", string(body))
 	}
-	block = &types.Block{}
-	err = json.Unmarshal(body, block)
+	block, err = utils.DecodeBlock(string(body))
 	return
 }
 
@@ -385,8 +384,7 @@ func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) 
 	if code != 200 {
 		return nil, fmt.Errorf("get block by height error: %s", string(body))
 	}
-	block = &types.Block{}
-	err = json.Unmarshal(body, block)
+	block, err = utils.DecodeBlock(string(body))
 	return
 }
 
@@ -521,6 +519,22 @@ func (c *Client) GetPendingTxIds() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	res := make([]string, 0)
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (c *Client) GetBlockHashList() ([]string, error) {
+	body, statusCode, err := c.httpGet("/hash_list")
+	if statusCode != 200 {
+		return nil, errors.New("get block hash list failed")
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	res := make([]string, 0)
 	if err := json.Unmarshal(body, &res); err != nil {
 		return nil, err
