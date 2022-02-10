@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/everFinance/goar/types"
+	"strings"
 )
 
 const (
@@ -16,7 +18,6 @@ func GenerateIndepHash(b types.Block) string {
 		return b.IndepHash
 	}
 
-	b.Format()
 	bds := generateBlockDataSegment(b)
 	list := make([]interface{}, 0)
 	list = append(list, Base64Encode(bds))
@@ -95,5 +96,35 @@ func poaToList(poa types.POA) []string {
 		poa.TxPath,
 		poa.DataPath,
 		poa.Chunk,
+	}
+}
+
+func DecodeBlock(body string) (*types.Block, error) {
+	b := &types.Block{}
+	// json unmarshal exist number precision problem
+	decoder := json.NewDecoder(strings.NewReader(body))
+	decoder.UseNumber()
+	err := decoder.Decode(b)
+	if err != nil {
+		return nil, err
+	}
+	formatBlockFields(b)
+	return b, err
+}
+
+func formatBlockFields(b *types.Block) {
+	if _, ok := b.RewardPool.(string); !ok {
+		by, _ := json.Marshal(b.RewardPool)
+		b.RewardPool = string(by)
+	}
+
+	if _, ok := b.WeaveSize.(string); !ok {
+		by, _ := json.Marshal(b.WeaveSize)
+		b.WeaveSize = string(by)
+	}
+
+	if _, ok := b.BlockSize.(string); !ok {
+		by, _ := json.Marshal(b.BlockSize)
+		b.BlockSize = string(by)
 	}
 }

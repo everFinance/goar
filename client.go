@@ -371,8 +371,7 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 	if code != 200 {
 		return nil, fmt.Errorf("get block by id error: %s", string(body))
 	}
-	block = &types.Block{}
-	err = block.Unmarshal(string(body))
+	block, err = utils.DecodeBlock(string(body))
 	return
 }
 
@@ -385,8 +384,7 @@ func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) 
 	if code != 200 {
 		return nil, fmt.Errorf("get block by height error: %s", string(body))
 	}
-	block = &types.Block{}
-	err = block.Unmarshal(string(body))
+	block, err = utils.DecodeBlock(string(body))
 	return
 }
 
