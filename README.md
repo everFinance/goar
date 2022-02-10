@@ -93,6 +93,9 @@ fmt.Println(id, err) // {{id}}, nil
 - [x] GetBundle
 - [x] GetTxDataFromPeers
 - [x] BroadcastData
+- [x] GetUnconfirmedTx
+- [x] GetPendingTxIds
+- [x] GetBlockHashList
 
 Initialize the instance:
 
@@ -149,6 +152,7 @@ Package for Arweave develop toolkit.
 - [x] GetSignatureData
 - [x] VerifyTransaction
 - [x] NewBundle
+- [x] GenerateIndepHash
 
 #### RSA Threshold Cryptography
 
