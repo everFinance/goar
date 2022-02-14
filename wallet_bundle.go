@@ -40,8 +40,11 @@ func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSp
 
 	txTags := make([]types.Tag, 0)
 	txTags = append(bundleTags, tags...)
-	txId, err = w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
-	return
+	sentTx, err := w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
+	if err != nil {
+		return "", err
+	}
+	return sentTx.ID, err
 }
 
 func (w *Wallet) SendBundleTx(bundleBinary []byte, tags []types.Tag) (txId string, err error) {
