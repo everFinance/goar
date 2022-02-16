@@ -103,13 +103,13 @@ func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (id string, err error) {
+func (w *Wallet) SendData(data []byte, tags []types.Tag) (tx types.Transaction, err error) {
 	return w.SendDataSpeedUp(data, tags, 0)
 }
 
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (id string, err error) {
+func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (signedTx types.Transaction, err error) {
 	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
 		return
@@ -125,7 +125,9 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
-	return w.SendTransaction(tx)
+	_, err = w.SendTransaction(tx)
+	signedTx = *tx
+	return
 }
 
 // SendTransaction: if send success, should return pending
@@ -150,16 +152,16 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
 	return
 }
 
-func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (string, error) {
+func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {
 	maxQty := big.NewInt(9007199254740991) // swc support max js integer
 	if qty.Cmp(maxQty) > 0 {
-		return "", fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
+		return types.Transaction{}, fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
 	}
 
 	// assemble tx tags
 	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64())
 	if err != nil {
-		return "", err
+		return types.Transaction{}, err
 	}
 
 	if len(customTags) > 0 {
@@ -172,7 +174,7 @@ func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customT
 		}
 		for _, tag := range customTags {
 			if _, ok := mmap[tag.Name]; ok {
-				return "", errors.New("custom tags can not include smartweave tags")
+				return types.Transaction{}, errors.New("custom tags can not include smartweave tags")
 			}
 		}
 		swcTags = append(swcTags, customTags...)
@@ -181,9 +183,5 @@ func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customT
 	// rand data
 	data := strconv.Itoa(rand.Intn(9999))
 	// send data tx
-	txId, err := w.SendDataSpeedUp([]byte(data), swcTags, speedFactor)
-	if err != nil {
-		return "", err
-	}
-	return txId, nil
+	return w.SendDataSpeedUp([]byte(data), swcTags, speedFactor)
 }

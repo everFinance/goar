@@ -106,8 +106,8 @@ func Test_SendPstTransfer(t *testing.T) {
 	//
 	// contractId := "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A"
 	// target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
-	// qty := int64(1)
-	// arId, err := w.SendPstTransfer(contractId,target,qty,nil,50)
+	// qty := big.NewInt(1)
+	// arTx, err := w.SendPst(contractId,target,qty,nil,50)
 	// assert.NoError(t, err)
-	// t.Log(arId)
+	// t.Log(arTx.ID)
 }
