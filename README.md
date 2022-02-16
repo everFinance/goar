@@ -41,7 +41,7 @@ func main() {
 #### Send Data
 
 ```golang
-id, err := wallet.SendData(
+tx, err := wallet.SendData(
   []byte("123"), // Data bytes
   []types.Tag{
     types.Tag{
@@ -60,7 +60,7 @@ Arweave occasionally experiences congestion, and a low Reward can cause a transa
 
 ```golang
 speedUp := int64(50) // means reward = reward * 150%
-id, err := wallet.SendDataSpeedUp(
+tx, err := wallet.SendDataSpeedUp(
   []byte("123"), // Data bytes
   []types.Tag{
     types.Tag{
