@@ -33,11 +33,27 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 }
 
+//Ar using pss padding model with random salt [in goar using io random data] to calculate the signature,
+//which will causing the signature result not the same with last time if we reopen the test.
 func TestPubKey(t *testing.T) {
 	pubKey := testWallet.PubKey
 	assert.Equal(t, "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E", base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes()))
+
+	var dataStr string = "123"
+	var msg []byte = []byte(dataStr)
+	sig, err := utils.Sign(msg[:], testWallet.PrvKey)
+	fmt.Println(utils.Base64Encode(sig))
+	assert.NoError(t, err)
+
+	var signature2 = "krJK1HZgBF89tQwg3zuDifZMKBJB2BRXGWRWZZ-KnW02ep_RnT8-LcBeWZfd_QhjdSf4Z5JEtJL0UuGOreUW5e3S0Jo314Dv3y8wj9E1DAu5ANSAnRiaoEc_5SRsAqWYA3SuGgHdxMzJhhuXQpWG4S_e_EvKG-oLqIN1K6eLPfr7zqbCf6zz28HbByCk6zxqRFv-rArbUX0ALF3e2tAYCkT4Jy9Gx2ZLEyD0UP8pB-xbv8VSHkgrjbPEn9o83Zih4sCkVgg-X1t27Wlp2_uslGdCmXTjQp8F1Il1l9Wppteburkipc6JMG9HPW_N9IC68MFl_ikQgvDGZm3-3UYpQtn4hDSmrEuWYeD1TQELyt45M9A4sCm-WXgwoXWaHtRI2rvV1LHaOsIrFe2uYEjxMVIG_8JpnNAxgubdVf7I1znkrAvXdPbENM7pn59Q3eJiiTCwth1xaVPRdHZX4WM9UnAYa6yab5Oqcf_ZYZXMwgX4x0DzbCO1R19oxGUZe-ENJuj7yH0KHl5J9NaNbJ_dqLEq_bGXvtX3UgBxUhVxTpd6McEpgtJVTq7NHzeOxnIzfcyyB_AG0ev97Z-Dt1t8LvhMzr7A5hzSTbebYefHToXB4V_rBj6t7v-gP5GSe_anzKSWZ1VdfDovet0Wk9AjKp0t8QkM8_-g-E96Gth6-ik"
+	var sign2byte []byte = []byte(signature2)
+	err2 := utils.Verify(msg[:], testWallet.PubKey, sign2byte)
+	if err2 != nil {
+		fmt.Println("verify fail..")
+	}
 }
 
 func TestAddress(t *testing.T) {
@@ -59,6 +75,25 @@ func TestWallet_SendAR(t *testing.T) {
 	// id,  err := w.SendAR(amount, target, tags)
 	// assert.NoError(t, err)
 	// t.Logf("tx hash: %s \n", id)
+}
+
+func TestWallet_GetTransactionData(t *testing.T) {
+
+	tx := &types.Transaction{
+		Owner:    "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E",
+		LastTx:   "HyYuIY8U1vfB2Kyv2Y9tBo_B7CG3kZNd4uk7OKthfVR7nYmpHJN49OAS-e080ooF",
+		Format:   2,
+		ID:       "",
+		Target:   "3vS0v6eUuu9IJohjb_NY_9KTQPPZvksEBno9rarfj5Q",
+		Quantity: "1000000000",
+		Data:     "",
+		DataSize: "0",
+		Reward:   "731880",
+	}
+
+	signData, _ := utils.GetSignatureData(tx)
+	fmt.Println("-----------------------------")
+	fmt.Println(utils.Base64Encode(signData))
 }
 
 // test send small size file

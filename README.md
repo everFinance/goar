@@ -377,3 +377,9 @@ response:
 ```
 
 ---
+
+
+#about nodes
+the offical node arweave.org is closed with error log, which will always return simple error, without detail hint.
+we can go to https://viewblock.io/arweave/nodes to change a normal node, if the node is with log open, the client api
+result will return with more info.
