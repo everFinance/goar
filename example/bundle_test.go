@@ -63,9 +63,9 @@ func TestBundle_SendBundleTx(t *testing.T) {
 	bd, err := utils.NewBundle(items...)
 	assert.NoError(t, err)
 
-	txId, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
+	signedTx, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
 	assert.NoError(t, err)
-	t.Log(txId)
+	t.Log(signedTx.ID)
 }
 
 func TestVerifyBundleItem(t *testing.T) {

@@ -88,7 +88,7 @@ func Test_Arq(t *testing.T) {
 	t.Log(ids)
 }
 
-func Test_SendFormat1Tx(t *testing.T) {
+func Test_SendFormatTx(t *testing.T) {
 	// arNode := "https://arweave.net"
 	// wallet, err := goar.NewWalletFromPath("./testKey.json", arNode)
 	// assert.NoError(t, err)

@@ -178,27 +178,30 @@ func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
 	return tags, nil
 }
 
-func (c *Client) GetTransactionData(id string, extension ...string) (body []byte, err error) {
+func (c *Client) GetTransactionData(id string, extension ...string) ([]byte, error) {
 	urlPath := fmt.Sprintf("tx/%v/%v", id, "data")
 	if extension != nil {
 		urlPath = urlPath + "." + extension[0]
 	}
-	body, statusCode, err := c.httpGet(urlPath)
+	data, statusCode, err := c.httpGet(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("httpGet error: %v", err)
+	}
 
 	// When data is bigger than 12MiB statusCode == 400 NOTE: Data bigger than that has to be downloaded chunk by chunk.
-	if statusCode == 400 {
-		body, err = c.DownloadChunkData(id)
-		return
-	} else if statusCode == 200 {
-		if len(body) == 0 {
+	switch statusCode {
+	case 200:
+		if len(data) == 0 {
 			return c.DownloadChunkData(id)
 		}
-		return body, nil
-	} else if statusCode == 202 {
+		return data, nil
+	case 400:
+		return c.DownloadChunkData(id)
+	case 202:
 		return nil, ErrPendingTx
-	} else if statusCode == 404 {
+	case 404:
 		return nil, ErrNotFound
-	} else {
+	default:
 		return nil, ErrBadGateway
 	}
 }
