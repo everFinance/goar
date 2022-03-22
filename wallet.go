@@ -72,22 +72,22 @@ func (w *Wallet) Owner() string {
 	return utils.Base64Encode(w.PubKey.N.Bytes())
 }
 
-func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (id string, err error) {
+func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (types.Transaction, error) {
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, 0)
 }
 
-func (w *Wallet) SendARSpeedUp(amount *big.Float, target string, tags []types.Tag, speedFactor int64) (id string, err error) {
+func (w *Wallet) SendARSpeedUp(amount *big.Float, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, speedFactor)
 }
 
-func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (id string, err error) {
+func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (types.Transaction, error) {
 	return w.SendWinstonSpeedUp(amount, target, tags, 0)
 }
 
-func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (id string, err error) {
+func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
 	reward, err := w.Client.GetTransactionPrice(nil, &target)
 	if err != nil {
-		return
+		return types.Transaction{}, err
 	}
 
 	tx := &types.Transaction{
@@ -103,16 +103,16 @@ func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (tx types.Transaction, err error) {
+func (w *Wallet) SendData(data []byte, tags []types.Tag) (types.Transaction, error) {
 	return w.SendDataSpeedUp(data, tags, 0)
 }
 
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (signedTx types.Transaction, err error) {
+func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
 	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
-		return
+		return types.Transaction{}, err
 	}
 
 	tx := &types.Transaction{
@@ -125,31 +125,27 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
-	_, err = w.SendTransaction(tx)
-	signedTx = *tx
-	return
+	return w.SendTransaction(tx)
 }
 
 // SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(tx *types.Transaction) (id string, err error) {
+func (w *Wallet) SendTransaction(tx *types.Transaction) (types.Transaction, error) {
 	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
-		return
+		return types.Transaction{}, err
 	}
 	tx.LastTx = anchor
 	tx.Owner = w.Owner()
 	if err = utils.SignTransaction(tx, w.PrvKey); err != nil {
-		return
+		return types.Transaction{}, err
 	}
-
-	id = tx.ID
 
 	uploader, err := CreateUploader(w.Client, tx, nil)
 	if err != nil {
-		return
+		return types.Transaction{}, err
 	}
 	err = uploader.Once()
-	return
+	return *tx, err
 }
 
 func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {

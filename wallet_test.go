@@ -56,9 +56,9 @@ func TestWallet_SendAR(t *testing.T) {
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},
 	// }
-	// id,  err := w.SendAR(amount, target, tags)
+	// tx,  err := w.SendAR(amount, target, tags)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s \n", id)
+	// t.Logf("tx hash: %s \n", tx.ID)
 }
 
 // test send small size file
@@ -75,9 +75,9 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "SMDT"},
 	// }
-	// id, err := w.SendDataSpeedUp(data, tags, 50)
+	// tx, err := w.SendDataSpeedUp(data, tags, 50)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s", id)
+	// t.Logf("tx hash: %s", tx.ID)
 }
 
 // test send big size file
@@ -95,9 +95,9 @@ func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// 	{Name: "Sender", Value: "Jie"},
 	// 	{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
 	// }
-	// id, err := w.SendDataSpeedUp(data, tags, 10)
+	// tx, err := w.SendDataSpeedUp(data, tags, 10)
 	// assert.NoError(t, err)
-	// t.Logf("tx hash: %s", id)
+	// t.Logf("tx hash: %s", tx.ID)
 }
 
 func Test_SendPstTransfer(t *testing.T) {

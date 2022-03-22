@@ -22,7 +22,7 @@ func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target 
 	return *bundleItem, nil
 }
 
-func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSpeed int64) (txId string, err error) {
+func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSpeed int64) (types.Transaction, error) {
 	bundleTags := []types.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
 		{Name: "Bundle-Version", Value: "2.0.0"},
@@ -34,19 +34,15 @@ func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSp
 	}
 	for _, tag := range tags {
 		if _, ok := mmap[tag.Name]; ok {
-			return "", errors.New("tags can not set bundleTags")
+			return types.Transaction{}, errors.New("tags can not set bundleTags")
 		}
 	}
 
 	txTags := make([]types.Tag, 0)
 	txTags = append(bundleTags, tags...)
-	sentTx, err := w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
-	if err != nil {
-		return "", err
-	}
-	return sentTx.ID, err
+	return w.SendDataSpeedUp(bundleBinary, txTags, txSpeed)
 }
 
-func (w *Wallet) SendBundleTx(bundleBinary []byte, tags []types.Tag) (txId string, err error) {
+func (w *Wallet) SendBundleTx(bundleBinary []byte, tags []types.Tag) (types.Transaction, error) {
 	return w.SendBundleTxSpeedUp(bundleBinary, tags, 0)
 }

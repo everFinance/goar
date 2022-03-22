@@ -26,14 +26,14 @@ func main() {
 		panic(err)
 	}
 
-	id, err := wallet.SendAR(
+	signedTx, err := wallet.SendAR(
   //id, err := wallet.SendWinston( 
 		big.NewFloat(1.0), // AR amount
 		{{target}}, // target address
 		[]types.Tag{},
 	)
 
-	fmt.Println(id, err) // {{id}}, nil
+	fmt.Println(signedTx.ID, err)
 }
 
 ```
@@ -69,7 +69,7 @@ tx, err := wallet.SendDataSpeedUp(
     },
   },speedUp)
 
-fmt.Println(id, err) // {{id}}, nil
+fmt.Println(tx.ID, err)
 ```
 ### Components
 
@@ -334,7 +334,7 @@ resp, err := w.Client.BatchSendItemToBundler(items,"") // The second parameter i
 
 #### Send Bundle Tx
 ```go
-txId, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
+tx, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
 ```
 
 #### Get Bundle and Verify
