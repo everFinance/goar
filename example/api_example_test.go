@@ -1,8 +1,6 @@
 package example
 
 import (
-	"github.com/everFinance/goar/types"
-	"io/ioutil"
 	"testing"
 
 	"github.com/everFinance/goar"
@@ -132,31 +130,4 @@ func Test_SendFormatTx(t *testing.T) {
 	// t.Log(status, code)
 	// t.Log("from: ",wallet.Address)
 	// t.Log("txHash: ", tx.ID)
-}
-
-func Test_SendData(t *testing.T) {
-	arNode := "https://arweave.net"
-	w, err := goar.NewWalletFromPath("./wallet/account1.json", arNode) // your wallet private key
-	assert.NoError(t, err)
-
-	data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/abc.jpeg") // local file path
-	if err != nil {
-		panic(err)
-	}
-	tags := []types.Tag{
-		{Name: "Sender", Value: "Jie"},
-		{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
-	}
-	tx, err := w.SendDataSpeedUp(data, tags, 10)
-	assert.NoError(t, err)
-	t.Logf("tx hash: %s", tx.ID)
-}
-
-func Test_LoadData(t *testing.T) {
-	arCli := goar.NewClient("https://arweave.net")
-
-	arId := "r90Z_PuhD-louq6uzLTI-xWMfB5TzIti30o7QvW-6A4"
-	data, err := arCli.GetTransactionData(arId)
-	assert.NoError(t, err)
-	t.Log(len(data))
 }
