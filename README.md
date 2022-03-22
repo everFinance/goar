@@ -26,14 +26,14 @@ func main() {
 		panic(err)
 	}
 
-	signedTx, err := wallet.SendAR(
+	tx, err := wallet.SendAR(
   //id, err := wallet.SendWinston( 
 		big.NewFloat(1.0), // AR amount
 		{{target}}, // target address
 		[]types.Tag{},
 	)
 
-	fmt.Println(signedTx.ID, err)
+	fmt.Println(tx.ID, err)
 }
 
 ```
