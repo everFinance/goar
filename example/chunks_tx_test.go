@@ -51,13 +51,14 @@ func assemblyDataTx(bigData []byte, wallet *goar.Wallet, tags []types.Tag) (*typ
 		return nil, err
 	}
 	tx.LastTx = anchor
-	tx.Owner = utils.Base64Encode(wallet.PubKey.N.Bytes())
+	tx.Owner = wallet.Owner()
 
 	signData, err := utils.GetSignatureData(tx)
 	if err != nil {
 		return nil, err
 	}
-	sign, err := utils.Sign(signData, wallet.PrvKey)
+
+	sign, err := wallet.Signer.SignMsg(signData)
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +173,9 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 }
 
 func Test_aa(t *testing.T) {
-	t.Log("address: ", wallet.Address)
+	t.Log("address: ", wallet.Signer.Address)
 
-	ownerBy := wallet.PubKey.N.Bytes()
+	ownerBy := wallet.Signer.PubKey.N.Bytes()
 	t.Log("length: ", len(ownerBy))
 	owner := utils.Base64Encode(ownerBy)
 	t.Log("owner:", owner)

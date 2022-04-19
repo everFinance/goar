@@ -57,19 +57,7 @@ func NewSigner(b []byte) (*Signer, error) {
 }
 
 func (s *Signer) SignTx(tx *types.Transaction) error {
-	signData, err := utils.GetSignatureData(tx)
-	if err != nil {
-		return err
-	}
-	sig, err := utils.Sign(signData, s.PrvKey)
-	if err != nil {
-		return err
-	}
-
-	txId := sha256.Sum256(sig)
-	tx.ID = utils.Base64Encode(txId[:])
-	tx.Signature = utils.Base64Encode(sig)
-	return nil
+	return utils.SignTransaction(tx, s.PrvKey)
 }
 
 func (s *Signer) Owner() string {
