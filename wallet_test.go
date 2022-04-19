@@ -36,22 +36,22 @@ func init() {
 }
 
 func TestPubKey(t *testing.T) {
-	pubKey := testWallet.PubKey
+	pubKey := testWallet.Signer.PubKey
 	assert.Equal(t, "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E", base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes()))
 }
 
 func TestAddress(t *testing.T) {
-	addr := testWallet.Address
+	addr := testWallet.Signer.Address
 	assert.Equal(t, "eIgnDk4vSKPe0lYB6yhCHDV1dOw3JgYHGocfj7WGrjQ", addr)
 }
 
 // test sand ar without data
 func TestWallet_SendAR(t *testing.T) {
 	// arNode := "https://arweave.net"
-	// w, err := NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
+	// w, err := NewWalletFromPath("./example/testKey.json", arNode) // your wallet private key
 	// assert.NoError(t, err)
 	//
-	// target := "Goueytjwney8mRqbWBwuxbk485svPUWxFQojteZpTx8"
+	// target := "cSYOy8-p1QFenktkDBFyRM3cwZSTrQ_J4EsELLho_UE"
 	// amount := big.NewFloat(0.001)
 	// tags := []types.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},

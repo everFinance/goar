@@ -11,7 +11,7 @@ import (
 func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.BundleItem, err error) {
 	bundleItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
 	// sign
-	err = utils.SignBundleItem(bundleItem, w.PrvKey)
+	err = utils.SignBundleItem(bundleItem, w.Signer.PrvKey)
 	if err != nil {
 		return di, err
 	}

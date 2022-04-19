@@ -131,6 +131,16 @@ proxyUrl := "http://127.0.0.1:8001"
 arWallet := NewWalletFromPath("./keyfile.json", "https://arweave.net", proxyUrl)
 ```
 
+#### Signer
+
+- [x] SignTx
+- [x] SignMsg
+- [x] Owner
+
+```golang
+signer := goar.NewSignerFromPath("./keyfile.json")
+```
+
 #### Utils
 
 Package for Arweave develop toolkit.
@@ -241,7 +251,7 @@ tx := &types.Transaction{
 tx.LastTx = anchor
 tx.Owner = utils.Base64Encode(w.PubKey.N.Bytes())
 
-if err = utils.SignTransaction(tx, w.PubKey, w.PrvKey); err != nil {
+if err = utils.SignTransaction(tx, w.PubKey, w.Signer.PrvKey); err != nil {
   return
 }
 

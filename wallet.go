@@ -1,8 +1,6 @@
 package goar
 
 import (
-	"crypto/rsa"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,14 +10,11 @@ import (
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/gojwk"
 )
 
 type Wallet struct {
-	Client  *Client
-	PubKey  *rsa.PublicKey
-	PrvKey  *rsa.PrivateKey
-	Address string
+	Client *Client
+	Signer *Signer
 }
 
 // proxyUrl: option
@@ -33,43 +28,21 @@ func NewWalletFromPath(path string, clientUrl string, proxyUrl ...string) (*Wall
 }
 
 func NewWallet(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err error) {
-	key, err := gojwk.Unmarshal(b)
+	signer, err := NewSigner(b)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	pubKey, err := key.DecodePublicKey()
-	if err != nil {
-		return
-	}
-	pub, ok := pubKey.(*rsa.PublicKey)
-	if !ok {
-		err = fmt.Errorf("pubKey type error")
-		return
-	}
-	prvKey, err := key.DecodePrivateKey()
-	if err != nil {
-		return
-	}
-	prv, ok := prvKey.(*rsa.PrivateKey)
-	if !ok {
-		err = fmt.Errorf("prvKey type error")
-		return
-	}
-
-	addr := sha256.Sum256(pub.N.Bytes())
 	w = &Wallet{
-		Client:  NewClient(clientUrl, proxyUrl...),
-		PubKey:  pub,
-		PrvKey:  prv,
-		Address: utils.Base64Encode(addr[:]),
+		Client: NewClient(clientUrl, proxyUrl...),
+		Signer: signer,
 	}
 
 	return
 }
 
 func (w *Wallet) Owner() string {
-	return utils.Base64Encode(w.PubKey.N.Bytes())
+	return w.Signer.Owner()
 }
 
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (types.Transaction, error) {
@@ -136,7 +109,7 @@ func (w *Wallet) SendTransaction(tx *types.Transaction) (types.Transaction, erro
 	}
 	tx.LastTx = anchor
 	tx.Owner = w.Owner()
-	if err = utils.SignTransaction(tx, w.PrvKey); err != nil {
+	if err = w.Signer.SignTx(tx); err != nil {
 		return types.Transaction{}, err
 	}
 
