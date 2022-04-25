@@ -255,6 +255,29 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 	return
 }
 
+func (c *Client) GetTransactionPriceLen(dataLen int64) (reward int64, err error) {
+	url := fmt.Sprintf("price/%d", dataLen)
+
+	body, code, err := c.httpGet(url)
+	if err != nil {
+		return
+	}
+	if code != 200 {
+		return 0, fmt.Errorf("get reward error: %s", string(body))
+	}
+
+	reward, err = strconv.ParseInt(string(body), 10, 64)
+	if err != nil {
+		return
+	}
+
+	// reward can not be 0
+	if reward <= 0 {
+		err = errors.New("reward must more than 0")
+	}
+	return
+}
+
 func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	body, code, err := c.httpGet("tx_anchor")
 	if err != nil {
