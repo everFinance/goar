@@ -11,6 +11,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/everFinance/goar/types"
@@ -231,7 +232,7 @@ func VerifyBundleItem(d types.BundleItem) error {
 		}
 		return Verify(signMsg, pubKey, sign)
 
-	case types.ED25519SignType:
+	case types.ED25519SignType, types.SolanaSignType:
 		pubkey, err := Base64Decode(d.Owner)
 		if err != nil {
 			return err
@@ -241,26 +242,18 @@ func VerifyBundleItem(d types.BundleItem) error {
 		}
 
 	case types.EthereumSignType:
-		pubkey, err := Base64Decode(d.Owner)
+		signer, err := ItemSignerAddr(d)
 		if err != nil {
 			return err
 		}
-		pk, err := crypto.UnmarshalPubkey(pubkey)
-		if err != nil {
-			err = fmt.Errorf("can not unmarshal pubkey: %v", err)
-			return err
-		}
-		signer := crypto.PubkeyToAddress(*pk)
 
 		addr, err := goether.Ecrecover(accounts.TextHash(signMsg), sign)
 		if err != nil {
 			return err
 		}
-		if signer != addr {
+		if signer != addr.String() {
 			return errors.New("verify ecc sign failed")
 		}
-	case types.SolanaSignType:
-		// todo
 	default:
 		return errors.New("not support the signType")
 	}
@@ -377,4 +370,32 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	bytesArr = append(bytesArr, data...)
 	d.ItemBinary = bytesArr
 	return nil
+}
+
+func ItemSignerAddr(b types.BundleItem) (string, error) {
+	switch b.SignatureType {
+	case types.ArweaveSignType:
+		return OwnerToAddress(b.Owner)
+
+	case types.ED25519SignType, types.SolanaSignType:
+		by, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		return base58.Encode(by), nil
+	case types.EthereumSignType:
+		pubkey, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		pk, err := crypto.UnmarshalPubkey(pubkey)
+		if err != nil {
+			err = fmt.Errorf("can not unmarshal pubkey: %v", err)
+			return "", err
+		}
+		return crypto.PubkeyToAddress(*pk).String(), nil
+
+	default:
+		return "", errors.New("not support the signType")
+	}
 }
