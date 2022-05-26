@@ -2,14 +2,12 @@ package goar
 
 import (
 	"errors"
-	"strconv"
-
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 )
 
 func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.BundleItem, err error) {
-	bundleItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
+	bundleItem := utils.NewBundleItem(w.Owner(), signatureType, target, anchor, data, tags)
 	// sign
 	err = utils.SignBundleItem(bundleItem, w.Signer.PrvKey)
 	if err != nil {
