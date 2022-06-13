@@ -51,5 +51,5 @@ type BundleItem struct {
 	Data          string `json:"data"`
 	Id            string `json:"id"`
 
-	ItemBinary []byte
+	ItemBinary []byte `json:"-"`
 }

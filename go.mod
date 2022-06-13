@@ -3,7 +3,9 @@ module github.com/everFinance/goar
 go 1.17
 
 require (
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/ethereum/go-ethereum v1.10.12
+	github.com/everFinance/goether v1.1.7
 	github.com/everFinance/gojwk v1.0.0
 	github.com/everFinance/ttcrsa v1.1.3
 	github.com/hamba/avro v1.5.6
@@ -16,13 +18,11 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
-	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v0.0.0-20180603214616-504e848d77ea // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/everFinance/ethrpc v1.0.4 // indirect
-	github.com/everFinance/goether v1.1.7 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
