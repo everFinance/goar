@@ -7,7 +7,6 @@ package utils
 
 import (
 	"crypto/ed25519"
-	"crypto/rsa"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -158,22 +157,6 @@ func NewBundleItem(owner string, signatureType int, target, anchor string, data 
 		Id:            "",
 		ItemBinary:    make([]byte, 0),
 	}
-}
-
-func SignBundleItem(d *types.BundleItem, prvKey *rsa.PrivateKey) error {
-	// sign item
-	signatureData, err := BundleItemSignData(*d)
-	if err != nil {
-		return err
-	}
-	signatureBytes, err := Sign(signatureData, prvKey)
-	if err != nil {
-		return errors.New(fmt.Sprintf("signature error: %v", err))
-	}
-	id := sha256.Sum256(signatureBytes)
-	d.Id = Base64Encode(id[:])
-	d.Signature = Base64Encode(signatureBytes)
-	return nil
 }
 
 func BundleItemSignData(d types.BundleItem) ([]byte, error) {

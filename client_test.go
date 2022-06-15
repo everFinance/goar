@@ -6,10 +6,6 @@ import (
 	"testing"
 )
 
-// import (
-// 	"fmt"
-// 	"testing"
-
 // func TestGetTransactionByID(t *testing.T) {
 // 	client := NewClient("https://arweave.net")
 // 	fmt.Println(client.GetTransactionByID("FgcKlptyDXSgEonYfy5cNBimq7GJ4h8h6L6pxuuYOBc"))
@@ -264,4 +260,20 @@ func TestNewClient(t *testing.T) {
 	res, err := cli.GetPendingTxIds()
 	assert.NoError(t, err)
 	t.Log("pending tx number:", len(res))
+}
+
+func TestNewTempConn(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	peers, err := c.GetPeers()
+	assert.NoError(t, err)
+	pNode := NewTempConn()
+	for _, peer := range peers {
+		pNode.SetTempConnUrl("http://" + peer)
+		offset, err := pNode.getTransactionOffset("pEYudvF0HjIU-2vKdhNZ9Dgr_bueucXaeRrbPhI90ew")
+		if err != nil {
+			t.Log("err", err, "perr", peer)
+			continue
+		}
+		t.Logf("offset: %s, peer: %s", offset.Offset, peer)
+	}
 }
