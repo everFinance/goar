@@ -64,10 +64,15 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 	for i := 0; i < itemsNum; i++ {
 		headerBegin := 32 + i*64
 		end := headerBegin + 64
+		if len(bundleBinary) < end {
+			return nil, errors.New("binary length incorrect")
+		}
 		headerByte := bundleBinary[headerBegin:end]
 		itemBinaryLength := ByteArrayToLong(headerByte[:32])
 		id := Base64Encode(headerByte[32:64])
-
+		if len(bundleBinary) < bundleItemStart+itemBinaryLength {
+			return nil, errors.New("binary length incorrect")
+		}
 		bundleItemBytes := bundleBinary[bundleItemStart : bundleItemStart+itemBinaryLength]
 		bundleItem, err := DecodeBundleItem(bundleItemBytes)
 		if err != nil {
@@ -83,18 +88,27 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 }
 
 func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
+	if len(itemBinary) < 2 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	sigType := ByteArrayToLong(itemBinary[:2])
 	sigMeta, ok := types.SigConfigMap[sigType]
 	if !ok {
 		return nil, fmt.Errorf("not support sigType:%d", sigType)
 	}
 	sigLength := sigMeta.SigLength
+	if len(itemBinary) < sigLength+2 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	sigBy := itemBinary[2 : sigLength+2]
 	signature := Base64Encode(sigBy)
 	idhash := sha256.Sum256(sigBy)
 	id := Base64Encode(idhash[:])
 
 	ownerLength := sigMeta.PubLength
+	if len(itemBinary) < sigLength+2+ownerLength {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	owner := Base64Encode(itemBinary[sigLength+2 : sigLength+2+ownerLength])
 	target := ""
 	anchor := ""
@@ -102,25 +116,45 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 
 	tagsStart := position + 2
 	anchorPresentByte := position + 1
-
+	if len(itemBinary) < position {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	targetPersent := itemBinary[position] == 1
 	if targetPersent {
 		tagsStart += 32
 		anchorPresentByte += 32
+		if len(itemBinary) < position+1+32 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		target = Base64Encode(itemBinary[position+1 : position+1+32])
+	}
+	if len(itemBinary) < anchorPresentByte {
+		return nil, errors.New("itemBinary incorrect")
 	}
 	anchorPersent := itemBinary[anchorPresentByte] == 1
 	if anchorPersent {
 		tagsStart += 32
+		if len(itemBinary) < anchorPresentByte+1+32 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		anchor = Base64Encode(itemBinary[anchorPresentByte+1 : anchorPresentByte+1+32])
 	}
 
+	if len(itemBinary) < anchorPresentByte+1+32 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
 
 	var tagsBytesLength int
 	tags := []types.Tag{}
 	if numOfTags > 0 {
+		if len(itemBinary) < tagsStart+16 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytesLength = ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
+		if len(itemBinary) < tagsStart+16+tagsBytesLength {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
 		// parser tags
 		tgs, err := DeserializeTags(tagsBytes)
@@ -244,6 +278,10 @@ func VerifyBundleItem(d types.BundleItem) error {
 }
 
 func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
+	if len(itemBinary) < 2 {
+		return nil, errors.New("itemBinary incorrect")
+	}
+
 	sigType := ByteArrayToLong(itemBinary[:2])
 	sigMeta, ok := types.SigConfigMap[sigType]
 	if !ok {
@@ -255,7 +293,7 @@ func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
 	tagsStart := position + 2
 
 	anchorPresentByte := position + 1
-	if len(itemBinary) < anchorPresentByte {
+	if len(itemBinary) < position {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	targetPersent := itemBinary[position] == 1
@@ -263,15 +301,27 @@ func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
 		tagsStart += 32
 		anchorPresentByte += 32
 	}
+	if len(itemBinary) < anchorPresentByte {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	anchorPersent := itemBinary[anchorPresentByte] == 1
 	if anchorPersent {
 		tagsStart += 32
 	}
 
+	if len(itemBinary) < tagsStart+8 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
 
 	if numOfTags > 0 {
+		if len(itemBinary) < tagsStart+16 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytesLength := ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
+		if len(itemBinary) < tagsStart+16+tagsBytesLength {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
 		return tagsBytes, nil
 	} else {
@@ -303,8 +353,16 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		return err
 	}
 
+	sigMeta, ok := types.SigConfigMap[d.SignatureType]
+	if !ok {
+		return fmt.Errorf("not support sigType:%d", d.SignatureType)
+	}
+
+	sigLength := sigMeta.SigLength
+	ownerLength := sigMeta.PubLength
+
 	// Create array with set length
-	bytesArr := make([]byte, 0, 1044)
+	bytesArr := make([]byte, 0, 2+sigLength+ownerLength)
 
 	bytesArr = append(bytesArr, ShortTo2ByteArray(d.SignatureType)...)
 	// Push bytes for `signature`

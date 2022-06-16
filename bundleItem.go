@@ -21,13 +21,9 @@ type ItemSdk struct {
 }
 
 func NewItemSdk(signer interface{}, serverUrl string) (*ItemSdk, error) {
-	signType, signerAddr, err := reflectSigner(signer)
+	signType, signerAddr, owner, err := reflectSigner(signer)
 	if err != nil {
 		return nil, err
-	}
-	owner := ""
-	if signType == types.ArweaveSignType {
-		owner = signer.(*Signer).Owner()
 	}
 	return &ItemSdk{
 		signType:   signType,
@@ -78,15 +74,17 @@ func (i *ItemSdk) SubmitItem(item types.BundleItem, currency string) (*types.Bun
 	return br, err
 }
 
-func reflectSigner(signer interface{}) (signType int, signerAddr string, err error) {
+func reflectSigner(signer interface{}) (signType int, signerAddr, owner string, err error) {
 	if s, ok := signer.(*Signer); ok {
 		signType = types.ArweaveSignType
 		signerAddr = s.Address
+		owner = s.Owner()
 		return
 	}
 	if s, ok := signer.(*goether.Signer); ok {
 		signType = types.EthereumSignType
 		signerAddr = s.Address.String()
+		owner = utils.Base64Encode(s.GetPublicKey())
 		return
 	}
 	err = errors.New("not support this signer")
