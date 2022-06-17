@@ -358,6 +358,9 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		if err != nil {
 			return
 		}
+		if len(targetBytes) != 32 {
+			return errors.New("targetBytes length must 32")
+		}
 	}
 	anchorBytes := []byte{}
 	if d.Anchor != "" {
@@ -365,7 +368,9 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		if err != nil {
 			return
 		}
-		fmt.Println(len(anchorBytes))
+		if len(anchorBytes) != 32 {
+			return errors.New("anchorBytes length must 32")
+		}
 	}
 	tagsBytes, err := SerializeTags(d.Tags)
 	if err != nil {
