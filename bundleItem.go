@@ -35,7 +35,10 @@ func NewItemSdk(signer interface{}, serverUrl string) (*ItemSdk, error) {
 }
 
 func (i *ItemSdk) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
-	bundleItem := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
+	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
 	// sign
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
 		return types.BundleItem{}, err

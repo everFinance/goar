@@ -45,8 +45,8 @@ type BundleItem struct {
 	SignatureType int    `json:"signatureType"`
 	Signature     string `json:"signature"`
 	Owner         string `json:"owner"`  //  utils.Base64Encode(pubkey)
-	Target        string `json:"target"` // optional
-	Anchor        string `json:"anchor"` // optional
+	Target        string `json:"target"` // optional, if exist must length 32, and is base64 str
+	Anchor        string `json:"anchor"` // optional, if exist must length 32, and is base64 str
 	Tags          []Tag  `json:"tags"`
 	Data          string `json:"data"`
 	Id            string `json:"id"`

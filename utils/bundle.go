@@ -70,7 +70,7 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 		headerByte := bundleBinary[headerBegin:end]
 		itemBinaryLength := ByteArrayToLong(headerByte[:32])
 		id := Base64Encode(headerByte[32:64])
-		if len(bundleBinary) < bundleItemStart+itemBinaryLength {
+		if len(bundleBinary) < bundleItemStart+itemBinaryLength || itemBinaryLength < 0 {
 			return nil, errors.New("binary length incorrect")
 		}
 		bundleItemBytes := bundleBinary[bundleItemStart : bundleItemStart+itemBinaryLength]
@@ -152,7 +152,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		tagsBytesLength = ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
-		if len(itemBinary) < tagsStart+16+tagsBytesLength {
+		if len(itemBinary) < tagsStart+16+tagsBytesLength || tagsStart+16+tagsBytesLength < 0 {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
@@ -179,7 +179,25 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 	}, nil
 }
 
-func NewBundleItem(owner string, signatureType int, target, anchor string, data []byte, tags []types.Tag) *types.BundleItem {
+func NewBundleItem(owner string, signatureType int, target, anchor string, data []byte, tags []types.Tag) (*types.BundleItem, error) {
+	if target != "" {
+		targetBy, err := Base64Decode(target)
+		if err != nil {
+			return nil, err
+		}
+		if len(targetBy) != 32 {
+			return nil, errors.New("taget length must be 32")
+		}
+	}
+	if anchor != "" {
+		anchorBy, err := Base64Decode(anchor)
+		if err != nil {
+			return nil, err
+		}
+		if len(anchorBy) != 32 {
+			return nil, errors.New("anchor length must be 32")
+		}
+	}
 	return &types.BundleItem{
 		SignatureType: signatureType,
 		Signature:     "",
@@ -190,7 +208,7 @@ func NewBundleItem(owner string, signatureType int, target, anchor string, data 
 		Data:          Base64Encode(data),
 		Id:            "",
 		ItemBinary:    make([]byte, 0),
-	}
+	}, nil
 }
 
 func BundleItemSignData(d types.BundleItem) ([]byte, error) {
@@ -319,7 +337,7 @@ func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		tagsBytesLength := ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
-		if len(itemBinary) < tagsStart+16+tagsBytesLength {
+		if len(itemBinary) < tagsStart+16+tagsBytesLength || tagsStart+16+tagsBytesLength < 0 {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
@@ -347,6 +365,7 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		if err != nil {
 			return
 		}
+		fmt.Println(len(anchorBytes))
 	}
 	tagsBytes, err := SerializeTags(d.Tags)
 	if err != nil {
