@@ -156,9 +156,9 @@ func (tt *TransactionUploader) PctComplete() float64 {
  */
 func (tt *TransactionUploader) UploadChunk() error {
 	defer func() {
-		if tt.TotalChunks() > 0 {
-			log.Debug("chunks", "uploads", fmt.Sprintf("%f%% completes, %d/%d", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks()))
-		}
+		// if tt.TotalChunks() > 0 {
+		// 	log.Debug("chunks", "uploads", fmt.Sprintf("%f%% completes, %d/%d", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks()))
+		// }
 	}()
 	if tt.IsComplete() {
 		return errors.New("Upload is already complete.")
