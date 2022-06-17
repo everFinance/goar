@@ -29,6 +29,9 @@ func NewBundle(items ...types.BundleItem) (*types.Bundle, error) {
 		if err != nil {
 			return nil, err
 		}
+		if len(id) != 32 {
+			return nil, errors.New("item id length must 32")
+		}
 		header = append(header, id...)
 
 		headers = append(headers, header...)
@@ -140,9 +143,6 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 		anchor = Base64Encode(itemBinary[anchorPresentByte+1 : anchorPresentByte+1+32])
 	}
 
-	if len(itemBinary) < anchorPresentByte+1+32 {
-		return nil, errors.New("itemBinary incorrect")
-	}
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
 
 	var tagsBytesLength int
@@ -394,11 +394,19 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	if err != nil {
 		return err
 	}
+
+	if len(sig) != sigLength {
+		return errors.New("signature length incorrect")
+	}
+
 	bytesArr = append(bytesArr, sig...)
 	// Push bytes for `ownerByte`
 	ownerByte, err := Base64Decode(d.Owner)
 	if err != nil {
 		return err
+	}
+	if len(ownerByte) != ownerLength {
+		return errors.New("signature length incorrect")
 	}
 	bytesArr = append(bytesArr, ownerByte...)
 	// Push `presence byte` and push `target` if present
