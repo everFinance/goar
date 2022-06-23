@@ -11,7 +11,8 @@ func TestBundle_SendBundleTx(t *testing.T) {
 	// signer, err := goar.NewSignerFromPath("./testKey.json")
 	// assert.NoError(t, err)
 	//
-	// itemSdk, err := goar.NewItemSigner(signer)
+	//
+	// itemSigner, err := goar.NewItemSigner(signer)
 	// assert.NoError(t, err)
 	//
 	// tags := []types.Tag{
@@ -20,18 +21,18 @@ func TestBundle_SendBundleTx(t *testing.T) {
 	// }
 	//
 	// data := []byte("123456")
-	// item01, err := itemSdk.CreateAndSignItem(data, "", "", tags)
+	// item01, err := itemSigner.CreateAndSignItem(data, "", "", tags)
 	// assert.NoError(t, err)
 	//
 	// err = utils.VerifyBundleItem(item01)
 	// assert.NoError(t, err)
-
+	//
 	// // send item to arseed
 	// arseedUrl := "https://seed-dev.everpay.io"
 	// resp, err := utils.SubmitItemToArSeed(item01,"USDT",arseedUrl)
 	// assert.NoError(t, err)
 	// t.Log(*resp)
-
+	//
 	// // send item to bundlr network
 	// bundlrUrl := "https://node1.bundlr.network"
 	// resp, err := utils.SubmitItemToBundlr(item01, bundlrUrl)

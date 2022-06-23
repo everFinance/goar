@@ -162,7 +162,9 @@ Package for Arweave develop toolkit.
 - [x] GetSignatureData
 - [x] VerifyTransaction
 - [x] NewBundle
-- [x] GenerateIndepHash
+- [x] NewBundleItem
+- [x] SubmitItemToBundlr
+- [x] SubmitItemToArSeed
 
 #### RSA Threshold Cryptography
 
@@ -311,46 +313,55 @@ assert.NoError(t, uploader.Once())
 2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement
 3. more example can be viewed in path `./example/bundle_test.go`
 
-#### CreateBundle
+#### Create Bundle Item
 ```go
-w, err := goar.NewWalletFromPath(privateKey, arNode)
-if err != nil {
-  panic(err)
-}
+signer, err := goar.NewSignerFromPath("./testKey.json") // rsa signer
+// or 
+signer, err := goether.NewSigner("0x.....") // ecdsa signer
 
 // Create Item
-data := []byte("upload update...")   
-signatureType := 1 // currently only supply type 1
+data := []byte("aa bb cc dd")
 target := "" // option 
 anchor := "" // option
-tags := []types.Tags{}{} // bundle item tags
-item01, err := w.CreateAndSignBundleItem(data, 1, target, anchor, tags)    
+tags := []types.Tags{}{} // option bundle item tags
+item01, err := itemSigner.CreateAndSignItem(data, target, anchor, tags)    
 // Same as create item
 item02
 item03
 ....
 
-items := []types.BundleItem{item01, item02, item03 ...}	
+```
+#### assemble bundle and send to arweave network 
+You can send items directly to the arweave network
+```go
 
+items := []types.BundleItem{item01, item02, item03 ...}
 bundle, err := utils.NewBundle(items...)
 
-```
+w, err := goar.NewWalletFromPath("./key.json", arNode)
 
-#### Send Item to Bundler
-Bundler network provides guaranteed data seeding and instant data accessibility
-```go
-resp, err := w.Client.BatchSendItemToBundler(items,"") // The second parameter is the bundler gateway url，"" means use default url
-```
-
-#### Send Bundle Tx
-```go
+arTxTags := []types.Tags{}{} // option
 tx, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
+
 ```
 
-#### Get Bundle and Verify
+#### Send Item to Arseeding gateway
+Arseeding provides guaranteed data seeding and instant data accessibility
 ```go
-id := "lt24bnUGms5XLZeVamSPHePl4M2ClpLQyRxZI7weH1k"
-bundle, err := cli.GetBundle(id)
+arseedUrl := "https://seed.everpay.io"
+currency := "USDC" // used for payment fee currency
+resp, err := utils.SubmitItemToArSeed(item01,currency,arseedUrl)
+```
+
+#### Send Item to Bundler gateway
+Bundler provides guaranteed data seeding and instant data accessibility
+```go
+bundlrUrl := "https://node1.bundlr.network"
+resp, err := utils.SubmitItemToBundlr(item01, bundlrUrl)
+```
+
+#### Verify Bundle Items
+```go
 
 // verify
 for _, item := range bundle.Items {
@@ -360,7 +371,7 @@ for _, item := range bundle.Items {
 ```
 
 ### notice
-if you call `w.Client.BatchSendItemToBundler(items,"")` 
+if you call `utils.SubmitItemToBundlr(item,"")` 
 and return `panic: send to bundler request failed; http code: 402`        
 means that you have to pay ar to the bundler service address    
 must use item signature address to transfer funds   
