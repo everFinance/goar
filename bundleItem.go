@@ -1,40 +1,34 @@
 package goar
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
-	"fmt"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
-	"gopkg.in/h2non/gentleman.v2"
-	"net/http"
 )
 
-type ItemSdk struct {
+type ItemSigner struct {
 	signType   int
 	signer     interface{}
 	owner      string // only rsa has owner
 	signerAddr string
-	cli        *gentleman.Client
 }
 
-func NewItemSdk(signer interface{}, serverUrl string) (*ItemSdk, error) {
+func NewItemSigner(signer interface{}) (*ItemSigner, error) {
 	signType, signerAddr, owner, err := reflectSigner(signer)
 	if err != nil {
 		return nil, err
 	}
-	return &ItemSdk{
+	return &ItemSigner{
 		signType:   signType,
 		signer:     signer,
 		owner:      owner,
 		signerAddr: signerAddr,
-		cli:        gentleman.New().URL(serverUrl),
 	}, nil
 }
 
-func (i *ItemSdk) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
+func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
 	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
 	if err != nil {
 		return types.BundleItem{}, err
@@ -47,34 +41,6 @@ func (i *ItemSdk) CreateAndSignItem(data []byte, target string, anchor string, t
 		return types.BundleItem{}, err
 	}
 	return *bundleItem, nil
-}
-
-func (i *ItemSdk) SubmitItem(item types.BundleItem, currency string) (*types.BundlerResp, error) {
-	req := i.cli.Request()
-	req.Method("POST")
-	req.Path(fmt.Sprintf("/bundle/tx/%s", currency))
-	req.SetHeader("content-type", "application/octet-stream")
-
-	itemBinary := item.ItemBinary
-	if len(itemBinary) == 0 {
-		if err := utils.GenerateItemBinary(&item); err != nil {
-			return nil, err
-		}
-		itemBinary = item.ItemBinary
-	}
-	req.Body(bytes.NewReader(itemBinary))
-
-	resp, err := req.Send()
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("send to bundler request failed; http code: %d, errMsg:%s", resp.StatusCode, resp.String())
-	}
-	br := &types.BundlerResp{}
-	err = resp.JSON(br)
-	return br, err
 }
 
 func reflectSigner(signer interface{}) (signType int, signerAddr, owner string, err error) {

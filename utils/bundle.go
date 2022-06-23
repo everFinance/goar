@@ -6,15 +6,20 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/everFinance/arseeding/schema"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goether"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 )
 
@@ -471,4 +476,63 @@ func ItemSignerAddr(b types.BundleItem) (string, error) {
 	default:
 		return "", errors.New("not support the signType")
 	}
+}
+
+func SubmitItemToBundlr(item types.BundleItem, bundlrUrl string) (*types.BundlrResp, error) {
+	itemBinary := item.ItemBinary
+	if len(itemBinary) == 0 {
+		if err := GenerateItemBinary(&item); err != nil {
+			return nil, err
+		}
+		itemBinary = item.ItemBinary
+	}
+	// post to bundler
+	resp, err := http.DefaultClient.Post(bundlrUrl+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &types.BundlrResp{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
+}
+
+func SubmitItemToArSeed(item types.BundleItem, currency, arseedUrl string) (*schema.RespOrder, error) {
+	itemBinary := item.ItemBinary
+	if len(itemBinary) == 0 {
+		if err := GenerateItemBinary(&item); err != nil {
+			return nil, err
+		}
+		itemBinary = item.ItemBinary
+	}
+	resp, err := http.DefaultClient.Post(arseedUrl+"/bundle/tx/"+currency, "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &schema.RespOrder{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
 }

@@ -2,40 +2,41 @@ package example
 
 import (
 	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestBundle_SendBundleTx(t *testing.T) {
-	signer, err := goar.NewSignerFromPath("./testKey.json")
-	assert.NoError(t, err)
-	arseedUrl := "http://127.0.0.1:8080"
+	// signer, err := goar.NewSignerFromPath("./testKey.json")
+	// assert.NoError(t, err)
+	//
+	// itemSdk, err := goar.NewItemSigner(signer)
+	// assert.NoError(t, err)
+	//
+	// tags := []types.Tag{
+	// 	{Name: "Content-Type", Value: "image/jpeg"},
+	// 	{Name: "App-Version", Value: "2.0.0"},
+	// }
+	//
+	// data := []byte("123456")
+	// item01, err := itemSdk.CreateAndSignItem(data, "", "", tags)
+	// assert.NoError(t, err)
+	//
+	// err = utils.VerifyBundleItem(item01)
+	// assert.NoError(t, err)
 
-	itemSdk, err := goar.NewItemSdk(signer, arseedUrl)
-	assert.NoError(t, err)
+	// // send item to arseed
+	// arseedUrl := "https://seed-dev.everpay.io"
+	// resp, err := utils.SubmitItemToArSeed(item01,"USDT",arseedUrl)
+	// assert.NoError(t, err)
+	// t.Log(*resp)
 
-	tags := []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "App-Version", Value: "2.0.0"},
-	}
-
-	data := []byte("123456")
-	item01, err := itemSdk.CreateAndSignItem(data, "", "", tags)
-	assert.NoError(t, err)
-
-	items := []types.BundleItem{item01}
-
-	// send item to arseed gateway
-	for _, item := range items {
-		// t.Log(item.Id)
-		err = utils.VerifyBundleItem(item)
-		assert.NoError(t, err)
-		resp, err := itemSdk.SubmitItem(item, "USDT")
-		assert.NoError(t, err)
-		t.Log(*resp)
-	}
+	// // send item to bundlr network
+	// bundlrUrl := "https://node1.bundlr.network"
+	// resp, err := utils.SubmitItemToBundlr(item01, bundlrUrl)
+	// assert.NoError(t, err)
+	// t.Log(*resp)
 }
 
 func TestVerifyBundleItem(t *testing.T) {
