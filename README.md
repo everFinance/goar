@@ -345,7 +345,7 @@ tx, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
 
 ```
 
-#### Send Item to Arseeding gateway
+#### Send Item to [Arseeding](https://github.com/everFinance/arseeding) gateway
 Arseeding provides guaranteed data seeding and instant data accessibility
 ```go
 arseedUrl := "https://seed.everpay.io"
