@@ -311,7 +311,6 @@ assert.NoError(t, uploader.Once())
 ### About Arweave Bundles
 1. `goar` implemented creating,editing,reading and verifying bundles tx
 2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement
-3. more example can be viewed in path `./example/bundle_test.go`
 
 #### Create Bundle Item
 ```go
@@ -369,8 +368,9 @@ for _, item := range bundle.Items {
   assert.NoError(t, err)
 }
 ```
+check [bundle example](./example/bundle_test.go) 
 
-### About Arseeding
+#### About Arseeding
 if you can `utils.SubmitItemToArseed(item,currency,arseedUrl)` 
 and you will get the following return response   
 ```go
@@ -387,13 +387,13 @@ and you will get the following return response
 After you transfer 0.000701 USDT to bundler using everpay, arseeding will upload the item to arweave.   
 For more usage, jump to [docs](https://github.com/everFinance/arseeding/blob/main/README.md)
 
-### About Bundlr
+#### About Bundlr
 if you call `utils.SubmitItemToBundlr(item,bundlrUrl)` 
 and return `panic: send to bundler request failed; http code: 402`        
 means that you have to pay ar to the bundler service address    
 must use item signature address to transfer funds   
 
-#### how to get bundler service address?
+##### how to get bundler service address?
 ```go
 curl --location --request GET 'https://node1.bundlr.network/info'
 
