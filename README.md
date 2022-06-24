@@ -370,25 +370,57 @@ for _, item := range bundle.Items {
 }
 ```
 
-### notice
-if you call `utils.SubmitItemToBundlr(item,"")` 
+### About Arseeding
+if you can `utils.SubmitItemToArseed(item,currency,arseedUrl)` 
+and you will get the following return response   
+```go
+{
+    "ItemId": "5rEb7c6OjMQIYjl6P7AJIb4bB9CLMBSxhZ9N7BVbRCk",
+    "bundler": "Fkj5J8CDLC9Jif4CzgtbiXJBnwXLSrp5AaIllleH_yY",
+    "currency": "USDT",
+    "decimals": 6,
+    "fee": "701",
+    "paymentExpiredTime": 1656044994,
+    "expectedBlock": 960751
+}
+```
+After you transfer 0.000701 USDT to bundler using everpay, arseeding will upload the item to arweave.   
+For more usage, jump to [docs](https://github.com/everFinance/arseeding/blob/main/README.md)
+
+### About Bundlr
+if you call `utils.SubmitItemToBundlr(item,bundlrUrl)` 
 and return `panic: send to bundler request failed; http code: 402`        
 means that you have to pay ar to the bundler service address    
 must use item signature address to transfer funds   
 
-##### how to get bundler service address?
+#### how to get bundler service address?
 ```go
 curl --location --request GET 'https://node1.bundlr.network/info'
 
 response:
 {
-"uptime": 275690.552536824,
-"address": "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs",
-"gateway": "arweave.net"
+    "version": "0.2.0",
+    "addresses": {
+        "arweave": "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs",
+        "ethereum": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "matic": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "bnb": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "avalanche": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "solana": "DHyDV2ZjN3rB6qNGXS48dP5onfbZd3fAEz6C5HJwSqRD",
+        "arbitrum": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "boba-eth": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "boba": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "chainlink": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "kyve": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "fantom": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "near": "bundlr1.near",
+        "algorand": "DL7ZTTQMTFNXRF3367OTSNAZ3L2X676OJ4GGB3DXMUJ37CCKJ5RJMEO6RI"
+    },
+    "gateway": "arweave.net"
 }
 ```
-This "address" is the bundler service receive ar address.    
-You need to transfer a certain amount of ar to this address    
+This "addresses" are the bundler service receive address.    
+You need to transfer a certain amount of token to this address    
 and wait for 25 blocks to confirm the transaction before you can use the bundler service.    
 
 You can also use the following api to query the balance in the bundler service.   
