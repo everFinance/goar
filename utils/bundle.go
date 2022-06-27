@@ -6,11 +6,20 @@
 package utils
 
 import (
-	"crypto/rsa"
+	"bytes"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/everFinance/arseeding/schema"
 	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goether"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 )
 
@@ -24,6 +33,9 @@ func NewBundle(items ...types.BundleItem) (*types.Bundle, error) {
 		id, err := Base64Decode(d.Id)
 		if err != nil {
 			return nil, err
+		}
+		if len(id) != 32 {
+			return nil, errors.New("item id length must 32")
 		}
 		header = append(header, id...)
 
@@ -60,10 +72,15 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 	for i := 0; i < itemsNum; i++ {
 		headerBegin := 32 + i*64
 		end := headerBegin + 64
+		if len(bundleBinary) < end {
+			return nil, errors.New("binary length incorrect")
+		}
 		headerByte := bundleBinary[headerBegin:end]
 		itemBinaryLength := ByteArrayToLong(headerByte[:32])
 		id := Base64Encode(headerByte[32:64])
-
+		if len(bundleBinary) < bundleItemStart+itemBinaryLength || itemBinaryLength < 0 {
+			return nil, errors.New("binary length incorrect")
+		}
 		bundleItemBytes := bundleBinary[bundleItemStart : bundleItemStart+itemBinaryLength]
 		bundleItem, err := DecodeBundleItem(bundleItemBytes)
 		if err != nil {
@@ -79,35 +96,70 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 }
 
 func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
-	if len(itemBinary) < types.MIN_BUNDLE_BINARY_SIZE {
-		return nil, errors.New("ItemBinary length incorrect")
+	if len(itemBinary) < 2 {
+		return nil, errors.New("itemBinary incorrect")
 	}
 	sigType := ByteArrayToLong(itemBinary[:2])
-	signature := Base64Encode(itemBinary[2:514])
-	idhash := sha256.Sum256(itemBinary[2:514])
+	sigMeta, ok := types.SigConfigMap[sigType]
+	if !ok {
+		return nil, fmt.Errorf("not support sigType:%d", sigType)
+	}
+	sigLength := sigMeta.SigLength
+	if len(itemBinary) < sigLength+2 {
+		return nil, errors.New("itemBinary incorrect")
+	}
+	sigBy := itemBinary[2 : sigLength+2]
+	signature := Base64Encode(sigBy)
+	idhash := sha256.Sum256(sigBy)
 	id := Base64Encode(idhash[:])
-	owner := Base64Encode(itemBinary[514:1026])
+
+	ownerLength := sigMeta.PubLength
+	if len(itemBinary) < sigLength+2+ownerLength {
+		return nil, errors.New("itemBinary incorrect")
+	}
+	owner := Base64Encode(itemBinary[sigLength+2 : sigLength+2+ownerLength])
 	target := ""
 	anchor := ""
-	tagsStart := 2 + 512 + 512 + 2
-	anchorPresentByte := 1027
-	targetPersent := itemBinary[1026] == 1
+	position := 2 + sigLength + ownerLength
+
+	tagsStart := position + 2
+	anchorPresentByte := position + 1
+	if len(itemBinary) < position {
+		return nil, errors.New("itemBinary incorrect")
+	}
+	targetPersent := itemBinary[position] == 1
 	if targetPersent {
 		tagsStart += 32
-		anchorPresentByte += 32 // 1059
-		target = Base64Encode(itemBinary[1027 : 1027+32])
+		anchorPresentByte += 32
+		if len(itemBinary) < position+1+32 {
+			return nil, errors.New("itemBinary incorrect")
+		}
+		target = Base64Encode(itemBinary[position+1 : position+1+32])
+	}
+	if len(itemBinary) < anchorPresentByte {
+		return nil, errors.New("itemBinary incorrect")
 	}
 	anchorPersent := itemBinary[anchorPresentByte] == 1
 	if anchorPersent {
 		tagsStart += 32
+		if len(itemBinary) < anchorPresentByte+1+32 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		anchor = Base64Encode(itemBinary[anchorPresentByte+1 : anchorPresentByte+1+32])
 	}
 
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
-	tagsBytesLength := ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
 
+	var tagsBytesLength int
 	tags := []types.Tag{}
 	if numOfTags > 0 {
+		if len(itemBinary) < tagsStart+16 {
+			return nil, errors.New("itemBinary incorrect")
+		}
+		tagsBytesLength = ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
+		if len(itemBinary) < tagsStart+16+tagsBytesLength || tagsStart+16+tagsBytesLength < 0 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
 		// parser tags
 		tgs, err := DeserializeTags(tagsBytes)
@@ -120,7 +172,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 	data := itemBinary[tagsStart+16+tagsBytesLength:]
 
 	return &types.BundleItem{
-		SignatureType: fmt.Sprintf("%d", sigType),
+		SignatureType: sigType,
 		Signature:     signature,
 		Owner:         owner,
 		Target:        target,
@@ -132,7 +184,25 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 	}, nil
 }
 
-func NewBundleItem(owner, signatureType, target, anchor string, data []byte, tags []types.Tag) *types.BundleItem {
+func NewBundleItem(owner string, signatureType int, target, anchor string, data []byte, tags []types.Tag) (*types.BundleItem, error) {
+	if target != "" {
+		targetBy, err := Base64Decode(target)
+		if err != nil {
+			return nil, err
+		}
+		if len(targetBy) != 32 {
+			return nil, errors.New("taget length must be 32")
+		}
+	}
+	if anchor != "" {
+		anchorBy, err := Base64Decode(anchor)
+		if err != nil {
+			return nil, err
+		}
+		if len(anchorBy) != 32 {
+			return nil, errors.New("anchor length must be 32")
+		}
+	}
 	return &types.BundleItem{
 		SignatureType: signatureType,
 		Signature:     "",
@@ -143,30 +213,17 @@ func NewBundleItem(owner, signatureType, target, anchor string, data []byte, tag
 		Data:          Base64Encode(data),
 		Id:            "",
 		ItemBinary:    make([]byte, 0),
-	}
-}
-
-func SignBundleItem(d *types.BundleItem, prvKey *rsa.PrivateKey) error {
-	// sign item
-	signatureData, err := BundleItemSignData(*d)
-	if err != nil {
-		return err
-	}
-	signatureBytes, err := Sign(signatureData, prvKey)
-	if err != nil {
-		return errors.New(fmt.Sprintf("signature error: %v", err))
-	}
-	id := sha256.Sum256(signatureBytes)
-	d.Id = Base64Encode(id[:])
-	d.Signature = Base64Encode(signatureBytes)
-	return nil
+	}, nil
 }
 
 func BundleItemSignData(d types.BundleItem) ([]byte, error) {
 	var err error
 	tagsBy := make([]byte, 0)
 	if len(d.ItemBinary) > 0 { // verify logic
-		tagsBy = GetBundleItemTagsBytes(d.ItemBinary)
+		tagsBy, err = GetBundleItemTagsBytes(d.ItemBinary)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		tagsBy, err = SerializeTags(d.Tags)
 		if err != nil {
@@ -178,7 +235,7 @@ func BundleItemSignData(d types.BundleItem) ([]byte, error) {
 	dataList := make([]interface{}, 0)
 	dataList = append(dataList, Base64Encode([]byte("dataitem")))
 	dataList = append(dataList, Base64Encode([]byte("1")))
-	dataList = append(dataList, Base64Encode([]byte(d.SignatureType)))
+	dataList = append(dataList, Base64Encode([]byte(strconv.Itoa(d.SignatureType))))
 	dataList = append(dataList, d.Owner)
 	dataList = append(dataList, d.Target)
 	dataList = append(dataList, d.Anchor)
@@ -192,55 +249,106 @@ func BundleItemSignData(d types.BundleItem) ([]byte, error) {
 
 func VerifyBundleItem(d types.BundleItem) error {
 	// Get signature data and signature present in di.
-	signatureData, err := BundleItemSignData(d)
+	signMsg, err := BundleItemSignData(d)
 	if err != nil {
-		return fmt.Errorf("signatureData, err := d.GetSignatureData(); err : %v", err)
+		return fmt.Errorf("signMsg, err := d.GetSignatureData(); err : %v", err)
 	}
-	signatureBytes, err := Base64Decode(d.Signature)
+	sign, err := Base64Decode(d.Signature)
 	if err != nil {
 		return fmt.Errorf("utils.Base64Decode(d.Signature) error: %v", err)
 	}
 	// Verify Id is correct
-	idBytes := sha256.Sum256(signatureBytes)
+	idBytes := sha256.Sum256(sign)
 	id := Base64Encode(idBytes[:])
 	if id != d.Id {
 		return fmt.Errorf("verify Id is not equal; id: %s, recId: %s", d.Id, id)
 	}
-	// Verify Signature is correct
-	pubKey, err := OwnerToPubKey(d.Owner)
-	if err != nil {
-		return fmt.Errorf("utils.OwnerToPubKey(d.Owner), err: %v", err)
-	}
-	if err := Verify(signatureData, pubKey, signatureBytes); err != nil {
-		return fmt.Errorf("utils.Verify(signatureData,pubKey,signatureBytes); err: %v", err)
+	switch d.SignatureType {
+	case types.ArweaveSignType:
+		// Verify Signature is correct
+		pubKey, err := OwnerToPubKey(d.Owner)
+		if err != nil {
+			return fmt.Errorf("utils.OwnerToPubKey(d.Owner), err: %v", err)
+		}
+		return Verify(signMsg, pubKey, sign)
+
+	case types.ED25519SignType, types.SolanaSignType:
+		pubkey, err := Base64Decode(d.Owner)
+		if err != nil {
+			return err
+		}
+		if !ed25519.Verify(pubkey, signMsg, sign) {
+			return errors.New("verify ed25519 signature failed")
+		}
+
+	case types.EthereumSignType:
+		signer, err := ItemSignerAddr(d)
+		if err != nil {
+			return err
+		}
+
+		addr, err := goether.Ecrecover(accounts.TextHash(signMsg), sign)
+		if err != nil {
+			return err
+		}
+		if signer != addr.String() {
+			return errors.New("verify ecc sign failed")
+		}
+	default:
+		return errors.New("not support the signType")
 	}
 	return nil
 }
 
-func GetBundleItemTagsBytes(itemBinary []byte) []byte {
-	tagsStart := 2 + 512 + 512 + 2
-	anchorPresentByte := 1027
-	if len(itemBinary) < anchorPresentByte {
-		return []byte{}
+func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
+	if len(itemBinary) < 2 {
+		return nil, errors.New("itemBinary incorrect")
 	}
-	targetPersent := itemBinary[1026] == 1
+
+	sigType := ByteArrayToLong(itemBinary[:2])
+	sigMeta, ok := types.SigConfigMap[sigType]
+	if !ok {
+		return nil, fmt.Errorf("not support sigType:%d", sigType)
+	}
+	sigLength := sigMeta.SigLength
+	ownerLength := sigMeta.PubLength
+	position := 2 + sigLength + ownerLength
+	tagsStart := position + 2
+
+	anchorPresentByte := position + 1
+	if len(itemBinary) < position {
+		return nil, errors.New("itemBinary incorrect")
+	}
+	targetPersent := itemBinary[position] == 1
 	if targetPersent {
 		tagsStart += 32
-		anchorPresentByte += 32 // 1059
+		anchorPresentByte += 32
+	}
+	if len(itemBinary) < anchorPresentByte {
+		return nil, errors.New("itemBinary incorrect")
 	}
 	anchorPersent := itemBinary[anchorPresentByte] == 1
 	if anchorPersent {
 		tagsStart += 32
 	}
 
+	if len(itemBinary) < tagsStart+8 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
-	tagsBytesLength := ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
 
 	if numOfTags > 0 {
+		if len(itemBinary) < tagsStart+16 {
+			return nil, errors.New("itemBinary incorrect")
+		}
+		tagsBytesLength := ByteArrayToLong(itemBinary[tagsStart+8 : tagsStart+16])
+		if len(itemBinary) < tagsStart+16+tagsBytesLength || tagsStart+16+tagsBytesLength < 0 {
+			return nil, errors.New("itemBinary incorrect")
+		}
 		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
-		return tagsBytes
+		return tagsBytes, nil
 	} else {
-		return []byte{}
+		return []byte{}, nil
 	}
 }
 
@@ -255,6 +363,9 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		if err != nil {
 			return
 		}
+		if len(targetBytes) != 32 {
+			return errors.New("targetBytes length must 32")
+		}
 	}
 	anchorBytes := []byte{}
 	if d.Anchor != "" {
@@ -262,29 +373,45 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 		if err != nil {
 			return
 		}
+		if len(anchorBytes) != 32 {
+			return errors.New("anchorBytes length must 32")
+		}
 	}
 	tagsBytes, err := SerializeTags(d.Tags)
 	if err != nil {
 		return err
 	}
 
-	// Create array with set length
-	bytesArr := make([]byte, 0, 1044)
-	signType, err := strconv.Atoi(d.SignatureType)
-	if err != nil {
-		return err
+	sigMeta, ok := types.SigConfigMap[d.SignatureType]
+	if !ok {
+		return fmt.Errorf("not support sigType:%d", d.SignatureType)
 	}
-	bytesArr = append(bytesArr, ShortTo2ByteArray(signType)...)
+
+	sigLength := sigMeta.SigLength
+	ownerLength := sigMeta.PubLength
+
+	// Create array with set length
+	bytesArr := make([]byte, 0, 2+sigLength+ownerLength)
+
+	bytesArr = append(bytesArr, ShortTo2ByteArray(d.SignatureType)...)
 	// Push bytes for `signature`
 	sig, err := Base64Decode(d.Signature)
 	if err != nil {
 		return err
 	}
+
+	if len(sig) != sigLength {
+		return errors.New("signature length incorrect")
+	}
+
 	bytesArr = append(bytesArr, sig...)
 	// Push bytes for `ownerByte`
 	ownerByte, err := Base64Decode(d.Owner)
 	if err != nil {
 		return err
+	}
+	if len(ownerByte) != ownerLength {
+		return errors.New("signature length incorrect")
 	}
 	bytesArr = append(bytesArr, ownerByte...)
 	// Push `presence byte` and push `target` if present
@@ -321,4 +448,91 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	bytesArr = append(bytesArr, data...)
 	d.ItemBinary = bytesArr
 	return nil
+}
+
+func ItemSignerAddr(b types.BundleItem) (string, error) {
+	switch b.SignatureType {
+	case types.ArweaveSignType:
+		return OwnerToAddress(b.Owner)
+
+	case types.ED25519SignType, types.SolanaSignType:
+		by, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		return base58.Encode(by), nil
+	case types.EthereumSignType:
+		pubkey, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		pk, err := crypto.UnmarshalPubkey(pubkey)
+		if err != nil {
+			err = fmt.Errorf("can not unmarshal pubkey: %v", err)
+			return "", err
+		}
+		return crypto.PubkeyToAddress(*pk).String(), nil
+
+	default:
+		return "", errors.New("not support the signType")
+	}
+}
+
+func SubmitItemToBundlr(item types.BundleItem, bundlrUrl string) (*types.BundlrResp, error) {
+	itemBinary := item.ItemBinary
+	if len(itemBinary) == 0 {
+		if err := GenerateItemBinary(&item); err != nil {
+			return nil, err
+		}
+		itemBinary = item.ItemBinary
+	}
+	// post to bundler
+	resp, err := http.DefaultClient.Post(bundlrUrl+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &types.BundlrResp{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
+}
+
+func SubmitItemToArSeed(item types.BundleItem, currency, arseedUrl string) (*schema.RespOrder, error) {
+	itemBinary := item.ItemBinary
+	if len(itemBinary) == 0 {
+		if err := GenerateItemBinary(&item); err != nil {
+			return nil, err
+		}
+		itemBinary = item.ItemBinary
+	}
+	resp, err := http.DefaultClient.Post(arseedUrl+"/bundle/tx/"+currency, "application/octet-stream", bytes.NewReader(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("send to bundler request failed; http code: %d", resp.StatusCode)
+	}
+
+	defer resp.Body.Close()
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+	}
+	br := &schema.RespOrder{}
+	if err := json.Unmarshal(body, br); err != nil {
+		return nil, fmt.Errorf("json.Unmarshal(body,br) failed; err: %v", err)
+	}
+	return br, nil
 }

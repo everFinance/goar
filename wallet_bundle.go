@@ -2,25 +2,8 @@ package goar
 
 import (
 	"errors"
-	"strconv"
-
 	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
 )
-
-func (w *Wallet) CreateAndSignBundleItem(data []byte, signatureType int, target string, anchor string, tags []types.Tag) (di types.BundleItem, err error) {
-	bundleItem := utils.NewBundleItem(w.Owner(), strconv.Itoa(signatureType), target, anchor, data, tags)
-	// sign
-	err = utils.SignBundleItem(bundleItem, w.Signer.PrvKey)
-	if err != nil {
-		return di, err
-	}
-	err = utils.GenerateItemBinary(bundleItem)
-	if err != nil {
-		return di, err
-	}
-	return *bundleItem, nil
-}
 
 func (w *Wallet) SendBundleTxSpeedUp(bundleBinary []byte, tags []types.Tag, txSpeed int64) (types.Transaction, error) {
 	bundleTags := []types.Tag{

@@ -162,7 +162,9 @@ Package for Arweave develop toolkit.
 - [x] GetSignatureData
 - [x] VerifyTransaction
 - [x] NewBundle
-- [x] GenerateIndepHash
+- [x] NewBundleItem
+- [x] SubmitItemToBundlr
+- [x] SubmitItemToArSeed
 
 #### RSA Threshold Cryptography
 
@@ -309,48 +311,56 @@ assert.NoError(t, uploader.Once())
 ### About Arweave Bundles
 1. `goar` implemented creating,editing,reading and verifying bundles tx
 2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement
-3. more example can be viewed in path `./example/bundle_test.go`
 
-#### CreateBundle
+#### Create Bundle Item
 ```go
-w, err := goar.NewWalletFromPath(privateKey, arNode)
-if err != nil {
-  panic(err)
-}
+signer, err := goar.NewSignerFromPath("./testKey.json") // rsa signer
+// or 
+signer, err := goether.NewSigner("0x.....") // ecdsa signer
 
 // Create Item
-data := []byte("upload update...")   
-signatureType := 1 // currently only supply type 1
+data := []byte("aa bb cc dd")
 target := "" // option 
 anchor := "" // option
-tags := []types.Tags{}{} // bundle item tags
-item01, err := w.CreateAndSignBundleItem(data, 1, target, anchor, tags)    
+tags := []types.Tags{}{} // option bundle item tags
+item01, err := itemSigner.CreateAndSignItem(data, target, anchor, tags)    
 // Same as create item
 item02
 item03
 ....
 
-items := []types.BundleItem{item01, item02, item03 ...}	
+```
+#### assemble bundle and send to arweave network 
+You can send items directly to the arweave network
+```go
 
+items := []types.BundleItem{item01, item02, item03 ...}
 bundle, err := utils.NewBundle(items...)
 
-```
+w, err := goar.NewWalletFromPath("./key.json", arNode)
 
-#### Send Item to Bundler
-Bundler network provides guaranteed data seeding and instant data accessibility
-```go
-resp, err := w.Client.BatchSendItemToBundler(items,"") // The second parameter is the bundler gateway url，"" means use default url
-```
-
-#### Send Bundle Tx
-```go
+arTxTags := []types.Tags{}{} // option
 tx, err := w.SendBundleTx(bd.BundleBinary, arTxtags)
+
 ```
 
-#### Get Bundle and Verify
+#### Send Item to [Arseeding](https://github.com/everFinance/arseeding) gateway
+Arseeding provides guaranteed data seeding and instant data accessibility
 ```go
-id := "lt24bnUGms5XLZeVamSPHePl4M2ClpLQyRxZI7weH1k"
-bundle, err := cli.GetBundle(id)
+arseedUrl := "https://seed.everpay.io"
+currency := "USDC" // used for payment fee currency
+resp, err := utils.SubmitItemToArSeed(item01,currency,arseedUrl)
+```
+
+#### Send Item to Bundler gateway
+Bundler provides guaranteed data seeding and instant data accessibility
+```go
+bundlrUrl := "https://node1.bundlr.network"
+resp, err := utils.SubmitItemToBundlr(item01, bundlrUrl)
+```
+
+#### Verify Bundle Items
+```go
 
 // verify
 for _, item := range bundle.Items {
@@ -358,9 +368,27 @@ for _, item := range bundle.Items {
   assert.NoError(t, err)
 }
 ```
+check [bundle example](./example/bundle_test.go) 
 
-### notice
-if you call `w.Client.BatchSendItemToBundler(items,"")` 
+#### About Arseeding
+if you can `utils.SubmitItemToArseed(item,currency,arseedUrl)` 
+and you will get the following return response   
+```go
+{
+    "ItemId": "5rEb7c6OjMQIYjl6P7AJIb4bB9CLMBSxhZ9N7BVbRCk",
+    "bundler": "Fkj5J8CDLC9Jif4CzgtbiXJBnwXLSrp5AaIllleH_yY",
+    "currency": "USDT",
+    "decimals": 6,
+    "fee": "701",
+    "paymentExpiredTime": 1656044994,
+    "expectedBlock": 960751
+}
+```
+After you transfer 0.000701 USDT to bundler using everpay, arseeding will upload the item to arweave.   
+For more usage, jump to [docs](https://github.com/everFinance/arseeding/blob/main/README.md)
+
+#### About Bundlr
+if you call `utils.SubmitItemToBundlr(item,bundlrUrl)` 
 and return `panic: send to bundler request failed; http code: 402`        
 means that you have to pay ar to the bundler service address    
 must use item signature address to transfer funds   
@@ -371,13 +399,28 @@ curl --location --request GET 'https://node1.bundlr.network/info'
 
 response:
 {
-"uptime": 275690.552536824,
-"address": "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs",
-"gateway": "arweave.net"
+    "version": "0.2.0",
+    "addresses": {
+        "arweave": "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs",
+        "ethereum": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "matic": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "bnb": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "avalanche": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "solana": "DHyDV2ZjN3rB6qNGXS48dP5onfbZd3fAEz6C5HJwSqRD",
+        "arbitrum": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "boba-eth": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "boba": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "chainlink": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "kyve": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "fantom": "0xb4DE0833771eae55040b698aF5eB06d59E142C82",
+        "near": "bundlr1.near",
+        "algorand": "DL7ZTTQMTFNXRF3367OTSNAZ3L2X676OJ4GGB3DXMUJ37CCKJ5RJMEO6RI"
+    },
+    "gateway": "arweave.net"
 }
 ```
-This "address" is the bundler service receive ar address.    
-You need to transfer a certain amount of ar to this address    
+This "addresses" are the bundler service receive address.    
+You need to transfer a certain amount of token to this address    
 and wait for 25 blocks to confirm the transaction before you can use the bundler service.    
 
 You can also use the following api to query the balance in the bundler service.   

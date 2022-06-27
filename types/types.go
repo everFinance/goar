@@ -29,7 +29,7 @@ type TxStatus struct {
 	NumberOfConfirmations int    `json:"number_of_confirmations"`
 }
 
-type BundlerResp struct {
+type BundlrResp struct {
 	Id        string `json:"id"`
 	Signature string `json:"signature"`
 	N         string `json:"n"`

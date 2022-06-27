@@ -13,6 +13,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -52,6 +53,10 @@ func NewTempConn() *Client {
 
 func (c *Client) SetTempConnUrl(url string) {
 	c.url = url
+}
+
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.client.Timeout = timeout
 }
 
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
