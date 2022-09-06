@@ -1,6 +1,10 @@
 package goar
 
 import (
+	crand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -39,6 +43,38 @@ func NewWallet(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err e
 	}
 
 	return
+}
+
+func NewKeyFile() error {
+	bitLen := 4096 // Binary length of key,compatible with arweave-js
+	priKey, err := rsa.GenerateKey(crand.Reader, bitLen)
+	if err != nil {
+		panic(err)
+	}
+	walletJson := types.KeyFile{
+		D:   utils.Base64Encode(priKey.D.Bytes()),
+		Dp:  utils.Base64Encode(priKey.Precomputed.Dp.Bytes()),
+		Dq:  utils.Base64Encode(priKey.Precomputed.Dq.Bytes()),
+		E:   "AQAB", // 65537
+		Ext: true,
+		Kty: "RSA",
+		N:   utils.Base64Encode(priKey.N.Bytes()),
+		P:   utils.Base64Encode(priKey.Primes[0].Bytes()),
+		Q:   utils.Base64Encode(priKey.Primes[1].Bytes()),
+		Qi:  utils.Base64Encode(priKey.Precomputed.Qinv.Bytes()),
+	}
+	addrBy := sha256.Sum256(priKey.N.Bytes())
+	addr := utils.Base64Encode(addrBy[:])
+	fileName := fmt.Sprintf("%s.json", addr)
+	walletBy, err := json.Marshal(walletJson)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(fileName, walletBy, 0777)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (w *Wallet) Owner() string {

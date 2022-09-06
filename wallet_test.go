@@ -111,3 +111,8 @@ func Test_SendPstTransfer(t *testing.T) {
 	// assert.NoError(t, err)
 	// t.Log(arTx.ID)
 }
+
+func TestGenKeyFile(t *testing.T) {
+	err := NewKeyFile()
+	assert.NoError(t, err)
+}
