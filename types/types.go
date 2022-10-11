@@ -30,7 +30,10 @@ type TxStatus struct {
 }
 
 type BundlrResp struct {
-	Id        string `json:"id"`
-	Signature string `json:"signature"`
-	N         string `json:"n"`
+	Id                  string   `json:"id"`
+	Signature           string   `json:"signature"`
+	N                   string   `json:"n"`
+	Public              string   `json:"public"`
+	Block               int64    `json:"block"`
+	ValidatorSignatures []string `json:"validatorSignatures"` 
 }
