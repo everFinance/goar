@@ -2,6 +2,9 @@ package goar
 
 import (
 	"encoding/base64"
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -110,4 +113,187 @@ func Test_SendPstTransfer(t *testing.T) {
 	// arTx, err := w.SendPst(contractId,target,qty,nil,50)
 	// assert.NoError(t, err)
 	// t.Log(arTx.ID)
+}
+
+func TestCreateUploader(t *testing.T) {
+	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
+	assert.NoError(t, err)
+	t.Log(w.Signer.Address)
+
+	data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/44444.mp4")
+	if err != nil {
+		panic(err)
+	}
+	tags := []types.Tag{
+		{Name: "Content-Type", Value: "video/mpeg4"},
+	}
+	tx, err := w.SendData(data, tags)
+	assert.NoError(t, err)
+	t.Log(tx.ID)
+}
+
+func TestNewWallet(t *testing.T) {
+	cli := NewClient("https://arseed-dev.web3infra.dev")
+	data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
+	assert.NoError(t, err)
+	ioutil.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
+
+	// -I6guxsTtnaLazLN4HgCHtYXNXQGALcHDrpi6oz7Cbk
+	// 91s
+
+	// _OXH-KzWyJVZsHEJ257uMcsi1VqdvMLroxVTeAYODi4
+	// 408s
+
+	// 355oQfW-6XM659iG4Yy69vyAeuTC5v7c_QqGU4iRI9Q
+	// 48s
+
+	// _bIcfrydLSGRzwLDYvwCB16SpKAeClJdZHLRC0lgOnQ
+	// 24s
+}
+
+func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
+	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
+	assert.NoError(t, err)
+	t.Log(w.Signer.Address)
+	signer01 := w.Signer
+	// sig item01 by ecc signer
+	itemSigner01, err := NewItemSigner(signer01)
+	assert.NoError(t, err)
+	d1, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item01, err := itemSigner01.CreateAndSignItem(d1, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item01", "id", item01.Id)
+
+	d2, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/2.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item02, err := itemSigner01.CreateAndSignItem(d2, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item02", "id", item02.Id)
+
+	d3, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/3.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item03, err := itemSigner01.CreateAndSignItem(d3, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item03", "id", item03.Id)
+
+	d4, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/4.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item04, err := itemSigner01.CreateAndSignItem(d4, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+
+	d5, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/5.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item05, err := itemSigner01.CreateAndSignItem(d5, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item05", "id", item05.Id)
+
+	d6, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/6.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item06, err := itemSigner01.CreateAndSignItem(d6, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item06", "id", item06.Id)
+
+	d7, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/7.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item07, err := itemSigner01.CreateAndSignItem(d7, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item07", "id", item07.Id)
+
+	d8, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/8.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item08, err := itemSigner01.CreateAndSignItem(d8, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item08", "id", item08.Id)
+
+	d9, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/9.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item09, err := itemSigner01.CreateAndSignItem(d9, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item09", "id", item09.Id)
+
+	d10, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/10.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item10, err := itemSigner01.CreateAndSignItem(d10, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item10", "id", item10.Id)
+
+	d11, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/11.jpeg")
+	if err != nil {
+		panic(err)
+	}
+	item11, err := itemSigner01.CreateAndSignItem(d11, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Owner", Value: "Vv"},
+	})
+	assert.NoError(t, err)
+	t.Log("item11", "id", item11.Id)
+
+	// assemble bundle
+	bundle, err := utils.NewBundle(item01, item02, item03, item04, item05, item06, item07, item08, item09, item10, item11)
+	assert.NoError(t, err)
+
+	t.Log(len(bundle.BundleBinary))
+	// send to arweave
+	// tx, err := w.SendBundleTx(bundle.BundleBinary, []types.Tag{
+	// 	{Name: "APP", Value: "Goar"},
+	// 	{Name: "Protocol-Name", Value: "BAR"},
+	// 	{Name: "Action", Value: "Burn"},
+	// 	{Name: "App-Name", Value: "SmartWeaveAction"},
+	// 	{Name: "App-Version", Value: "0.3.0"},
+	// 	{Name: "Input", Value: `{"function":"mint"}`},
+	// 	{Name: "Contract", Value: "VFr3Bk-uM-motpNNkkFg4lNW1BMmSfzqsVO551Ho4hA"},
+	// })
+	// assert.NoError(t, err)
+	// t.Log(tx.ID)
 }

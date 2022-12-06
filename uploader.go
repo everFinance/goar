@@ -3,9 +3,12 @@ package goar
 import (
 	"errors"
 	"fmt"
+	"github.com/panjf2000/ants/v2"
 	"math"
+	"math/big"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/everFinance/goar/types"
@@ -108,6 +111,13 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 }
 
 func (tt *TransactionUploader) Once() (err error) {
+	dataSize, ok := new(big.Int).SetString(tt.Transaction.DataSize, 10)
+	if ok && dataSize.Cmp(big.NewInt(types.CONCURRENT_MIN_DATA_SIZE)) >= 0 {
+		log.Debug("Using concurrent upload chunks", "dataSize", dataSize.String())
+		return tt.ConcurrentUploadChunks()
+	}
+
+	// not use concurrent submit chunks
 	for !tt.IsComplete() {
 		if err = tt.UploadChunk(); err != nil {
 			return
@@ -146,6 +156,64 @@ func (tt *TransactionUploader) PctComplete() float64 {
 	val := decimal.NewFromInt(int64(tt.UploadedChunks())).Div(decimal.NewFromInt(int64(tt.TotalChunks())))
 	fval, _ := val.Float64()
 	return math.Trunc(fval * 100)
+}
+
+func (tt *TransactionUploader) ConcurrentUploadChunks() error {
+	// post tx info
+	if err := tt.postTransaction(); err != nil {
+		return err
+	}
+
+	if tt.IsComplete() {
+		return nil
+	}
+
+	var wg sync.WaitGroup
+	p, _ := ants.NewPoolWithFunc(types.DEFAULT_CHUNK_CONCURRENT_NUM, func(i interface{}) {
+		defer wg.Done()
+		// process submit chunk
+		idx := i.(int)
+		chunk, err := utils.GetChunk(*tt.Transaction, idx, tt.Data)
+		if err != nil {
+			log.Error("GetChunk error", "err", err, "idx", idx)
+			return
+		}
+		body, statusCode, err := tt.Client.SubmitChunks(chunk) // always body is errMsg
+		if statusCode == 200 {
+			return
+		}
+
+		log.Error("concurrent submitChunk failed", "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
+		// try again
+		retryCount := 0
+		for {
+			retryCount++
+
+			if statusCode == 429 {
+				time.Sleep(1 * time.Second)
+			} else {
+				time.Sleep(200 * time.Millisecond)
+			}
+
+			body, statusCode, err = tt.Client.SubmitChunks(chunk)
+			if statusCode == 200 {
+				return
+			}
+			log.Warn("retry submitChunk failed", "retryCount", retryCount, "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
+		}
+	})
+
+	defer p.Release()
+	for i := 0; i < len(tt.Transaction.Chunks.Chunks); i++ {
+		wg.Add(1)
+		if err := p.Invoke(i); err != nil {
+			log.Error("p.Invoke(i)", "err", err, "i", i)
+			return err
+		}
+	}
+
+	wg.Wait()
+	return nil
 }
 
 /**
