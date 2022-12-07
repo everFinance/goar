@@ -11,6 +11,9 @@ const (
 	NOTE_SIZE      = 32
 	HASH_SIZE      = 32
 
+	// concurrent submit chunks min size
+	DEFAULT_CHUNK_CONCURRENT_NUM = 50 // default concurrent number
+
 	// number of bits in a big.Word
 	WordBits = 32 << (uint64(^big.Word(0)) >> 63)
 	// number of bytes in a big.Word
