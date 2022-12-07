@@ -4,10 +4,9 @@ import (
 	"encoding/base64"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var testWallet *Wallet
@@ -285,7 +284,9 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 
 	t.Log(len(bundle.BundleBinary))
 	// send to arweave
-	// tx, err := w.SendBundleTx(bundle.BundleBinary, []types.Tag{
+	// ctx ,cancel := context.WithTimeout(context.Background(),100*time.Millisecond)
+	// defer cancel()
+	// tx, err := w.SendBundleTx(ctx, 0,bundle.BundleBinary, []types.Tag{
 	// 	{Name: "APP", Value: "Goar"},
 	// 	{Name: "Protocol-Name", Value: "BAR"},
 	// 	{Name: "Action", Value: "Burn"},

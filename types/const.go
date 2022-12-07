@@ -12,8 +12,7 @@ const (
 	HASH_SIZE      = 32
 
 	// concurrent submit chunks min size
-	CONCURRENT_MIN_DATA_SIZE     = 30 * 1024 * 1024 // 30 MB
-	DEFAULT_CHUNK_CONCURRENT_NUM = 100              // default concurrent number
+	DEFAULT_CHUNK_CONCURRENT_NUM = 50 // default concurrent number
 
 	// number of bits in a big.Word
 	WordBits = 32 << (uint64(^big.Word(0)) >> 63)

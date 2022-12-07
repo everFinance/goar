@@ -1,6 +1,7 @@
 package goar
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -101,24 +102,55 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 	return w.SendTransaction(tx)
 }
 
-// SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(tx *types.Transaction) (types.Transaction, error) {
-	anchor, err := w.Client.GetTransactionAnchor()
+func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+	reward, err := w.Client.GetTransactionPrice(data, nil)
 	if err != nil {
 		return types.Transaction{}, err
 	}
-	tx.LastTx = anchor
-	tx.Owner = w.Owner()
-	if err = w.Signer.SignTx(tx); err != nil {
-		return types.Transaction{}, err
+
+	tx := &types.Transaction{
+		Format:   2,
+		Target:   "",
+		Quantity: "0",
+		Tags:     utils.TagsEncode(tags),
+		Data:     utils.Base64Encode(data),
+		DataSize: fmt.Sprintf("%d", len(data)),
+		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
-	uploader, err := CreateUploader(w.Client, tx, nil)
+	return w.SendTransactionConcurrent(ctx, concurrentNum, tx)
+}
+
+// SendTransaction: if send success, should return pending
+func (w *Wallet) SendTransaction(tx *types.Transaction) (types.Transaction, error) {
+	uploader, err := w.getUploader(tx)
 	if err != nil {
 		return types.Transaction{}, err
 	}
 	err = uploader.Once()
 	return *tx, err
+}
+
+func (w *Wallet) SendTransactionConcurrent(ctx context.Context, concurrentNum int, tx *types.Transaction) (types.Transaction, error) {
+	uploader, err := w.getUploader(tx)
+	if err != nil {
+		return types.Transaction{}, err
+	}
+	err = uploader.ConcurrentOnce(ctx, concurrentNum)
+	return *tx, err
+}
+
+func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error) {
+	anchor, err := w.Client.GetTransactionAnchor()
+	if err != nil {
+		return nil, err
+	}
+	tx.LastTx = anchor
+	tx.Owner = w.Owner()
+	if err = w.Signer.SignTx(tx); err != nil {
+		return nil, err
+	}
+	return CreateUploader(w.Client, tx, nil)
 }
 
 func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {

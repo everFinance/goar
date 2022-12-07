@@ -1,11 +1,11 @@
 package goar
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/panjf2000/ants/v2"
 	"math"
-	"math/big"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -111,13 +111,6 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 }
 
 func (tt *TransactionUploader) Once() (err error) {
-	dataSize, ok := new(big.Int).SetString(tt.Transaction.DataSize, 10)
-	if ok && dataSize.Cmp(big.NewInt(types.CONCURRENT_MIN_DATA_SIZE)) >= 0 {
-		log.Debug("Using concurrent upload chunks", "dataSize", dataSize.String())
-		return tt.ConcurrentUploadChunks()
-	}
-
-	// not use concurrent submit chunks
 	for !tt.IsComplete() {
 		if err = tt.UploadChunk(); err != nil {
 			return
@@ -158,7 +151,7 @@ func (tt *TransactionUploader) PctComplete() float64 {
 	return math.Trunc(fval * 100)
 }
 
-func (tt *TransactionUploader) ConcurrentUploadChunks() error {
+func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum int) error {
 	// post tx info
 	if err := tt.postTransaction(); err != nil {
 		return err
@@ -169,10 +162,20 @@ func (tt *TransactionUploader) ConcurrentUploadChunks() error {
 	}
 
 	var wg sync.WaitGroup
-	p, _ := ants.NewPoolWithFunc(types.DEFAULT_CHUNK_CONCURRENT_NUM, func(i interface{}) {
+	if concurrentNum <= 0 {
+		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+	}
+	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
 		defer wg.Done()
 		// process submit chunk
 		idx := i.(int)
+
+		select {
+		case <-ctx.Done():
+			log.Warn("ctx.done", "chunkIdx", idx)
+			return
+		default:
+		}
 		chunk, err := utils.GetChunk(*tt.Transaction, idx, tt.Data)
 		if err != nil {
 			log.Error("GetChunk error", "err", err, "idx", idx)
@@ -187,8 +190,14 @@ func (tt *TransactionUploader) ConcurrentUploadChunks() error {
 		// try again
 		retryCount := 0
 		for {
-			retryCount++
+			select {
+			case <-ctx.Done():
+				log.Warn("ctx.done", "chunkIdx", idx)
+				return
+			default:
+			}
 
+			retryCount++
 			if statusCode == 429 {
 				time.Sleep(1 * time.Second)
 			} else {

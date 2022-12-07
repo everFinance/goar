@@ -1,6 +1,7 @@
 package example
 
 import (
+	"context"
 	"github.com/everFinance/everpay-go/sdk"
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
@@ -70,7 +71,8 @@ func TestBundleToArweave(t *testing.T) {
 
 	// send to arweave
 	wal, err := goar.NewWalletFromPath("jwkKey.json", "https://arweave.net")
-	tx, err := wal.SendBundleTx(bundle.BundleBinary, []types.Tag{
+	assert.NoError(t, err)
+	tx, err := wal.SendBundleTx(context.TODO(), 0, bundle.BundleBinary, []types.Tag{
 		{Name: "App", Value: "goar"},
 	})
 	assert.NoError(t, err)
