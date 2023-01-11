@@ -305,3 +305,15 @@ func TestClient_GetBlockHashList2(t *testing.T) {
 	// 	t.Log(list)
 	// }
 }
+
+func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	arId := "hG478oYzU0ReX8fCsRMcsm4ywuO4eiElCqDUAsm0nDk"
+	data, err := c.ConcurrentDownloadChunkData(arId, 0)
+	assert.NoError(t, err)
+	// ioutil.WriteFile("nannan.jpeg",data,0777)
+	chunks := utils.GenerateChunks(data)
+	dataRoot := utils.Base64Encode(chunks.DataRoot)
+	t.Log(dataRoot)
+	t.Log(len(data))
+}

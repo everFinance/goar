@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/inconshreveable/log15"
+	"github.com/panjf2000/ants/v2"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/everFinance/goar/types"
@@ -499,6 +501,109 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 		data = append(data, chunkData...)
 		fmt.Printf("download chunk data; offset: %d/%d; size: %d/%d \n", int64(i)+startOffset, endOffset, len(data), size)
 		i += len(chunkData)
+	}
+	return data, nil
+}
+
+func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]byte, error) {
+	offsetResponse, err := c.getTransactionOffset(id)
+	if err != nil {
+		return nil, err
+	}
+	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	startOffset := endOffset - size + 1
+
+	offsetArr := make([]int64, 0, 5)
+	for i := 0; int64(i)+startOffset < endOffset; {
+		offsetArr = append(offsetArr, int64(i)+startOffset)
+		i += types.MAX_CHUNK_SIZE
+	}
+
+	if len(offsetArr) <= 3 { // not need concurrent get chunks
+		return c.DownloadChunkData(id)
+	}
+
+	log.Debug("need download chunks length", "length", len(offsetArr))
+	// concurrent get chunks
+	type OffsetSort struct {
+		Idx    int
+		Offset int64
+	}
+
+	chunkArr := make([][]byte, len(offsetArr)-2)
+	var (
+		lock sync.Mutex
+		wg   sync.WaitGroup
+	)
+	if concurrentNum <= 0 {
+		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+	}
+	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
+		defer wg.Done()
+		oss := i.(OffsetSort)
+		chunkData, err := c.getChunkData(oss.Offset)
+		if err != nil {
+			count := 0
+			for count < 50 {
+				time.Sleep(2 * time.Second)
+				chunkData, err = c.getChunkData(oss.Offset)
+				if err == nil {
+					break
+				}
+				log.Error("retry getChunkData failed and try again...", "err", err, "offset", oss.Offset, "retryCount", count)
+				count++
+			}
+		}
+		lock.Lock()
+		chunkArr[oss.Idx] = chunkData
+		lock.Unlock()
+	})
+
+	defer p.Release()
+
+	for i, offset := range offsetArr[:len(offsetArr)-2] {
+		wg.Add(1)
+		if err := p.Invoke(OffsetSort{Idx: i, Offset: offset}); err != nil {
+			log.Error("p.Invoke(i)", "err", err, "i", i)
+			return nil, err
+		}
+	}
+	wg.Wait()
+
+	// add latest 2 chunks
+	start := offsetArr[len(offsetArr)-3] + types.MAX_CHUNK_SIZE
+	for i := 0; int64(i)+start < endOffset; {
+		chunkData, err := c.getChunkData(int64(i) + start)
+		if err != nil {
+			count := 0
+			for count < 50 {
+				time.Sleep(2 * time.Second)
+				chunkData, err = c.getChunkData(int64(i) + start)
+				if err == nil {
+					break
+				}
+				log.Error("retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count)
+				count++
+			}
+		}
+		chunkArr = append(chunkArr, chunkData)
+		i += len(chunkData)
+	}
+
+	// assemble data
+	data := make([]byte, 0, size)
+	for _, chunk := range chunkArr {
+		if chunk == nil {
+			return nil, errors.New("concurrent get chunk failed")
+		}
+		data = append(data, chunk...)
 	}
 	return data, nil
 }
