@@ -3,6 +3,7 @@ package goar
 import (
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 )
 
@@ -308,12 +309,21 @@ func TestClient_GetBlockHashList2(t *testing.T) {
 
 func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
 	c := NewClient("https://arweave.net")
-	arId := "hG478oYzU0ReX8fCsRMcsm4ywuO4eiElCqDUAsm0nDk"
+	arId := "6G_gCR5ZlFzg5Ek3DDTgwFFJhOKEowKJjHaA6Bt48VA"
 	data, err := c.ConcurrentDownloadChunkData(arId, 0)
+	// data , err := c.DownloadChunkData(arId)
 	assert.NoError(t, err)
-	// ioutil.WriteFile("nannan.jpeg",data,0777)
+	ioutil.WriteFile("nannan.gif", data, 0666)
 	chunks := utils.GenerateChunks(data)
 	dataRoot := utils.Base64Encode(chunks.DataRoot)
 	t.Log(dataRoot)
 	t.Log(len(data))
+}
+
+func TestClient_ExistTxData(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	arId := "cAC7ave2lo3aixlC1wdvRBpGa3ELX_s2M2zJ03u0AwI"
+	exist, err := c.ExistTxData(arId)
+	assert.NoError(t, err)
+	t.Log(exist)
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/inconshreveable/log15"
 	"github.com/panjf2000/ants/v2"
+	"github.com/tidwall/gjson"
+	"gopkg.in/h2non/gentleman.v2"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -63,6 +65,9 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 
 func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 	body, code, err := c.httpGet("info")
+	if code == 429 {
+		return nil, ErrRequestLimit
+	}
 	if err != nil {
 		return nil, ErrBadGateway
 	}
@@ -77,6 +82,9 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 
 func (c *Client) GetPeers() ([]string, error) {
 	body, code, err := c.httpGet("peers")
+	if code == 429 {
+		return nil, ErrRequestLimit
+	}
 	if err != nil {
 		return nil, ErrBadGateway
 	}
@@ -121,6 +129,8 @@ func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, err error
 		return nil, ErrInvalidId
 	case 404:
 		return nil, ErrNotFound
+	case 429:
+		return nil, ErrRequestLimit
 	default:
 		return nil, ErrBadGateway
 	}
@@ -143,6 +153,8 @@ func (c *Client) GetTransactionStatus(id string) (*types.TxStatus, error) {
 		return nil, ErrPendingTx
 	case 404:
 		return nil, ErrNotFound
+	case 429:
+		return nil, ErrRequestLimit
 	default:
 		return nil, ErrBadGateway
 	}
@@ -163,6 +175,8 @@ func (c *Client) GetTransactionField(id string, field string) (string, error) {
 		return "", ErrInvalidId
 	case 404:
 		return "", ErrNotFound
+	case 429:
+		return "", ErrRequestLimit
 	default:
 		return "", ErrBadGateway
 	}
@@ -208,6 +222,8 @@ func (c *Client) GetTransactionData(id string, extension ...string) ([]byte, err
 		return nil, ErrPendingTx
 	case 404:
 		return nil, ErrNotFound
+	case 429:
+		return nil, ErrRequestLimit
 	default:
 		return nil, ErrBadGateway
 	}
@@ -231,6 +247,8 @@ func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error)
 		return nil, ErrNotFound
 	case 410:
 		return nil, ErrInvalidId
+	case 429:
+		return nil, ErrRequestLimit
 	default:
 		return nil, ErrBadGateway
 	}
@@ -243,6 +261,9 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 	}
 
 	body, code, err := c.httpGet(url)
+	if code == 429 {
+		return 0, ErrRequestLimit
+	}
 	if err != nil {
 		return
 	}
@@ -264,6 +285,9 @@ func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64,
 
 func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	body, code, err := c.httpGet("tx_anchor")
+	if code == 429 {
+		return "", ErrRequestLimit
+	}
 	if err != nil {
 		return
 	}
@@ -318,6 +342,9 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 
 	// query from http client
 	data, statusCode, err := c.httpPost("graphql", byQuery)
+	if statusCode == 429 {
+		return nil, ErrRequestLimit
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -340,6 +367,9 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 // Wallet
 func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
+	if code == 429 {
+		return nil, ErrRequestLimit
+	}
 	if err != nil {
 		return
 	}
@@ -360,6 +390,9 @@ func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err erro
 
 func (c *Client) GetLastTransactionID(address string) (id string, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/last_tx", address))
+	if code == 429 {
+		return "", ErrRequestLimit
+	}
 	if err != nil {
 		return
 	}
@@ -377,6 +410,9 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 	if err != nil {
 		return
 	}
+	if code == 429 {
+		return nil, ErrRequestLimit
+	}
 
 	if code != 200 {
 		return nil, fmt.Errorf("get block by id error: %s", string(body))
@@ -389,6 +425,9 @@ func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) 
 	body, code, err := c.httpGet(fmt.Sprintf("block/height/%d", height))
 	if err != nil {
 		return
+	}
+	if code == 429 {
+		return nil, ErrRequestLimit
 	}
 
 	if code != 200 {
@@ -468,6 +507,9 @@ func (c *Client) getChunkData(offset int64) ([]byte, error) {
 func (c *Client) getTransactionOffset(id string) (*types.TransactionOffset, error) {
 	_path := fmt.Sprintf("tx/%s/offset", id)
 	body, statusCode, err := c.httpGet(_path)
+	if statusCode == 429 {
+		return nil, ErrRequestLimit
+	}
 	if statusCode != 200 {
 		return nil, errors.New("not found tx offset")
 	}
@@ -663,4 +705,71 @@ func (c *Client) GetBlockHashList(from, to int) ([]string, error) {
 		return nil, err
 	}
 	return res, nil
+}
+
+func (c *Client) ExistTxData(arId string) (bool, error) {
+	offsetResponse, err := c.getTransactionOffset(arId)
+	if err != nil {
+		return false, err
+	}
+	endOffset := offsetResponse.Offset
+
+	records, err := c.DataSyncRecord(endOffset, 1)
+	if err != nil {
+		return false, err
+	}
+	if len(records) == 0 {
+		return false, errors.New("c.DataSyncRecord(endOffset,1) is null")
+	}
+	record := records[0]
+
+	// if tx data has end offset 145 and size 10 (you can see it in GET /tx/<id>/offset),
+	// you can query GET /data_sync_record/145/1
+	// - you will receive {"<end>": "<start>"} => the node has the tx data if start =< 145 - 10
+	mmp := gjson.Parse(record).Map()
+	start := ""
+	for _, val := range mmp {
+		start = val.String()
+		break
+	}
+	startNum, err := strconv.Atoi(start)
+	if err != nil {
+		return false, err
+	}
+	endOffsetNum, err := strconv.Atoi(endOffset)
+	if err != nil {
+		return false, err
+	}
+	sizeNum, err := strconv.Atoi(offsetResponse.Size)
+	if err != nil {
+		return false, err
+	}
+
+	return startNum <= endOffsetNum-sizeNum, nil
+}
+
+// DataSyncRecord you can use GET /data_sync_record/<end_offset>/<number_of_intervals>
+// to fetch the first intervals with end offset >= end_offset;
+// set Content-Type: application/json to get the reply in JSON
+func (c *Client) DataSyncRecord(endOffset string, intervalsNum int) ([]string, error) {
+	req := gentleman.New().URL(c.url).Request()
+	req.AddPath("/data_sync_record/" + endOffset + "/" + strconv.Itoa(intervalsNum))
+	req.SetHeader("Content-Type", "application/json")
+	resp, err := req.Send()
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 429 {
+		return nil, ErrRequestLimit
+	}
+	if !resp.Ok {
+		return nil, errors.New("resp ok is false")
+	}
+	defer resp.Close()
+	ss := gjson.ParseBytes(resp.Bytes()).Array()
+	result := make([]string, 0, len(ss))
+	for _, s := range ss {
+		result = append(result, s.String())
+	}
+	return result, nil
 }
