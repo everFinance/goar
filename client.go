@@ -441,6 +441,9 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
 	_path := "chunk/" + strconv.FormatInt(offset, 10)
 	body, statusCode, err := c.httpGet(_path)
+	if statusCode == 429 {
+		return nil, ErrRequestLimit
+	}
 	if statusCode != 200 {
 		return nil, errors.New("not found chunk data")
 	}
@@ -551,14 +554,16 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		chunkData, err := c.getChunkData(oss.Offset)
 		if err != nil {
 			count := 0
-			for count < 50 {
+			for count < 3 {
 				time.Sleep(2 * time.Second)
 				chunkData, err = c.getChunkData(oss.Offset)
 				if err == nil {
 					break
 				}
-				log.Error("retry getChunkData failed and try again...", "err", err, "offset", oss.Offset, "retryCount", count)
-				count++
+				log.Error("retry getChunkData failed and try again...", "err", err, "offset", oss.Offset, "retryCount", count, "arId", id)
+				if err != ErrRequestLimit {
+					count++
+				}
 			}
 		}
 		lock.Lock()
@@ -583,14 +588,16 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		chunkData, err := c.getChunkData(int64(i) + start)
 		if err != nil {
 			count := 0
-			for count < 50 {
+			for count < 3 {
 				time.Sleep(2 * time.Second)
 				chunkData, err = c.getChunkData(int64(i) + start)
 				if err == nil {
 					break
 				}
-				log.Error("retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count)
-				count++
+				log.Error("retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
+				if err != ErrRequestLimit {
+					count++
+				}
 			}
 		}
 		chunkArr = append(chunkArr, chunkData)
