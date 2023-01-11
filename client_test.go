@@ -277,3 +277,31 @@ func TestNewTempConn(t *testing.T) {
 		t.Logf("offset: %s, peer: %s", offset.Offset, peer)
 	}
 }
+
+func TestClient_GetBlockHashList(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	from := 1095730
+	to := 1095750
+	list, err := c.GetBlockHashList(from, to)
+	assert.NoError(t, err)
+	t.Log(list)
+}
+
+func TestClient_GetBlockHashList2(t *testing.T) {
+	// c := NewClient("https://arweave.net")
+	// peers, err := c.GetPeers()
+	// assert.NoError(t, err)
+	// pNode := NewTempConn()
+	// for _, peer := range peers {
+	// 	pNode.SetTempConnUrl("http://" + peer)
+	// 	from := 1095740
+	// 	to := 1095750
+	// 	list, err := c.GetBlockHashList(from, to)
+	// 	if err != nil {
+	// 		t.Log("err", err, "perr", peer)
+	// 		continue
+	// 	}
+	// 	t.Log(peer)
+	// 	t.Log(list)
+	// }
+}

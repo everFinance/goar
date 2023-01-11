@@ -534,8 +534,11 @@ func (c *Client) GetPendingTxIds() ([]string, error) {
 	return res, nil
 }
 
-func (c *Client) GetBlockHashList() ([]string, error) {
-	body, statusCode, err := c.httpGet("/hash_list")
+func (c *Client) GetBlockHashList(from, to int) ([]string, error) {
+	if from > to {
+		return nil, errors.New("from must <= to")
+	}
+	body, statusCode, err := c.httpGet("/hash_list/" + strconv.Itoa(from) + "/" + strconv.Itoa(to))
 	if statusCode != 200 {
 		return nil, errors.New("get block hash list failed")
 	}
