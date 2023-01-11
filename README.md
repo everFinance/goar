@@ -96,6 +96,7 @@ fmt.Println(tx.ID, err)
 - [x] GetUnconfirmedTx
 - [x] GetPendingTxIds
 - [x] GetBlockHashList
+- [x] ConcurrentDownloadChunkData
 
 Initialize the instance:
 
