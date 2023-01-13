@@ -309,7 +309,7 @@ func TestClient_GetBlockHashList2(t *testing.T) {
 
 func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
 	c := NewClient("https://arweave.net")
-	arId := "6G_gCR5ZlFzg5Ek3DDTgwFFJhOKEowKJjHaA6Bt48VA"
+	arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
 	data, err := c.ConcurrentDownloadChunkData(arId, 0)
 	// data , err := c.DownloadChunkData(arId)
 	assert.NoError(t, err)
@@ -322,7 +322,7 @@ func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
 
 func TestClient_ExistTxData(t *testing.T) {
 	c := NewClient("https://arweave.net")
-	arId := "cAC7ave2lo3aixlC1wdvRBpGa3ELX_s2M2zJ03u0AwI"
+	arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
 	exist, err := c.ExistTxData(arId)
 	assert.NoError(t, err)
 	t.Log(exist)

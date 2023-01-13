@@ -596,13 +596,13 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		chunkData, err := c.getChunkData(oss.Offset)
 		if err != nil {
 			count := 0
-			for count < 3 {
-				time.Sleep(2 * time.Second)
+			for count < 2 {
+				time.Sleep(1 * time.Second)
 				chunkData, err = c.getChunkData(oss.Offset)
 				if err == nil {
 					break
 				}
-				log.Error("retry getChunkData failed and try again...", "err", err, "offset", oss.Offset, "retryCount", count, "arId", id)
+				log.Error("retry getChunkData failed and try again...", "err", err, "idx", oss.Idx, "offset", oss.Offset, "retryCount", count, "arId", id)
 				if err != ErrRequestLimit {
 					count++
 				}
@@ -630,17 +630,20 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		chunkData, err := c.getChunkData(int64(i) + start)
 		if err != nil {
 			count := 0
-			for count < 3 {
-				time.Sleep(2 * time.Second)
+			for count < 2 {
+				time.Sleep(1 * time.Second)
 				chunkData, err = c.getChunkData(int64(i) + start)
 				if err == nil {
 					break
 				}
-				log.Error("retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
+				log.Error("latest two chunks retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
 				if err != ErrRequestLimit {
 					count++
 				}
 			}
+		}
+		if err != nil {
+			return nil, errors.New("concurrent get latest two chunks failed")
 		}
 		chunkArr = append(chunkArr, chunkData)
 		i += len(chunkData)
