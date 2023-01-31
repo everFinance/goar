@@ -6,6 +6,7 @@ import (
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
+	"io"
 )
 
 type ItemSigner struct {
@@ -38,6 +39,27 @@ func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string
 		return types.BundleItem{}, err
 	}
 	if err := utils.GenerateItemBinary(bundleItem); err != nil {
+		return types.BundleItem{}, err
+	}
+	return *bundleItem, nil
+}
+
+func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
+	bundleItem, err := utils.NewBundleItemStream(i.owner, i.signType, target, anchor, data, tags)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
+	// sign
+	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
+		return types.BundleItem{}, err
+	}
+	if _, err := bundleItem.DataReader.Seek(0, 0); err != nil {
+		return types.BundleItem{}, err
+	}
+	if err := utils.GenerateItemBinary(bundleItem); err != nil {
+		return types.BundleItem{}, err
+	}
+	if _, err := bundleItem.DataReader.Seek(0, 0); err != nil {
 		return types.BundleItem{}, err
 	}
 	return *bundleItem, nil
