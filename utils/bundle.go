@@ -565,14 +565,21 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	data := make([]byte, 0)
 	if len(d.Data) > 0 {
 		data, err = Base64Decode(d.Data)
-	} else {
-		data, err = io.ReadAll(d.DataReader)
+		if err != nil {
+			return err
+		}
+		bytesArr = append(bytesArr, data...)
+		d.ItemBinary = bytesArr
+	} else if d.DataReader != nil {
+		metaBuf := bytes.NewBuffer(bytesArr)
+		_, err = d.DataReader.Seek(0, 0)
+		if err != nil {
+			return err
+		}
+		// note: DataReader must seek(0,0) after call DataReader.read(), otherwise BinaryReader will change
+		d.BinaryReader = io.MultiReader(metaBuf, d.DataReader)
 	}
-	if err != nil {
-		return err
-	}
-	bytesArr = append(bytesArr, data...)
-	d.ItemBinary = bytesArr
+
 	return nil
 }
 

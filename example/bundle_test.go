@@ -224,6 +224,30 @@ func TestPointerAndValueCopy(t *testing.T) {
 	assert.Equal(t, int(n), len(data0))
 }
 
+func TestReader(t *testing.T) {
+	data, err := os.Open("../go.mod")
+	defer data.Close()
+	assert.NoError(t, err)
+	data2, err := ioutil.ReadFile("../go.mod")
+	itemSigner, err := goar.NewItemSigner(signer01)
+	assert.NoError(t, err)
+	item, err := itemSigner.CreateAndSignItemStream(data, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "application/txt"},
+		{Name: "App-Version", Value: "2.0.0"},
+	})
+	assert.NoError(t, err)
+	item2, err := itemSigner.CreateAndSignItem(data2, "", "", []types.Tag{
+		{Name: "Content-Type", Value: "application/txt"},
+		{Name: "App-Version", Value: "2.0.0"},
+	})
+	assert.NoError(t, err)
+
+	binary, err := io.ReadAll(item.BinaryReader)
+	assert.NoError(t, err)
+
+	assert.Equal(t, binary, item2.ItemBinary)
+}
+
 func changeData(item types.BundleItem) error {
 	b := make([]byte, 1)
 	n, err := item.DataReader.Read(b)
