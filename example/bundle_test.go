@@ -248,6 +248,16 @@ func TestReader(t *testing.T) {
 	assert.Equal(t, binary, item2.ItemBinary)
 }
 
+func TestVerifyItemStream(t *testing.T) {
+	itemReader, err := os.Open("test.item")
+	defer itemReader.Close()
+	assert.NoError(t, err)
+	item, err := utils.DecodeBundleItemStream(itemReader)
+	assert.NoError(t, err)
+	err = utils.VerifyBundleItem(*item)
+	assert.NoError(t, err)
+}
+
 func changeData(item types.BundleItem) error {
 	b := make([]byte, 1)
 	n, err := item.DataReader.Read(b)
