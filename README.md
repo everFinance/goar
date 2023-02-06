@@ -221,7 +221,7 @@ make test
 
 #### chunked uploading advanced options
 ##### upload all transaction data
-The method of sumbitting a data transaction is to use chunk uploading. This method will allow larger transaction zises,resuming a transaction upload if it's interrupted and give progress updates while uploading.
+The method of submitting a data transaction is to use chunk uploading. This method will allow larger transaction sizes, resuming a transaction upload if it's interrupted and give progress updates while uploading.
 Simple example:
 
 ```golang
@@ -273,7 +273,7 @@ if err != nil {
 
 ##### Breakpoint continuingly
 
-You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload.To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
+You can resume an upload from a saved uploader object, that you have persisted in storage some using json.marshal(uploader) at any stage of the upload. To resume, parse it back into an object and pass it to getUploader() along with the transactions data:
 
 ```golang
 uploaderBuf, err := ioutil.ReadFile("./jsonUploaderFile.json")
@@ -310,7 +310,7 @@ assert.NoError(t, uploader.Once())
 
 ---
 ### About Arweave Bundles
-1. `goar` implemented creating,editing,reading and verifying bundles tx
+1. `goar` implemented creating, editing, reading and verifying bundles tx
 2. This is the [ANS-104](https://github.com/joshbenaron/arweave-standards/blob/ans104/ans/ANS-104.md) standard protocol and refers to the [arbundles](https://github.com/Bundler-Network/arbundles) js-lib implement
 
 #### Create Bundle Item
