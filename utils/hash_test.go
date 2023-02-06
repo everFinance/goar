@@ -2,6 +2,9 @@ package utils
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -29,4 +32,21 @@ func TestDeepHash(t *testing.T) {
 func TestDeepHashStr(t *testing.T) {
 	hash := deepHashStr(Base64Encode([]byte("123")))
 	assert.Equal(t, [48]uint8([48]byte{0x27, 0xbb, 0xb6, 0x32, 0x9a, 0xcb, 0x39, 0x7e, 0x10, 0x59, 0x85, 0xd2, 0x66, 0xa0, 0xe2, 0x1b, 0x4e, 0x64, 0xf1, 0xe0, 0x97, 0x8d, 0x2a, 0x31, 0x16, 0x88, 0xca, 0x99, 0xa7, 0xf5, 0xa4, 0x94, 0xd5, 0x8f, 0xf9, 0xf6, 0xc4, 0xc8, 0x66, 0x33, 0x36, 0x9, 0x83, 0x32, 0xd6, 0x88, 0x59, 0xc3}), hash)
+}
+
+func TestHashStream(t *testing.T) {
+	file, err := os.Open("bytes.go")
+	assert.NoError(t, err)
+	var data interface{}
+	data = file
+	_, ok := data.(io.Reader)
+	assert.Equal(t, ok, true)
+	dataBy, err := ioutil.ReadAll(file)
+	assert.NoError(t, err)
+	file.Close()
+	file2, err := os.Open("bytes.go")
+	defer file2.Close()
+	hashStr := deepHashStr(Base64Encode(dataBy))
+	hashStream := deepHashStream(file2)
+	assert.Equal(t, hashStr, hashStream)
 }

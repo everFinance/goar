@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/sha512"
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -23,13 +24,29 @@ func deepHashStr(str string) [48]byte {
 	return sha512.Sum384(tagged)
 }
 
+func deepHashStream(data io.Reader) [48]byte {
+	hash := sha512.New384()
+	n, err := io.Copy(hash, data)
+	if err != nil {
+		panic(err)
+	}
+	tag := append([]byte("blob"), []byte(fmt.Sprintf("%d", n))...)
+	tagHash := sha512.Sum384(tag)
+	blobHash := hash.Sum(nil)
+	tagged := append(tagHash[:], blobHash...)
+
+	return sha512.Sum384(tagged)
+}
+
 func deepHashChunk(data []interface{}, acc [48]byte) [48]byte {
 	if len(data) < 1 {
 		return acc
 	}
 
 	dHash := [48]byte{}
-	if reflect.TypeOf(data[0]).String() == "string" {
+	if _, ok := data[0].(io.Reader); ok {
+		dHash = deepHashStream(data[0].(io.Reader))
+	} else if reflect.TypeOf(data[0]).String() == "string" {
 		dHash = deepHashStr(data[0].(string))
 	} else {
 		value := reflect.ValueOf(data[0])

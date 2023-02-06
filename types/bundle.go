@@ -1,5 +1,10 @@
 package types
 
+import (
+	"io"
+	"os"
+)
+
 const (
 	ArweaveSignType  = 1
 	ED25519SignType  = 2
@@ -51,5 +56,7 @@ type BundleItem struct {
 	Data          string `json:"data"`
 	Id            string `json:"id"`
 
-	ItemBinary []byte `json:"-"`
+	ItemBinary   []byte    `json:"-"`
+	BinaryReader io.Reader `json:"-"`
+	DataReader   *os.File  `json:"-"`
 }
