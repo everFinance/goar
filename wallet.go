@@ -2,15 +2,17 @@ package goar
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"strconv"
 
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
 )
 
 type Wallet struct {
@@ -59,65 +61,52 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 }
 
 func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(nil, &target)
+	reward, err := w.Client.GetTransactionPrice(0, target)
 	if err != nil {
 		return types.Transaction{}, err
 	}
-
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   target,
-		Quantity: amount.String(),
-		Tags:     utils.TagsEncode(tags),
-		Data:     "",
-		DataSize: "0",
-		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
+	tx := NewSendTokenTransaction(target, *amount, reward*(100+speedFactor)/100, tags...)
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (types.Transaction, error) {
-	return w.SendDataSpeedUp(data, tags, 0)
+func (w *Wallet) SendFile(file io.ReadSeeker, fileSize int64, tags ...types.Tag) (types.Transaction, error) {
+	return w.SendFileSpeedUp(file, fileSize, 0, tags...)
 }
 
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
+func (w *Wallet) SendFileSpeedUp(file io.ReadSeeker, fileSize int64, speedFactor int64, tags ...types.Tag) (types.Transaction, error) {
+	reward, err := w.Client.GetTransactionPrice(fileSize)
 	if err != nil {
 		return types.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   "",
-		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(data)),
-		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
+	tx := NewSendFileTransaction(file, fileSize, reward*(100+speedFactor)/100, tags...)
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
+func (w *Wallet) SendData(data []byte, tags ...types.Tag) (types.Transaction, error) {
+	return w.SendDataSpeedUp(data, 0, tags...)
+}
+
+// SendDataSpeedUp set speedFactor for speed up
+// eg: speedFactor = 10, reward = 1.1 * reward
+func (w *Wallet) SendDataSpeedUp(data []byte, speedFactor int64, tags ...types.Tag) (types.Transaction, error) {
+	reward, err := w.Client.GetTransactionPrice(int64(len(data)))
+	if err != nil {
+		return types.Transaction{}, err
+	}
+	tx := NewSendFileTransaction(utils.NewReadBuffer(data), int64(len(data)), reward*(100+speedFactor)/100, tags...)
+	return w.SendTransaction(tx)
+}
+
+func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, file io.ReadSeeker, fileSize int64, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+	reward, err := w.Client.GetTransactionPrice(fileSize)
 	if err != nil {
 		return types.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   "",
-		Quantity: "0",
-		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(data)),
-		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
+	tx := NewSendFileTransaction(file, fileSize, reward*(100+speedFactor)/100, tags...)
 	return w.SendTransactionConcurrent(ctx, concurrentNum, tx)
 }
 
@@ -150,7 +139,7 @@ func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error
 	if err = w.Signer.SignTx(tx); err != nil {
 		return nil, err
 	}
-	return CreateUploader(w.Client, tx, nil)
+	return CreateUploader(w.Client, tx, tx.File, tx.FileSize)
 }
 
 func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {
@@ -184,5 +173,54 @@ func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customT
 	// rand data
 	data := strconv.Itoa(rand.Intn(9999))
 	// send data tx
-	return w.SendDataSpeedUp([]byte(data), swcTags, speedFactor)
+	return w.SendDataSpeedUp([]byte(data), speedFactor, swcTags...)
+}
+
+func (w *Wallet) SignTransaction(tx *types.Transaction) error {
+	anchor, err := w.Client.GetTransactionAnchor()
+	if err != nil {
+		return err
+	}
+	tx.LastTx = anchor
+	tx.Owner = w.Owner()
+	signData, err := utils.GetSignatureData(tx)
+	if err != nil {
+		return err
+	}
+	sign, err := w.Signer.SignMsg(signData)
+	if err != nil {
+		return err
+	}
+	txHash := sha256.Sum256(sign)
+	tx.ID = utils.Base64Encode(txHash[:])
+	tx.Signature = utils.Base64Encode(sign)
+	return nil
+}
+
+// NewFileTransaction https://docs.arweave.org/developers/server/http-api
+func NewSendFileTransaction(file io.ReadSeeker, fileSize, reward int64, tags ...types.Tag) *types.Transaction {
+	return &types.Transaction{
+		Format:   2,
+		Target:   "",
+		Quantity: "0",
+		Tags:     utils.TagsEncode(tags),
+		DataSize: fmt.Sprintf("%d", fileSize),
+		Reward:   fmt.Sprintf("%d", reward),
+		File:     file,
+		FileSize: fileSize,
+	}
+}
+
+// NewSendTokenTransaction https://docs.arweave.org/developers/server/http-api
+// Send a amount of tokens to target
+func NewSendTokenTransaction(target string, amount big.Int, reward int64, tags ...types.Tag) *types.Transaction {
+	return &types.Transaction{
+		Format:   2,
+		Target:   target,
+		Quantity: amount.String(),
+		Tags:     utils.TagsEncode(tags),
+		Data:     "",
+		DataSize: "0",
+		Reward:   fmt.Sprintf("%d", reward),
+	}
 }

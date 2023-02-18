@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/everFinance/goar/utils"
+	"github.com/daqiancode/goar/utils"
 	tcrsa "github.com/everFinance/ttcrsa"
 	"github.com/stretchr/testify/assert"
 )

@@ -4,10 +4,11 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/gojwk"
 	"io/ioutil"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
+	"github.com/everFinance/gojwk"
 )
 
 type Signer struct {

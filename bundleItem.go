@@ -3,10 +3,11 @@ package goar
 import (
 	"crypto/sha256"
 	"errors"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/goether"
 	"io"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
+	"github.com/everFinance/goether"
 )
 
 type ItemSigner struct {

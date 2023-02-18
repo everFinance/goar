@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
+	"github.com/daqiancode/goar/types"
 	"github.com/hamba/avro"
 )
 

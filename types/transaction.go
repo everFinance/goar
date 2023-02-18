@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"io"
 )
 
 type Transaction struct {
@@ -19,15 +20,18 @@ type Transaction struct {
 	Signature string `json:"signature"`
 
 	// Computed when needed.
-	Chunks *Chunks `json:"-"`
+	Chunks   *Chunks       `json:"-"`
+	File     io.ReadSeeker `json:"-"`
+	FileSize int64         `json:"-"`
 }
 
 type GetChunk struct {
-	DataRoot string `json:"data_root"`
-	DataSize string `json:"data_size"`
-	DataPath string `json:"data_path"`
-	Offset   string `json:"offset"`
-	Chunk    string `json:"chunk"`
+	DataRoot  string `json:"data_root"`
+	DataSize  string `json:"data_size"`
+	DataPath  string `json:"data_path"`
+	Offset    string `json:"offset"`
+	Chunk     string `json:"chunk"`
+	ChunkSize int    `json:"-"`
 }
 
 func (gc *GetChunk) Marshal() ([]byte, error) {

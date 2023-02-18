@@ -3,17 +3,18 @@ package example
 import (
 	"context"
 	"errors"
-	"github.com/everFinance/everpay-go/sdk"
-	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/goether"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"math/big"
 	"os"
 	"testing"
+
+	"github.com/daqiancode/goar"
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
+	"github.com/everFinance/everpay-go/sdk"
+	"github.com/everFinance/goether"
+	"github.com/stretchr/testify/assert"
 )
 
 var (

@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/everFinance/goar/types"
+	"github.com/daqiancode/goar/types"
 	"github.com/stretchr/testify/assert"
 )
 

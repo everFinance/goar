@@ -2,3 +2,5 @@ main.go
 go.sum
 test-keyfile.json
 .DS_Store
+arweave-key.json
+test_resources/**

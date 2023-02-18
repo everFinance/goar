@@ -3,25 +3,90 @@
 ### Install
 
 ```
-go get github.com/everFinance/goar
+go get github.com/daqiancode/goar
 ```
 
-### Example
-
-#### Send AR or Winston
-
+### Example:
 ```golang
-package main
 
 import (
 	"fmt"
 	"math/big"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar"
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar"
 )
+func TestUploaderFile(t *testing.T) {
+	w, err := goar.NewWalletFromPath("arweave-key.json", "https://arweave.net")
+	assert.NoError(t, err)
+	t.Log(w.Signer.Address)
+
+	file, err := os.Open("test_resources/test.mp4")
+	if err != nil {
+		panic(err)
+	}
+	stat, err := file.Stat()
+	assert.Nil(t, err)
+	fileSize := stat.Size()
+	reward, err := w.Client.GetTransactionPrice(fileSize)
+	assert.Nil(t, err)
+	tx := goar.NewSendFileTransaction(file, fileSize, reward, types.Tag{Name: "Content-Type", Value: "video/mp4"})
+	err = w.SignTransaction(tx)
+	assert.Nil(t, err)
+
+	uploader, err := goar.CreateUploader(w.Client, tx, file, fileSize)
+	totalSent := 0
+	lastTime := time.Now().Unix()
+	lastTotal := 0
+	callbackCount := 0
+	uploader.ProgressCallback = func(bytesSent int) {
+		callbackCount += 1
+		totalSent += bytesSent
+		fmt.Println(bytesSent, totalSent, fileSize)
+		fmt.Println("progress: ", totalSent/int(fileSize))
+		if callbackCount%10 == 0 {
+			now := time.Now().Unix()
+			duration := now - lastTime
+			if duration > 0 {
+				speed := (totalSent - lastTotal) / 1024 / int(duration)
+				fmt.Print("speed: ", speed, "KB/s")
+				lastTotal = totalSent
+				lastTime = now
+			}
+
+		}
+
+	}
+	assert.Nil(t, err)
+	uploader.ConcurrentOnce(context.Background(), 10)
+	// err = uploader.Once()
+	assert.Nil(t, err)
+	fmt.Println("https://arweave.net/" + tx.ID)
+}
+
+func TestSendBytes(t *testing.T) {
+	w, err := goar.NewWalletFromPath("arweave-key.json", "https://arweave.net")
+	assert.NoError(t, err)
+	t.Log(w.Signer.Address)
+
+	file := utils.NewReadBuffer([]byte("hello world"))
+	assert.Nil(t, err)
+	reward, err := w.Client.GetTransactionPrice(int64(file.Len()))
+	assert.Nil(t, err)
+	tags := []types.Tag{{Name: "content-type", Value: "text/plain"}}
+
+	tx := goar.NewSendFileTransaction(file, int64(file.Len()), reward, tags...)
+	err = w.SignTransaction(tx)
+	assert.Nil(t, err)
+	uploader, err := goar.CreateUploader(w.Client, tx, file, int64(file.Len()))
+	assert.Nil(t, err)
+	err = uploader.Once()
+	assert.Nil(t, err)
+	fmt.Println("https://arweave.net/" + tx.ID)
+}
+
 
 func main() {
-	wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
+	wallet, err := goar.NewWalletFromPath("./arweave-key.json", "https://arweave.net")
 	if err != nil {
 		panic(err)
 	}
@@ -38,39 +103,6 @@ func main() {
 
 ```
 
-#### Send Data
-
-```golang
-tx, err := wallet.SendData(
-  []byte("123"), // Data bytes
-  []types.Tag{
-    types.Tag{
-      Name:  "testSendData",
-      Value: "123",
-    },
-  },
-)
-
-fmt.Println(id, err) // {{id}}, nil
-```
-
-#### Send Data SpeedUp
-
-Arweave occasionally experiences congestion, and a low Reward can cause a transaction to fail; use speedUp to accelerate the transaction.
-
-```golang
-speedUp := int64(50) // means reward = reward * 150%
-tx, err := wallet.SendDataSpeedUp(
-  []byte("123"), // Data bytes
-  []types.Tag{
-    types.Tag{
-      Name:  "testSendDataSpeedUp",
-      Value: "123",
-    },
-  },speedUp)
-
-fmt.Println(tx.ID, err)
-```
 ### Components
 
 #### Client
@@ -174,7 +206,7 @@ Package for Arweave develop toolkit.
 - [x] AssembleSigShares
 - [x] VerifySigShare
 
-[Threshold Signature Usage Guidelines](https://github.com/everFinance/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
+[Threshold Signature Usage Guidelines](https://github.com/daqiancode/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
 
 Create RSA Threshold Cryptography:
 
@@ -222,54 +254,7 @@ make test
 #### chunked uploading advanced options
 ##### upload all transaction data
 The method of sumbitting a data transaction is to use chunk uploading. This method will allow larger transaction zises,resuming a transaction upload if it's interrupted and give progress updates while uploading.
-Simple example:
 
-```golang
-arNode := "https://arweave.net"
-w, err := goar.NewWalletFromPath("../example/testKey.json", arNode) // your wallet private key
-anchor, err := w.Client.GetTransactionAnchor()
-if err != nil {
-  return
-}
-data, err := ioutil.ReadFile("./2.3MBPhoto.jpg")
-if err != nil {
-  return
-}
-
-reward, err := w.Client.GetTransactionPrice(data, nil)
-if err != nil {
-  return
-}
-
-tx := &types.Transaction{
-  Format:   2,
-  Target:   "",
-  Quantity: "0",
-  Tags:     utils.TagsEncode(tags),
-  Data:     utils.Base64Encode(data),
-  DataSize: fmt.Sprintf("%d", len(data)),
-  Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-}
-
-tx.LastTx = anchor
-tx.Owner = utils.Base64Encode(w.PubKey.N.Bytes())
-
-if err = utils.SignTransaction(tx, w.PubKey, w.Signer.PrvKey); err != nil {
-  return
-}
-
-id = tx.ID
-
-uploader, err := goar.CreateUploader(w.Client, tx, nil)
-if err != nil {
-  return
-}
-
-err = uploader.Once()
-if err != nil {
-  return
-}
-```
 
 ##### Breakpoint continuingly
 
@@ -435,3 +420,5 @@ response:
 ```
 
 ---
+
+The original & this project need refactory

@@ -1,11 +1,12 @@
 package example
 
 import (
-	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
+
+	"github.com/daqiancode/goar"
+	"github.com/daqiancode/goar/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_SendData(t *testing.T) {

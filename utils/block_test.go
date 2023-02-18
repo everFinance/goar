@@ -1,9 +1,10 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndepHash(t *testing.T) {

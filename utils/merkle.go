@@ -3,25 +3,16 @@ package utils
 import (
 	"bytes"
 	"crypto/sha256"
+	"io"
 	"math"
 	"math/big"
 
-	"github.com/everFinance/goar/types"
+	"github.com/daqiancode/goar/types"
 	"github.com/shopspring/decimal"
 )
 
-/**
- * Generates the data_root, chunks & proofs
- * needed for a transaction.
- *
- * This also checks if the last chunk is a zero-length
- * chunk and discards that chunk and proof if so.
- * (we do not need to upload this zero length chunk)
- *
- * @param data
- */
-func GenerateChunks(data []byte) types.Chunks {
-	chunks := chunkData(data)
+func GenerateChunksBytes(data []byte) types.Chunks {
+	chunks := chunkDataBytes(data)
 	leaves := generateLeaves(chunks)
 	root := buildLayer(leaves, 0) // leaf node level == 0
 	proofs := generateProofs(root)
@@ -39,8 +30,7 @@ func GenerateChunks(data []byte) types.Chunks {
 		Proofs:   proofs,
 	}
 }
-
-func chunkData(data []byte) (chunks []types.Chunk) {
+func chunkDataBytes(data []byte) (chunks []types.Chunk) {
 	cursor := 0
 	var rest = data
 	// if data length > max size
@@ -73,6 +63,74 @@ func chunkData(data []byte) (chunks []types.Chunk) {
 		MaxByteRange: cursor + len(rest),
 	})
 	return
+}
+
+/**
+ * Generates the data_root, chunks & proofs
+ * needed for a transaction.
+ *
+ * This also checks if the last chunk is a zero-length
+ * chunk and discards that chunk and proof if so.
+ * (we do not need to upload this zero length chunk)
+ *
+ * @param data
+ */
+func GenerateChunks(data io.ReadSeeker, fileSize int64) (types.Chunks, error) {
+	_, err := data.Seek(0, io.SeekStart)
+	if err != nil {
+		return types.Chunks{}, err
+	}
+	chunks, err := chunkData(data, fileSize)
+	if err != nil {
+		return types.Chunks{}, err
+	}
+	leaves := generateLeaves(chunks)
+	root := buildLayer(leaves, 0) // leaf node level == 0
+	proofs := generateProofs(root)
+
+	// Discard the last chunk & proof if it's zero length.
+	lastChunk := chunks[len(chunks)-1]
+	if lastChunk.MaxByteRange-lastChunk.MinByteRange == 0 {
+		chunks = chunks[:len(chunks)-1]
+		proofs = proofs[:len(proofs)-1]
+	}
+
+	return types.Chunks{
+		DataRoot: root.ID,
+		Chunks:   chunks,
+		Proofs:   proofs,
+	}, nil
+}
+
+func chunkData(data io.ReadSeeker, fileSize int64) ([]types.Chunk, error) {
+	n := fileSize / types.MAX_CHUNK_SIZE
+	w := fileSize % types.MAX_CHUNK_SIZE
+	if w != 0 {
+		n++
+	}
+	buffer := make([]byte, types.MAX_CHUNK_SIZE)
+	chunks := make([]types.Chunk, n)
+	var i int64 = 0
+	var p int = 0
+	for ; i < n; i++ {
+		if i >= n-2 && n > 1 && w != 0 {
+			buffer = make([]byte, (types.MAX_CHUNK_SIZE+w)/2+1)
+		}
+		rc, err := data.Read(buffer)
+		if err != nil {
+			return nil, err
+		}
+		p += rc
+		dataHash := sha256.Sum256(buffer[:rc])
+		chunks[i] = types.Chunk{
+			DataHash:     dataHash[:],
+			MinByteRange: p - rc,
+			MaxByteRange: p,
+		}
+	}
+
+	return chunks, nil
+
 }
 
 func generateLeaves(chunks []types.Chunk) (leafs []*types.Node) {

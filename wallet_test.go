@@ -1,20 +1,26 @@
-package goar
+package goar_test
 
 import (
+	"context"
 	"encoding/base64"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
+	"time"
+
+	"github.com/daqiancode/goar"
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
-var testWallet *Wallet
+var testWallet *goar.Wallet
 var err error
 
 func init() {
 	clientUrl := "https://arweave.net"
-	testWallet, err = NewWallet([]byte(`{ "kty": "RSA",
+	testWallet, err = goar.NewWallet([]byte(`{ "kty": "RSA",
 	"n":
 	 "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E",
 	"e": "AQAB",
@@ -31,13 +37,13 @@ func init() {
 	"qi":
 	 "ENtqTq3iiDkeiyPWD7pNRfiwIJnY5Zf97yXakxe04usHXWKmZulllttqsDkfHOXkBxRxHxqqTgOLuRpNsLrpI5MAxs8uSl13A70LUzHldnE8ePgt0688UpoI5Iw9oV2RdF_LvSrsgpa-SeexXxbZqXWpDNeUxYt2S327cS8HmrnETKy9z9VoVFmCT6_NCnxOaOTwr67dPBnGnW7nT3499m_aqmikCNjcmkfYihED6S2jZBRHPaSDM7JPPyQSEyRkGjR4z9JzhLOvbJf8tDKSE00JXJClmbpX-5qRcNt0gcJy6ceYQs-c94I24yGpunMMSwGo2i1-sGNwH1wj5-gv1Q" }`),
 		clientUrl)
-
 	if err != nil {
 		panic(err)
 	}
 }
 
 func TestPubKey(t *testing.T) {
+
 	pubKey := testWallet.Signer.PubKey
 	assert.Equal(t, "nQ9iy1fRM2xrgggjHhN1xZUnOkm9B4KFsJzH70v7uLMVyDqfyIJEVXeJ4Jhk_8KpjzYQ1kYfnCMjeXnhTUfY3PbeqY4PsK5nTje0uoOe1XGogeGAyKr6mVtKPhBku-aq1gz7LLRHndO2tvLRbLwX1931vNk94bSfJPYgMfU7OXxFXbTdKU38W6u9ShoaJGgUQI1GObd_sid1UVniCmu7P-99XPkixqyacsrkHzBajGz1S7jGmpQR669KWE9Z0unvH0KSHxAKoDD7Q7QZO7_4ujTBaIFwy_SJUxzVV8G33xvs7edmRdiqMdVK5W0LED9gbS4dv_aee9IxUJQqulSqZphPgShIiGNl9TcL5iUi9gc9cXR7ISyavos6VGiem_A-S-5f-_OKxoeZzvgAQda8sD6jtBTTuM5eLvgAbosbaSi7zFYCN7zeFdB72OfvCh72ZWSpBMH3dkdxsKCDmXUXvPdDLEnnRS87-MP5RV9Z6foq_YSEN5MFTMDdo4CpFGYl6mWTP6wUP8oM3Mpz3-_HotwSZEjASvWtiff2tc1fDHulVMYIutd52Fis_FKj6K1fzpiDYVA1W3cV4P28Q1-uF3CZ8nJEa5FXchB9lFrXB4HvsJVG6LPSt-y2R9parGi1_kEc6vOYIesKspgZ0hLyIKtqpTQFiPgKRlyUc-WEn5E", base64.RawURLEncoding.EncodeToString(pubKey.N.Bytes()))
 }
@@ -114,56 +120,90 @@ func Test_SendPstTransfer(t *testing.T) {
 	// t.Log(arTx.ID)
 }
 
-func TestCreateUploader(t *testing.T) {
-	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
+// go test  -run ^TestUploaderFile$ github.com/daqiancode/goar -v
+func TestUploaderFile(t *testing.T) {
+	w, err := goar.NewWalletFromPath("arweave-key.json", "https://arweave.net")
 	assert.NoError(t, err)
 	t.Log(w.Signer.Address)
 
-	data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/44444.mp4")
+	file, err := os.Open("test_resources/test.mp4")
 	if err != nil {
 		panic(err)
 	}
-	tags := []types.Tag{
-		{Name: "Content-Type", Value: "video/mpeg4"},
+	stat, err := file.Stat()
+	assert.Nil(t, err)
+	fileSize := stat.Size()
+	reward, err := w.Client.GetTransactionPrice(fileSize)
+	assert.Nil(t, err)
+	tx := goar.NewSendFileTransaction(file, fileSize, reward, types.Tag{Name: "Content-Type", Value: "video/mp4"})
+	err = w.SignTransaction(tx)
+	assert.Nil(t, err)
+
+	uploader, err := goar.CreateUploader(w.Client, tx, file, fileSize)
+	totalSent := 0
+	lastTime := time.Now().Unix()
+	lastTotal := 0
+	callbackCount := 0
+	uploader.ProgressCallback = func(bytesSent int) {
+		callbackCount += 1
+		totalSent += bytesSent
+		fmt.Println(bytesSent, totalSent, fileSize)
+		fmt.Println("progress: ", totalSent/int(fileSize))
+		if callbackCount%10 == 0 {
+			now := time.Now().Unix()
+			duration := now - lastTime
+			if duration > 0 {
+				speed := (totalSent - lastTotal) / 1024 / int(duration)
+				fmt.Print("speed: ", speed, "KB/s")
+				lastTotal = totalSent
+				lastTime = now
+			}
+
+		}
+
 	}
-	tx, err := w.SendData(data, tags)
-	assert.NoError(t, err)
-	t.Log(tx.ID)
+	assert.Nil(t, err)
+	uploader.ConcurrentOnce(context.Background(), 10)
+	// err = uploader.Once()
+	assert.Nil(t, err)
+	fmt.Println("https://arweave.net/" + tx.ID)
 }
 
-func TestNewWallet(t *testing.T) {
-	cli := NewClient("https://arseed-dev.web3infra.dev")
-	data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
+func TestSendBytes(t *testing.T) {
+	w, err := goar.NewWalletFromPath("arweave-key.json", "https://arweave.net")
 	assert.NoError(t, err)
-	ioutil.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
+	t.Log(w.Signer.Address)
 
-	// -I6guxsTtnaLazLN4HgCHtYXNXQGALcHDrpi6oz7Cbk
-	// 91s
+	file := utils.NewReadBuffer([]byte("hello world"))
+	assert.Nil(t, err)
+	reward, err := w.Client.GetTransactionPrice(int64(file.Len()))
+	assert.Nil(t, err)
+	tags := []types.Tag{{Name: "content-type", Value: "text/plain"}}
 
-	// _OXH-KzWyJVZsHEJ257uMcsi1VqdvMLroxVTeAYODi4
-	// 408s
-
-	// 355oQfW-6XM659iG4Yy69vyAeuTC5v7c_QqGU4iRI9Q
-	// 48s
-
-	// _bIcfrydLSGRzwLDYvwCB16SpKAeClJdZHLRC0lgOnQ
-	// 24s
+	tx := goar.NewSendFileTransaction(file, int64(file.Len()), reward, tags...)
+	err = w.SignTransaction(tx)
+	assert.Nil(t, err)
+	uploader, err := goar.CreateUploader(w.Client, tx, file, int64(file.Len()))
+	assert.Nil(t, err)
+	err = uploader.Once()
+	assert.Nil(t, err)
+	fmt.Println("https://arweave.net/" + tx.ID)
 }
 
 func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
-	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
+	w, err := goar.NewWalletFromPath("", "https://arweave.net")
 	assert.NoError(t, err)
 	t.Log(w.Signer.Address)
 	signer01 := w.Signer
 	// sig item01 by ecc signer
-	itemSigner01, err := NewItemSigner(signer01)
+	itemSigner01, err := goar.NewItemSigner(signer01)
 	assert.NoError(t, err)
-	d1, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
+	d1, err := ioutil.ReadFile("test.go")
 	if err != nil {
 		panic(err)
 	}
 	item01, err := itemSigner01.CreateAndSignItem(d1, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
+		{Name: "Content-Type", Value: "text/html"},
 		{Name: "Owner", Value: "Vv"},
 	})
 	assert.NoError(t, err)

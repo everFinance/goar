@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/inconshreveable/log15"
-	"github.com/panjf2000/ants/v2"
-	"github.com/tidwall/gjson"
-	"gopkg.in/h2non/gentleman.v2"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -19,8 +15,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/inconshreveable/log15"
+	"github.com/panjf2000/ants/v2"
+	"github.com/tidwall/gjson"
+	"gopkg.in/h2non/gentleman.v2"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
 )
 
 var log = log15.New("module", "goar")
@@ -254,10 +255,10 @@ func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error)
 	}
 }
 
-func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64, err error) {
-	url := fmt.Sprintf("price/%d", len(data))
-	if target != nil {
-		url = fmt.Sprintf("%v/%v", url, *target)
+func (c *Client) GetTransactionPrice(fileSize int64, target ...string) (reward int64, err error) {
+	url := fmt.Sprintf("price/%d", fileSize)
+	if len(target) > 0 && target[0] != "" {
+		url = fmt.Sprintf("%v/%v", url, target[0])
 	}
 
 	body, code, err := c.httpGet(url)

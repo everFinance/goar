@@ -3,7 +3,7 @@ package example
 import (
 	"testing"
 
-	"github.com/everFinance/goar"
+	"github.com/daqiancode/goar"
 	"github.com/stretchr/testify/assert"
 )
 

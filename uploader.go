@@ -4,15 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/panjf2000/ants/v2"
+	"io"
 	"math"
 	"math/rand"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/panjf2000/ants/v2"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
 	"github.com/shopspring/decimal"
 )
 
@@ -30,14 +32,17 @@ type TransactionUploader struct {
 	ChunkIndex         int
 	TxPosted           bool
 	Transaction        *types.Transaction
-	Data               []byte
+	Data               io.ReadSeeker
+	FileSize           int64
 	LastRequestTimeEnd int64
 	TotalErrors        int // Not serialized.
 	LastResponseStatus int
 	LastResponseError  string
+	progressLock       sync.Mutex
+	ProgressCallback   func(bytesSent int)
 }
 
-func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, error) {
+func newUploader(tt *types.Transaction, client *Client, file io.ReadSeeker, fileSize int64) (*TransactionUploader, error) {
 	if tt.ID == "" {
 		return nil, errors.New("Transaction is not signed.")
 	}
@@ -46,24 +51,25 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 	}
 	// Make a copy of Transaction, zeroing the Data so we can serialize.
 	tu := &TransactionUploader{
-		Client: client,
+		Client:   client,
+		Data:     file,
+		FileSize: fileSize,
 	}
-	da, err := utils.Base64Decode(tt.Data)
-	if err != nil {
-		log.Error("utils.Base64Decode(tt.Data)", "err", err)
-		return nil, err
+	// da, err := utils.Base64Decode(tt.Data)
+	// if err != nil {
+	// 	log.Error("utils.Base64Decode(tt.Data)", "err", err)
+	// 	return nil, err
 
-	}
-	tu.Data = da
+	// }
 	tu.Transaction = &types.Transaction{
-		Format:    tt.Format,
-		ID:        tt.ID,
-		LastTx:    tt.LastTx,
-		Owner:     tt.Owner,
-		Tags:      tt.Tags,
-		Target:    tt.Target,
-		Quantity:  tt.Quantity,
-		Data:      "",
+		Format:   tt.Format,
+		ID:       tt.ID,
+		LastTx:   tt.LastTx,
+		Owner:    tt.Owner,
+		Tags:     tt.Tags,
+		Target:   tt.Target,
+		Quantity: tt.Quantity,
+		// Data:      "",
 		DataSize:  tt.DataSize,
 		DataRoot:  tt.DataRoot,
 		Reward:    tt.Reward,
@@ -76,14 +82,14 @@ func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, e
 // CreateUploader
 // @param upload: Transaction | SerializedUploader | string,
 // @param Data the Data of the Transaction. Required when resuming an upload.
-func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionUploader, error) {
+func CreateUploader(api *Client, upload interface{}, data io.ReadSeeker, fileSize int64) (*TransactionUploader, error) {
 	var (
 		uploader *TransactionUploader
 		err      error
 	)
 
 	if tt, ok := upload.(*types.Transaction); ok {
-		uploader, err = newUploader(tt, api)
+		uploader, err = newUploader(tt, api, data, fileSize)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +112,7 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 		upload = newUpload
 	}
 
-	uploader, err = (&TransactionUploader{Client: api}).FromSerialized(upload.(*SerializedUploader), data)
+	uploader, err = (&TransactionUploader{Client: api}).FromSerialized(upload.(*SerializedUploader), data, fileSize)
 	return uploader, err
 }
 
@@ -151,6 +157,8 @@ func (tt *TransactionUploader) PctComplete() float64 {
 	return math.Trunc(fval * 100)
 }
 
+type ProgressFunc func(sentBytes int)
+
 func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum int) error {
 	// post tx info
 	if err := tt.postTransaction(); err != nil {
@@ -183,6 +191,12 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 		}
 		body, statusCode, err := tt.Client.SubmitChunks(chunk) // always body is errMsg
 		if statusCode == 200 {
+			if tt.ProgressCallback != nil {
+				tt.progressLock.Lock()
+				tt.ProgressCallback(chunk.ChunkSize)
+				tt.progressLock.Unlock()
+			}
+
 			return
 		}
 
@@ -206,6 +220,11 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 
 			body, statusCode, err = tt.Client.SubmitChunks(chunk)
 			if statusCode == 200 {
+				if tt.ProgressCallback != nil {
+					tt.progressLock.Lock()
+					tt.ProgressCallback(chunk.ChunkSize)
+					tt.progressLock.Unlock()
+				}
 				return
 			}
 			log.Warn("retry submitChunk failed", "retryCount", retryCount, "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
@@ -299,6 +318,11 @@ func (tt *TransactionUploader) UploadChunk() error {
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
 		tt.ChunkIndex++
+		if tt.ProgressCallback != nil {
+			tt.progressLock.Lock()
+			tt.ProgressCallback(chunk.ChunkSize)
+			tt.progressLock.Unlock()
+		}
 	} else {
 		errStr := fmt.Sprintf("%s,%v,%d", body, err, statusCode)
 		tt.LastResponseError = errStr
@@ -316,14 +340,14 @@ func (tt *TransactionUploader) UploadChunk() error {
  * @param serialized
  * @param data
  */
-func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, data []byte) (*TransactionUploader, error) {
+func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, data io.ReadSeeker, fileSize int64) (*TransactionUploader, error) {
 	if serialized == nil {
 		return nil, errors.New("Serialized object does not match expected format.")
 	}
 
 	// Everything looks ok, reconstruct the TransactionUpload,
 	// prepare the chunks again and verify the data_root matches
-	upload, err := newUploader(serialized.transaction, tt.Client)
+	upload, err := newUploader(serialized.transaction, tt.Client, data, fileSize)
 	if err != nil {
 		return nil, err
 	}
@@ -334,8 +358,9 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
 	upload.LastResponseStatus = serialized.lastResponseStatus
 	upload.TxPosted = serialized.txPosted
 	upload.Data = data
+	upload.FileSize = fileSize
 
-	utils.PrepareChunks(upload.Transaction, data)
+	utils.PrepareChunks(upload.Transaction)
 
 	if upload.Transaction.DataRoot != serialized.transaction.DataRoot {
 		return nil, errors.New("Data mismatch: Uploader doesn't match provided Data.")
@@ -357,7 +382,6 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 		return nil, errors.New(fmt.Sprintf("Tx %s not found; error: %v", id, err))
 	}
 	transaction := tx
-	transaction.Data = ""
 
 	serialized := &SerializedUploader{
 		chunkIndex:         0,
@@ -391,7 +415,14 @@ func (tt *TransactionUploader) postTransaction() error {
 func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	if withBody {
 		// Post the Transaction with Data.
-		tt.Transaction.Data = utils.Base64Encode(tt.Data)
+		_, err := tt.Data.Seek(0, 0)
+		if err != nil {
+			return err
+		}
+		tt.Transaction.Data, err = utils.Base64EncodeReader(tt.Data, tt.FileSize)
+		if err != nil {
+			return err
+		}
 	}
 	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	if err != nil || statusCode >= 400 {

@@ -1,10 +1,11 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSigner(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/everFinance/goar
+module github.com/daqiancode/goar
 
 go 1.17
 
@@ -14,16 +14,18 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
 	github.com/panjf2000/ants/v2 v2.6.0
 	github.com/shopspring/decimal v1.2.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	github.com/tidwall/gjson v1.14.1
 	gopkg.in/h2non/gentleman.v2 v2.0.5
 )
 
 require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/everFinance/ethrpc v1.0.4 // indirect
+	github.com/everFinance/goar v1.4.3 // indirect
 	github.com/getsentry/sentry-go v0.11.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect

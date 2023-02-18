@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/daqiancode/goar"
+	"github.com/daqiancode/goar/types"
+	"github.com/daqiancode/goar/utils"
 	"github.com/stretchr/testify/assert"
 )
 

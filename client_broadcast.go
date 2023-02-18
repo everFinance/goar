@@ -3,10 +3,12 @@ package goar
 import (
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/types"
+	"io"
+
+	"github.com/daqiancode/goar/types"
 )
 
-func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers ...string) error {
+func (c *Client) BroadcastData(txId string, data io.ReadSeeker, fileSize int64, numOfNodes int64, peers ...string) error {
 	var err error
 	if len(peers) == 0 {
 		peers, err = c.GetPeers()
@@ -19,7 +21,7 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers
 	pNode := NewTempConn()
 	for _, peer := range peers {
 		pNode.SetTempConnUrl("http://" + peer)
-		uploader, err := CreateUploader(pNode, txId, data)
+		uploader, err := CreateUploader(pNode, txId, data, fileSize)
 		if err != nil {
 			continue
 		}

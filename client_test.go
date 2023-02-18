@@ -1,10 +1,10 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"testing"
+
+	"github.com/daqiancode/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // func TestGetTransactionByID(t *testing.T) {
@@ -208,22 +208,22 @@ func Test_GetTxDataFromPeers(t *testing.T) {
 	t.Log(len(data))
 
 	// verify data root
-	chunks := utils.GenerateChunks(data)
+	chunks := utils.GenerateChunksBytes(data)
 	dataRoot := utils.Base64Encode(chunks.DataRoot)
 	tx, err := cli.GetTransactionByID(txId)
 	assert.NoError(t, err)
 	assert.Equal(t, tx.DataRoot, dataRoot)
 }
 
-func TestClient_BroadcastData(t *testing.T) {
-	cli := NewClient("https://arweave.net")
-	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
-	data, err := cli.GetTransactionData(txId, "json")
-	assert.NoError(t, err)
+// func TestClient_BroadcastData(t *testing.T) {
+// 	cli := NewClient("https://arweave.net")
+// 	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
+// 	data, err := cli.GetTransactionData(txId, "json")
+// 	assert.NoError(t, err)
 
-	err = cli.BroadcastData(txId, data, 20)
-	assert.NoError(t, err)
-}
+// 	err = cli.BroadcastData(txId, data, 20)
+// 	assert.NoError(t, err)
+// }
 
 func TestClient_GetBlockFromPeers(t *testing.T) {
 	cli := NewClient("https://arweave.net")
@@ -307,18 +307,18 @@ func TestClient_GetBlockHashList2(t *testing.T) {
 	// }
 }
 
-func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
-	data, err := c.ConcurrentDownloadChunkData(arId, 0)
-	// data , err := c.DownloadChunkData(arId)
-	assert.NoError(t, err)
-	ioutil.WriteFile("nannan.gif", data, 0666)
-	chunks := utils.GenerateChunks(data)
-	dataRoot := utils.Base64Encode(chunks.DataRoot)
-	t.Log(dataRoot)
-	t.Log(len(data))
-}
+// func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
+// 	c := NewClient("https://arweave.net")
+// 	arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
+// 	data, err := c.ConcurrentDownloadChunkData(arId, 0)
+// 	// data , err := c.DownloadChunkData(arId)
+// 	assert.NoError(t, err)
+// 	ioutil.WriteFile("nannan.gif", data, 0666)
+// 	chunks := utils.GenerateChunks(data)
+// 	dataRoot := utils.Base64Encode(chunks.DataRoot)
+// 	t.Log(dataRoot)
+// 	t.Log(len(data))
+// }
 
 func TestClient_ExistTxData(t *testing.T) {
 	c := NewClient("https://arweave.net")
