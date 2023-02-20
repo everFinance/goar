@@ -42,8 +42,9 @@ var SigConfigMap = map[int]SigMeta{
 }
 
 type Bundle struct {
-	Items        []BundleItem `json:"items"`
-	BundleBinary []byte
+	Items            []BundleItem `json:"items"`
+	BundleBinary     []byte
+	BundleDataReader *os.File
 }
 
 type BundleItem struct {
