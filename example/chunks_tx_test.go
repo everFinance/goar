@@ -33,7 +33,7 @@ func init() {
 }
 
 func assemblyDataTx(bigData []byte, wallet *goar.Wallet, tags []types.Tag) (*types.Transaction, error) {
-	reward, err := wallet.Client.GetTransactionPrice(bigData, nil)
+	reward, err := wallet.Client.GetTransactionPrice(len(bigData), nil)
 	if err != nil {
 		return nil, err
 	}

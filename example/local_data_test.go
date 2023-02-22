@@ -5,6 +5,7 @@ import (
 	"github.com/everFinance/goar/types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -33,4 +34,24 @@ func Test_LoadData(t *testing.T) {
 	data, err := arCli.GetTransactionData(arId)
 	assert.NoError(t, err)
 	t.Log(len(data))
+}
+
+func TestSendDataStream(t *testing.T) {
+
+	arNode := "https://arweave.net"
+	w, err := goar.NewWalletFromPath("./testKey.json", arNode) // your wallet private key
+	assert.NoError(t, err)
+	data, err := os.Open("img.jpeg") // local file path
+	defer data.Close()
+	if err != nil {
+		panic(err)
+	}
+	tags := []types.Tag{
+		{Name: "Content-Type", Value: "img/jpeg"},
+		{Name: "test", Value: "kevin-test"},
+	}
+	tx, err := w.SendDataStreamSpeedUp(data, tags, 10)
+	assert.NoError(t, err)
+	t.Log(tx.ID)
+	// test arId: k5IgHLTag_3bB6Sp5tTUhrFrPPvU5MjevV468dfxNKk
 }
