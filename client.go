@@ -621,6 +621,8 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 	return data, nil
 }
 
+// it's caller's responsibility to reserve or delete the tmp file created by this method
+
 func (c *Client) DownloadChunkDataStream(id string) (*os.File, error) {
 	offsetResponse, err := c.getTransactionOffset(id)
 	if err != nil {
@@ -766,6 +768,8 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 	}
 	return data, nil
 }
+
+// it's caller's responsibility to reserve or delete the tmp file created by this method
 
 func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int) (*os.File, []byte, error) {
 	offsetResponse, err := c.getTransactionOffset(id)
