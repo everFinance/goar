@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -229,10 +230,48 @@ func (c *Client) GetTransactionData(id string, extension ...string) ([]byte, err
 	}
 }
 
+func (c *Client) GetTransactionDataStream(id string, extension ...string) (*os.File, error) {
+	urlPath := fmt.Sprintf("tx/%v/%v", id, "data")
+	if extension != nil {
+		urlPath = urlPath + "." + extension[0]
+	}
+	data, statusCode, err := c.httpGet(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("httpGet error: %v", err)
+	}
+
+	// When data is bigger than 12MiB statusCode == 400 NOTE: Data bigger than that has to be downloaded chunk by chunk.
+	switch statusCode {
+	case 200:
+		if len(data) == 0 {
+			return c.DownloadChunkDataStream(id)
+		}
+		dataFile, err := os.CreateTemp(".", "arTxData-")
+		if err != nil {
+			return nil, err
+		}
+		_, err = dataFile.Write(data)
+		return dataFile, err
+	case 400:
+		return c.DownloadChunkDataStream(id)
+	case 202:
+		return nil, ErrPendingTx
+	case 404:
+		return nil, ErrNotFound
+	case 429:
+		return nil, ErrRequestLimit
+	default:
+		return nil, ErrBadGateway
+	}
+}
+
 // GetTransactionDataByGateway
 func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error) {
 	urlPath := fmt.Sprintf("/%v/%v", id, "data")
 	body, statusCode, err := c.httpGet(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("httpGet error: %v", err)
+	}
 	switch statusCode {
 	case 200:
 		if len(body) == 0 {
@@ -241,6 +280,38 @@ func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error)
 		return body, nil
 	case 400:
 		return c.DownloadChunkData(id)
+	case 202:
+		return nil, ErrPendingTx
+	case 404:
+		return nil, ErrNotFound
+	case 410:
+		return nil, ErrInvalidId
+	case 429:
+		return nil, ErrRequestLimit
+	default:
+		return nil, ErrBadGateway
+	}
+}
+
+func (c *Client) GetTransactionDataStreamByGateway(id string) (*os.File, error) {
+	urlPath := fmt.Sprintf("/%v/%v", id, "data")
+	body, statusCode, err := c.httpGet(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("httpGet error: %v", err)
+	}
+	switch statusCode {
+	case 200:
+		if len(body) == 0 {
+			return c.DownloadChunkDataStream(id)
+		}
+		dataFile, err := os.CreateTemp(".", "arTxData-")
+		if err != nil {
+			return nil, err
+		}
+		_, err = dataFile.Write(body)
+		return dataFile, err
+	case 400:
+		return c.DownloadChunkDataStream(id)
 	case 202:
 		return nil, ErrPendingTx
 	case 404:
@@ -550,6 +621,42 @@ func (c *Client) DownloadChunkData(id string) ([]byte, error) {
 	return data, nil
 }
 
+func (c *Client) DownloadChunkDataStream(id string) (*os.File, error) {
+	offsetResponse, err := c.getTransactionOffset(id)
+	if err != nil {
+		return nil, err
+	}
+	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	startOffset := endOffset - size + 1
+	dataFile, err := os.CreateTemp(".", "chunkData-")
+	if err != nil {
+		return nil, err
+	}
+	downloadSize := 0
+	n := 0
+	for i := 0; int64(i)+startOffset < endOffset; {
+		chunkData, err := c.getChunkData(int64(i) + startOffset)
+		if err != nil {
+			return nil, err
+		}
+		downloadSize += len(chunkData)
+		n, err = dataFile.Write(chunkData)
+		if err != nil || n < len(chunkData) {
+			return nil, fmt.Errorf("write chunkData to dataFile failed")
+		}
+		fmt.Printf("download chunk data; offset: %d/%d; size: %d/%d \n", int64(i)+startOffset, endOffset, downloadSize, size)
+		i += len(chunkData)
+	}
+	return dataFile, nil
+}
+
 func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]byte, error) {
 	offsetResponse, err := c.getTransactionOffset(id)
 	if err != nil {
@@ -658,6 +765,123 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		data = append(data, chunk...)
 	}
 	return data, nil
+}
+
+func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int) (*os.File, []byte, error) {
+	offsetResponse, err := c.getTransactionOffset(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
+	if err != nil {
+		return nil, nil, err
+	}
+	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
+	if err != nil {
+		return nil, nil, err
+	}
+	startOffset := endOffset - size + 1
+
+	offsetArr := make([]int64, 0, 5)
+	for i := 0; int64(i)+startOffset < endOffset; {
+		offsetArr = append(offsetArr, int64(i))
+		i += types.MAX_CHUNK_SIZE
+	}
+
+	if len(offsetArr) <= 3 { // not need concurrent get chunks
+		data, err := c.DownloadChunkData(id)
+		return nil, data, err
+	}
+
+	log.Debug("need download chunks length", "length", len(offsetArr))
+
+	dataFile, err := os.CreateTemp(".", "concurrent-load-chunks-")
+	if err != nil {
+		return nil, nil, err
+	}
+	type Offset struct {
+		fileOffset  int64
+		chunkOffset int64
+	}
+	var (
+		lock sync.Mutex
+		wg   sync.WaitGroup
+	)
+	if concurrentNum <= 0 {
+		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+	}
+	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
+		defer wg.Done()
+		oss := i.(Offset)
+		chunkData, err := c.getChunkData(oss.chunkOffset)
+		if err != nil {
+			count := 0
+			for count < 2 {
+				time.Sleep(1 * time.Second)
+				chunkData, err = c.getChunkData(oss.chunkOffset)
+				if err == nil {
+					break
+				}
+				log.Error("retry getChunkData failed and try again...", "err", err, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset, "retryCount", count, "arId", id)
+				if err != ErrRequestLimit {
+					count++
+				}
+			}
+		}
+		log.Info("download chunk data", "totalNum", size/types.MAX_CHUNK_SIZE)
+		var n int
+		lock.Lock()
+		n, err = dataFile.WriteAt(chunkData, oss.fileOffset)
+		if err != nil || n < len(chunkData) {
+			log.Error("write dataFile error")
+		}
+		lock.Unlock()
+	})
+
+	defer p.Release()
+
+	for i, offset := range offsetArr[:len(offsetArr)-2] {
+		wg.Add(1)
+		if err := p.Invoke(Offset{fileOffset: offset, chunkOffset: offset + startOffset}); err != nil {
+			log.Error("p.Invoke(i)", "err", err, "i", i)
+			return nil, nil, err
+		}
+	}
+	wg.Wait()
+	_, err = dataFile.Seek(0, 2)
+	if err != nil {
+		return nil, nil, err
+	}
+	// add latest 2 chunks
+	start := offsetArr[len(offsetArr)-3] + startOffset + types.MAX_CHUNK_SIZE
+	for i := 0; int64(i)+start < endOffset; {
+		chunkData, err := c.getChunkData(int64(i) + start)
+		if err != nil {
+			count := 0
+			for count < 2 {
+				time.Sleep(1 * time.Second)
+				chunkData, err = c.getChunkData(int64(i) + start)
+				if err == nil {
+					break
+				}
+				log.Error("latest two chunks retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
+				if err != ErrRequestLimit {
+					count++
+				}
+			}
+		}
+		if err != nil {
+			return nil, nil, errors.New("concurrent get latest two chunks failed")
+		}
+		n := 0
+		n, err = dataFile.Write(chunkData)
+		if err != nil || n < len(chunkData) {
+			return nil, nil, fmt.Errorf("write dataFile error writeSize:%d, expectSize:%d", n, len(chunkData))
+		}
+		i += len(chunkData)
+	}
+
+	return dataFile, nil, nil
 }
 
 func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {

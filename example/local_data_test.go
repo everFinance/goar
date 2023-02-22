@@ -34,3 +34,23 @@ func Test_LoadData(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(len(data))
 }
+
+func TestDownloadDataStream(t *testing.T) {
+	arCli := goar.NewClient("https://arweave.net")
+
+	arId := "BF85hzl9HobCkLKrKET1MRd2pr_XRqB2dAWQEZYDTRE" // 300KB
+	// arId := "cqCdSEKu-A272DuwFpKPBdyEsxXHT92gxoorS3Y-sbM" // image size:12MB
+	dataFile, err := arCli.DownloadChunkDataStream(arId)
+	assert.NoError(t, err)
+	dataFile.Close()
+}
+
+func TestConcurrentDownloadStream(t *testing.T) {
+	arCli := goar.NewClient("https://arweave.net")
+
+	arId := "cqCdSEKu-A272DuwFpKPBdyEsxXHT92gxoorS3Y-sbM"
+	dataFile, data, err := arCli.ConcurrentDownloadChunkDataStream(arId, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(data))
+	dataFile.Close()
+}
