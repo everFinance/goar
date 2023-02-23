@@ -832,7 +832,6 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 				}
 			}
 		}
-		log.Info("download chunk data", "totalNum", size/types.MAX_CHUNK_SIZE)
 		var n int
 		lock.Lock()
 		n, err = dataFile.WriteAt(chunkData, oss.fileOffset)
