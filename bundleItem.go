@@ -56,19 +56,7 @@ func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags 
 	if err != nil {
 		return types.BundleItem{}, err
 	}
-
-	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, bundle.BundleBinary, tags)
-	if err != nil {
-		return types.BundleItem{}, err
-	}
-	// sign
-	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
-		return types.BundleItem{}, err
-	}
-	if err := utils.GenerateItemBinary(bundleItem); err != nil {
-		return types.BundleItem{}, err
-	}
-	return *bundleItem, nil
+	return i.CreateAndSignItem(bundle.BundleBinary, target, anchor, tags)
 }
 
 func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
