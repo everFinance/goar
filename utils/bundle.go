@@ -12,17 +12,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/everFinance/arseeding/schema"
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goether"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
 )
 
 func NewBundle(items ...types.BundleItem) (*types.Bundle, error) {

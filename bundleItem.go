@@ -3,10 +3,11 @@ package goar
 import (
 	"crypto/sha256"
 	"errors"
+	"io"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
-	"io"
 )
 
 type ItemSigner struct {
@@ -31,6 +32,32 @@ func NewItemSigner(signer interface{}) (*ItemSigner, error) {
 
 func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
 	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
+	// sign
+	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
+		return types.BundleItem{}, err
+	}
+	if err := utils.GenerateItemBinary(bundleItem); err != nil {
+		return types.BundleItem{}, err
+	}
+	return *bundleItem, nil
+}
+
+func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags []types.Tag, items ...types.BundleItem) (types.BundleItem, error) {
+	bundleTags := []types.Tag{
+		{Name: "Bundle-Format", Value: "binary"},
+		{Name: "Bundle-Version", Value: "2.0.0"},
+	}
+	tags = append(tags, bundleTags...)
+
+	bundle, err := utils.NewBundle(items...)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
+
+	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, bundle.BundleBinary, tags)
 	if err != nil {
 		return types.BundleItem{}, err
 	}
