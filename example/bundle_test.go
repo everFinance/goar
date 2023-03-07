@@ -283,8 +283,9 @@ func TestReader(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	binary, err := io.ReadAll(item.BinaryReader)
+	binaryReader, err := utils.GenerateItemBinaryStream(&item)
 	assert.NoError(t, err)
+	binary, err := io.ReadAll(binaryReader)
 
 	assert.Equal(t, binary, item2.ItemBinary)
 }
@@ -335,6 +336,8 @@ func TestDecodeBundleStream(t *testing.T) {
 	for _, item := range bundle.Items {
 		os.Remove(item.DataReader.Name())
 	}
+	os.Remove(item01.DataReader.Name())
+	os.Remove(item02.DataReader.Name())
 }
 
 func changeData(item types.BundleItem) error {

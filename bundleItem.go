@@ -68,9 +68,6 @@ func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anch
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
 		return types.BundleItem{}, err
 	}
-	if err := utils.GenerateItemBinary(bundleItem); err != nil {
-		return types.BundleItem{}, err
-	}
 	return *bundleItem, nil
 }
 
