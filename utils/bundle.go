@@ -193,9 +193,12 @@ func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
 			return nil, errors.New("seek itemData failed")
 		}
 		bundleItem, err := DecodeBundleItemStream(itemReader)
+		itemReader.Close()
+		os.Remove(itemReader.Name())
 		if err != nil {
 			return nil, err
 		}
+
 		if bundleItem.Id != id {
 			return nil, fmt.Errorf("bundleItem.Id != id, bundleItem.Id: %s, id: %s", bundleItem.Id, id)
 		}
@@ -295,7 +298,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 	}, nil
 }
 
-func DecodeBundleItemStream(itemBinary *os.File) (*types.BundleItem, error) {
+func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 	sigTypeBy := make([]byte, 2, 2)
 	n, err := itemBinary.Read(sigTypeBy)
 	if err != nil || n < 2 {
@@ -382,7 +385,15 @@ func DecodeBundleItemStream(itemBinary *os.File) (*types.BundleItem, error) {
 		}
 		tags = tgs
 	}
-
+	dataReader, err := os.CreateTemp(".", "itemData-")
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(dataReader, itemBinary)
+	if err != nil {
+		os.Remove(dataReader.Name())
+		return nil, err
+	}
 	return &types.BundleItem{
 		SignatureType: sigType,
 		Signature:     signature,
@@ -393,7 +404,7 @@ func DecodeBundleItemStream(itemBinary *os.File) (*types.BundleItem, error) {
 		Data:          "",
 		Id:            id,
 		ItemBinary:    make([]byte, 0),
-		DataReader:    itemBinary,
+		DataReader:    dataReader,
 	}, nil
 }
 
@@ -582,39 +593,40 @@ func GetBundleItemTagsBytes(itemBinary []byte) ([]byte, error) {
 	}
 }
 
-func GenerateItemBinary(d *types.BundleItem) (err error) {
+func generateItemMetaBinary(d *types.BundleItem) ([]byte, error) {
 	if len(d.Signature) == 0 {
-		return errors.New("must be sign")
+		return nil, errors.New("must be sign")
 	}
 
+	var err error
 	targetBytes := []byte{}
 	if d.Target != "" {
 		targetBytes, err = Base64Decode(d.Target)
 		if err != nil {
-			return
+			return nil, err
 		}
 		if len(targetBytes) != 32 {
-			return errors.New("targetBytes length must 32")
+			return nil, errors.New("targetBytes length must 32")
 		}
 	}
 	anchorBytes := []byte{}
 	if d.Anchor != "" {
 		anchorBytes, err = Base64Decode(d.Anchor)
 		if err != nil {
-			return
+			return nil, err
 		}
 		if len(anchorBytes) != 32 {
-			return errors.New("anchorBytes length must 32")
+			return nil, errors.New("anchorBytes length must 32")
 		}
 	}
 	tagsBytes, err := SerializeTags(d.Tags)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sigMeta, ok := types.SigConfigMap[d.SignatureType]
 	if !ok {
-		return fmt.Errorf("not support sigType:%d", d.SignatureType)
+		return nil, fmt.Errorf("not support sigType:%d", d.SignatureType)
 	}
 
 	sigLength := sigMeta.SigLength
@@ -627,21 +639,21 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	// Push bytes for `signature`
 	sig, err := Base64Decode(d.Signature)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(sig) != sigLength {
-		return errors.New("signature length incorrect")
+		return nil, errors.New("signature length incorrect")
 	}
 
 	bytesArr = append(bytesArr, sig...)
 	// Push bytes for `ownerByte`
 	ownerByte, err := Base64Decode(d.Owner)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(ownerByte) != ownerLength {
-		return errors.New("signature length incorrect")
+		return nil, errors.New("signature length incorrect")
 	}
 	bytesArr = append(bytesArr, ownerByte...)
 	// Push `presence byte` and push `target` if present
@@ -669,27 +681,45 @@ func GenerateItemBinary(d *types.BundleItem) (err error) {
 	if len(d.Tags) > 0 {
 		bytesArr = append(bytesArr, tagsBytes...)
 	}
+	return bytesArr, nil
+}
 
+func GenerateItemBinary(d *types.BundleItem) (by []byte, err error) {
+	metaBinary, err := generateItemMetaBinary(d)
+	if err != nil {
+		return nil, err
+	}
+
+	by = append(by, metaBinary...)
 	// push data
 	data := make([]byte, 0)
 	if len(d.Data) > 0 {
 		data, err = Base64Decode(d.Data)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		bytesArr = append(bytesArr, data...)
-		d.ItemBinary = bytesArr
-	} else if d.DataReader != nil {
-		metaBuf := bytes.NewBuffer(bytesArr)
-		_, err = d.DataReader.Seek(0, 0)
-		if err != nil {
-			return err
-		}
-		// note: DataReader must seek(0,0) after call DataReader.read(), otherwise BinaryReader will change
-		d.BinaryReader = io.MultiReader(metaBuf, d.DataReader)
+		by = append(by, data...)
+	}
+	return
+}
+
+func GenerateItemBinaryStream(d *types.BundleItem) (binaryReader io.Reader, err error) {
+	metaBinary, err := generateItemMetaBinary(d)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	metaBuf := bytes.NewBuffer(metaBinary)
+	if d.DataReader == nil {
+		return metaBuf, nil
+	} else {
+		_, err = d.DataReader.Seek(0, 0)
+		if err != nil {
+			return nil, err
+		}
+		// note: DataReader must seek(0,0) after call DataReader.read(), otherwise BinaryReader will change
+		return io.MultiReader(metaBuf, d.DataReader), nil
+	}
 }
 
 func ItemSignerAddr(b types.BundleItem) (string, error) {
@@ -723,10 +753,11 @@ func ItemSignerAddr(b types.BundleItem) (string, error) {
 func SubmitItemToBundlr(item types.BundleItem, bundlrUrl string) (*types.BundlrResp, error) {
 	itemBinary := item.ItemBinary
 	if len(itemBinary) == 0 {
-		if err := GenerateItemBinary(&item); err != nil {
+		var err error
+		itemBinary, err = GenerateItemBinary(&item)
+		if err != nil {
 			return nil, err
 		}
-		itemBinary = item.ItemBinary
 	}
 	// post to bundler
 	resp, err := http.DefaultClient.Post(bundlrUrl+"/tx", "application/octet-stream", bytes.NewReader(itemBinary))
@@ -753,7 +784,9 @@ func SubmitItemToBundlr(item types.BundleItem, bundlrUrl string) (*types.BundlrR
 func SubmitItemToArSeed(item types.BundleItem, currency, arseedUrl string) (*schema.RespOrder, error) {
 	itemBinary := item.ItemBinary
 	if len(itemBinary) == 0 {
-		if err := GenerateItemBinary(&item); err != nil {
+		var err error
+		itemBinary, err = GenerateItemBinary(&item)
+		if err != nil {
 			return nil, err
 		}
 		itemBinary = item.ItemBinary

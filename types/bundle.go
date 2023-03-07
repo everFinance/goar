@@ -1,7 +1,6 @@
 package types
 
 import (
-	"io"
 	"os"
 )
 
@@ -57,7 +56,6 @@ type BundleItem struct {
 	Data          string `json:"data"`
 	Id            string `json:"id"`
 
-	ItemBinary   []byte    `json:"-"`
-	BinaryReader io.Reader `json:"-"`
-	DataReader   *os.File  `json:"-"`
+	ItemBinary []byte   `json:"-"`
+	DataReader *os.File `json:"-"`
 }
