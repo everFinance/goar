@@ -37,11 +37,11 @@ func Test_Client(t *testing.T) {
 	t.Log(string(data))
 
 	// 5. get tx send current time reward
-	reward, err := c.GetTransactionPrice(data, nil)
+	reward, err := c.GetTransactionPrice(len(data), nil)
 	assert.NoError(t, err)
 	t.Log(reward)
 	to := "1seRanklLU_1VTGkEk7P0xAwMJfA7owA1JHW5KyZKlY"
-	reward, err = c.GetTransactionPrice([]byte{}, &to)
+	reward, err = c.GetTransactionPrice(0, &to)
 	assert.NoError(t, err)
 	t.Log(reward)
 

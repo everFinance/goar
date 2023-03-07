@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/big"
 	"math/rand"
+	"os"
 	"strconv"
 
 	"github.com/everFinance/goar/types"
@@ -59,7 +60,7 @@ func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (
 }
 
 func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(nil, &target)
+	reward, err := w.Client.GetTransactionPrice(0, &target)
 	if err != nil {
 		return types.Transaction{}, err
 	}
@@ -81,10 +82,14 @@ func (w *Wallet) SendData(data []byte, tags []types.Tag) (types.Transaction, err
 	return w.SendDataSpeedUp(data, tags, 0)
 }
 
+func (w *Wallet) SendDataStream(data *os.File, tags []types.Tag) (types.Transaction, error) {
+	return w.SendDataStreamSpeedUp(data, tags, 0)
+}
+
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
 func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
+	reward, err := w.Client.GetTransactionPrice(len(data), nil)
 	if err != nil {
 		return types.Transaction{}, err
 	}
@@ -102,8 +107,44 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(data, nil)
+func (w *Wallet) SendDataStreamSpeedUp(data *os.File, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+	fileInfo, err := data.Stat()
+	if err != nil {
+		return types.Transaction{}, err
+	}
+	reward, err := w.Client.GetTransactionPrice(int(fileInfo.Size()), nil)
+	if err != nil {
+		return types.Transaction{}, err
+	}
+
+	tx := &types.Transaction{
+		Format:     2,
+		Target:     "",
+		Quantity:   "0",
+		Tags:       utils.TagsEncode(tags),
+		Data:       "",
+		DataReader: data,
+		DataSize:   fmt.Sprintf("%d", fileInfo.Size()),
+		Reward:     fmt.Sprintf("%d", reward*(100+speedFactor)/100),
+	}
+
+	return w.SendTransaction(tx)
+}
+
+func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data interface{}, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+	var reward int64
+	var dataLen int
+	isByteArr := true
+	if _, isByteArr = data.([]byte); isByteArr {
+		dataLen = len(data.([]byte))
+	} else {
+		fileInfo, err := data.(*os.File).Stat()
+		if err != nil {
+			return types.Transaction{}, err
+		}
+		dataLen = int(fileInfo.Size())
+	}
+	reward, err := w.Client.GetTransactionPrice(dataLen, nil)
 	if err != nil {
 		return types.Transaction{}, err
 	}
@@ -113,9 +154,14 @@ func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum in
 		Target:   "",
 		Quantity: "0",
 		Tags:     utils.TagsEncode(tags),
-		Data:     utils.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(data)),
+		DataSize: fmt.Sprintf("%d", dataLen),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
+	}
+
+	if isByteArr {
+		tx.Data = utils.Base64Encode(data.([]byte))
+	} else {
+		tx.DataReader = data.(*os.File)
 	}
 
 	return w.SendTransactionConcurrent(ctx, concurrentNum, tx)

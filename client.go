@@ -325,8 +325,8 @@ func (c *Client) GetTransactionDataStreamByGateway(id string) (*os.File, error) 
 	}
 }
 
-func (c *Client) GetTransactionPrice(data []byte, target *string) (reward int64, err error) {
-	url := fmt.Sprintf("price/%d", len(data))
+func (c *Client) GetTransactionPrice(dataSize int, target *string) (reward int64, err error) {
+	url := fmt.Sprintf("price/%d", dataSize)
 	if target != nil {
 		url = fmt.Sprintf("%v/%v", url, *target)
 	}

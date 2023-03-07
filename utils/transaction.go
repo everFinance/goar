@@ -5,36 +5,47 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 
 	"github.com/everFinance/goar/types"
 )
 
-func PrepareChunks(tx *types.Transaction, data []byte) {
+func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error {
 	// Note: we *do not* use `this.Data`, the caller may be
 	// operating on a Transaction with an zero length Data field.
 	// This function computes the chunks for the Data passed in and
 	// assigns the result to this Transaction. It should not read the
 	// Data *from* this Transaction.
-	if tx.Chunks == nil && len(data) > 0 {
-		chunks := GenerateChunks(data)
+	if tx.Chunks == nil && dataSize > 0 {
+		chunks, err := GenerateChunks(data)
+		if err != nil {
+			tx.Chunks = &types.Chunks{
+				DataRoot: make([]byte, 0),
+				Chunks:   make([]types.Chunk, 0),
+				Proofs:   make([]*types.Proof, 0),
+			}
+			return err
+		}
 		tx.Chunks = &chunks
 		tx.DataRoot = Base64Encode(tx.Chunks.DataRoot)
 	}
 
-	if tx.Chunks == nil && len(data) == 0 {
+	if tx.Chunks == nil && dataSize == 0 {
 		tx.Chunks = &types.Chunks{
 			DataRoot: make([]byte, 0),
 			Chunks:   make([]types.Chunk, 0),
 			Proofs:   make([]*types.Proof, 0),
 		}
 	}
-	return
+	return nil
 }
 
 // Returns a chunk in a format suitable for posting to /chunk.
 // Similar to `PrepareChunks()` this does not operate `this.Data`,
 // instead using the Data passed in.
+
 func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
@@ -49,6 +60,28 @@ func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, erro
 		DataPath: Base64Encode(proof.Proof),
 		Offset:   strconv.Itoa(proof.Offest),
 		Chunk:    Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
+	}, nil
+}
+
+func GetChunkStream(tx types.Transaction, idx int, data *os.File) (*types.GetChunk, error) {
+	if tx.Chunks == nil {
+		return nil, errors.New("Chunks have not been prepared")
+	}
+
+	proof := tx.Chunks.Proofs[idx]
+	chunk := tx.Chunks.Chunks[idx]
+	dataLen := chunk.MaxByteRange - chunk.MinByteRange
+	chunkBy := make([]byte, dataLen, dataLen)
+	n, err := data.ReadAt(chunkBy, int64(chunk.MinByteRange))
+	if n < dataLen || err != nil {
+		return nil, fmt.Errorf("getChunkStream failed, err: %v, readByte:%d, dataLen:%d", err, n, dataLen)
+	}
+	return &types.GetChunk{
+		DataRoot: tx.DataRoot,
+		DataSize: tx.DataSize,
+		DataPath: Base64Encode(proof.Proof),
+		Offset:   strconv.Itoa(proof.Offest),
+		Chunk:    Base64Encode(chunkBy),
 	}, nil
 }
 
@@ -79,11 +112,19 @@ func GetSignatureData(tx *types.Transaction) ([]byte, error) {
 		for _, tag := range dcTags {
 			tags = append(tags, ConcatBuffer([]byte(tag.Name), []byte(tag.Value))...)
 		}
-
-		data, err := Base64Decode(tx.Data)
-		if err != nil {
-			return nil, err
+		data := make([]byte, 0)
+		if tx.DataReader != nil {
+			data, err = io.ReadAll(tx.DataReader)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			data, err = Base64Decode(tx.Data)
+			if err != nil {
+				return nil, err
+			}
 		}
+
 		owner, err := Base64Decode(tx.Owner)
 		if err != nil {
 			return nil, err
@@ -108,11 +149,25 @@ func GetSignatureData(tx *types.Transaction) ([]byte, error) {
 		), nil
 
 	case 2:
-		data, err := Base64Decode(tx.Data)
-		if err != nil {
-			return nil, err
+		if tx.DataReader != nil {
+			info, err := tx.DataReader.Stat()
+			if err != nil {
+				return nil, err
+			}
+			err = PrepareChunks(tx, tx.DataReader, int(info.Size()))
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			data, err := Base64Decode(tx.Data)
+			if err != nil {
+				return nil, err
+			}
+			err = PrepareChunks(tx, data, len(data))
+			if err != nil {
+				return nil, err
+			}
 		}
-		PrepareChunks(tx, data)
 		tags := [][]string{}
 		for _, tag := range tx.Tags {
 			tags = append(tags, []string{

@@ -3,10 +3,11 @@ package goar
 import (
 	"crypto/sha256"
 	"errors"
+	"io"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
-	"io"
 )
 
 type ItemSigner struct {
@@ -42,6 +43,20 @@ func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string
 		return types.BundleItem{}, err
 	}
 	return *bundleItem, nil
+}
+
+func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags []types.Tag, items ...types.BundleItem) (types.BundleItem, error) {
+	bundleTags := []types.Tag{
+		{Name: "Bundle-Format", Value: "binary"},
+		{Name: "Bundle-Version", Value: "2.0.0"},
+	}
+	tags = append(tags, bundleTags...)
+
+	bundle, err := utils.NewBundle(items...)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
+	return i.CreateAndSignItem(bundle.BundleBinary, target, anchor, tags)
 }
 
 func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
