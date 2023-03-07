@@ -3,8 +3,11 @@ package utils
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
+	"io"
 	"math"
 	"math/big"
+	"os"
 
 	"github.com/everFinance/goar/types"
 	"github.com/shopspring/decimal"
@@ -20,8 +23,18 @@ import (
  *
  * @param data
  */
-func GenerateChunks(data []byte) types.Chunks {
-	chunks := chunkData(data)
+func GenerateChunks(data interface{}) (types.Chunks, error) {
+	chunks := make([]types.Chunk, 0)
+	var err error
+	if _, ok := data.([]byte); ok {
+		chunks = chunkData(data.([]byte))
+	} else {
+		chunks, err = chunkStreamData(data.(*os.File))
+		if err != nil {
+			return types.Chunks{}, err
+		}
+	}
+
 	leaves := generateLeaves(chunks)
 	root := buildLayer(leaves, 0) // leaf node level == 0
 	proofs := generateProofs(root)
@@ -37,7 +50,7 @@ func GenerateChunks(data []byte) types.Chunks {
 		DataRoot: root.ID,
 		Chunks:   chunks,
 		Proofs:   proofs,
-	}
+	}, nil
 }
 
 func chunkData(data []byte) (chunks []types.Chunk) {
@@ -66,6 +79,58 @@ func chunkData(data []byte) (chunks []types.Chunk) {
 		rest = rest[chunkSize:]
 	}
 
+	hash := sha256.Sum256(rest)
+	chunks = append(chunks, types.Chunk{
+		DataHash:     hash[:],
+		MinByteRange: cursor,
+		MaxByteRange: cursor + len(rest),
+	})
+	return
+}
+
+func chunkStreamData(data *os.File) (chunks []types.Chunk, err error) {
+	_, err = data.Seek(0, 0)
+	if err != nil {
+		return
+	}
+	fileInfo, err := data.Stat()
+	if err != nil {
+		return
+	}
+	cursor := 0
+	dataSize := int(fileInfo.Size())
+	// if data length > max size
+	for dataSize-cursor >= types.MAX_CHUNK_SIZE {
+		restSize := dataSize - cursor
+		chunkSize := types.MAX_CHUNK_SIZE
+
+		// 查看下一轮的chunkSize 是否小于最小的size，如果是则在这轮中调整chunk size 的大小
+		nextChunkSize := restSize - types.MAX_CHUNK_SIZE
+		if nextChunkSize > 0 && nextChunkSize < types.MIN_CHUNK_SIZE {
+			dec := decimal.NewFromFloat(math.Ceil(float64(restSize / 2)))
+			chunkSize = int(dec.IntPart())
+		}
+
+		chunk := make([]byte, chunkSize, chunkSize)
+		var n int
+		n, err = data.Read(chunk)
+		if n < chunkSize || err != nil {
+			err = fmt.Errorf("data.Read(chunk) error: chunkSize: %d, readSize: %d", chunkSize, n)
+			return
+		}
+		dataHash := sha256.Sum256(chunk)
+		cursor += len(chunk)
+		chunks = append(chunks, types.Chunk{
+			DataHash:     dataHash[:],
+			MinByteRange: cursor - len(chunk),
+			MaxByteRange: cursor,
+		})
+
+	}
+	rest, err := io.ReadAll(data)
+	if err != nil {
+		return
+	}
 	hash := sha256.Sum256(rest)
 	chunks = append(chunks, types.Chunk{
 		DataHash:     hash[:],

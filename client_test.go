@@ -208,7 +208,8 @@ func Test_GetTxDataFromPeers(t *testing.T) {
 	t.Log(len(data))
 
 	// verify data root
-	chunks := utils.GenerateChunks(data)
+	chunks, err := utils.GenerateChunks(data)
+	assert.NoError(t, err)
 	dataRoot := utils.Base64Encode(chunks.DataRoot)
 	tx, err := cli.GetTransactionByID(txId)
 	assert.NoError(t, err)
@@ -314,7 +315,8 @@ func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
 	// data , err := c.DownloadChunkData(arId)
 	assert.NoError(t, err)
 	ioutil.WriteFile("nannan.gif", data, 0666)
-	chunks := utils.GenerateChunks(data)
+	chunks, err := utils.GenerateChunks(data)
+	assert.NoError(t, err)
 	dataRoot := utils.Base64Encode(chunks.DataRoot)
 	t.Log(dataRoot)
 	t.Log(len(data))
