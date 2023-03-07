@@ -224,6 +224,17 @@ func TestIOBuffer(t *testing.T) {
 	assert.Equal(t, itemBinary2, itemBinary)
 }
 
+func TestIOBuffere(t *testing.T) {
+	itemReader, err := os.Open("test.item")
+	assert.NoError(t, err)
+	defer itemReader.Close()
+	item, err := utils.DecodeBundleItemStream(itemReader)
+	assert.NoError(t, err)
+	by, err := io.ReadAll(item.DataReader)
+	assert.NoError(t, err)
+	t.Log(len(by))
+}
+
 func TestCreateBundleItemStream(t *testing.T) {
 	data0, err := ioutil.ReadFile("../go.mod")
 	assert.NoError(t, err)

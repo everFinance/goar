@@ -394,6 +394,11 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 		os.Remove(dataReader.Name())
 		return nil, err
 	}
+	_, err = dataReader.Seek(0, 0)
+	if err != nil {
+		os.Remove(dataReader.Name())
+		return nil, err
+	}
 	return &types.BundleItem{
 		SignatureType: sigType,
 		Signature:     signature,
