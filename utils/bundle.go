@@ -74,7 +74,12 @@ func NewBundleStream(items ...types.BundleItem) (*types.Bundle, error) {
 		if err != nil {
 			return nil, err
 		}
-		header = append(header, LongTo32ByteArray(int(itemInfo.Size()))...)
+		metaBy, err := generateItemMetaBinary(&d)
+		if err != nil {
+			return nil, err
+		}
+		itemBinaryLen := len(metaBy) + int(itemInfo.Size())
+		header = append(header, LongTo32ByteArray(itemBinaryLen)...)
 		id, err := Base64Decode(d.Id)
 		if err != nil {
 			return nil, err
@@ -94,7 +99,15 @@ func NewBundleStream(items ...types.BundleItem) (*types.Bundle, error) {
 		if err != nil {
 			return nil, err
 		}
-		_, err = io.Copy(dataReader, d.DataReader)
+		binaryReader, err := GenerateItemBinaryStream(&d)
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(dataReader, binaryReader)
+		if err != nil {
+			return nil, err
+		}
+		_, err = d.DataReader.Seek(0, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -192,11 +205,11 @@ func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
 		if err != nil {
 			return nil, errors.New("seek itemData failed")
 		}
-		bundleItem, err := DecodeBundleItemStream(itemReader)
+		bundleItem, err2 := DecodeBundleItemStream(itemReader)
 		itemReader.Close()
 		os.Remove(itemReader.Name())
-		if err != nil {
-			return nil, err
+		if err2 != nil {
+			return nil, err2
 		}
 
 		if bundleItem.Id != id {

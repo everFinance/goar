@@ -329,6 +329,21 @@ func TestNewBundleStream(t *testing.T) {
 	assert.Equal(t, item01.Signature, bundle02.Items[0].Signature)
 }
 
+func TestAAA(t *testing.T) {
+	binary01, err := os.Open("test.item")
+	assert.NoError(t, err)
+	binary02, err := os.Open("test2.item")
+	assert.NoError(t, err)
+	item01, err := utils.DecodeBundleItemStream(binary01)
+	assert.NoError(t, err)
+	item02, err := utils.DecodeBundleItemStream(binary02)
+	assert.NoError(t, err)
+	bundle, err := utils.NewBundleStream(*item01, *item02)
+	assert.NoError(t, err)
+	_, err = utils.DecodeBundleStream(bundle.BundleDataReader)
+	assert.NoError(t, err)
+}
+
 func TestDecodeBundleStream(t *testing.T) {
 	binary01, err := os.Open("test.item")
 	assert.NoError(t, err)
