@@ -342,6 +342,11 @@ func TestAAA(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = utils.DecodeBundleStream(bundle.BundleDataReader)
 	assert.NoError(t, err)
+
+	by, err := io.ReadAll(bundle.BundleDataReader)
+	assert.NoError(t, err)
+	t.Log(len(by))
+
 }
 
 func TestDecodeBundleStream(t *testing.T) {

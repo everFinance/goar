@@ -197,8 +197,8 @@ func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
 		if err != nil {
 			return nil, errors.New("seek bundleData failed")
 		}
-		n, err := io.CopyN(itemReader, bundleData, int64(itemBinaryLength))
-		if int(n) < itemBinaryLength || err != nil {
+		n, err1 := io.CopyN(itemReader, bundleData, int64(itemBinaryLength))
+		if int(n) < itemBinaryLength || err1 != nil {
 			return nil, errors.New("binary length incorrect")
 		}
 		_, err = itemReader.Seek(0, 0)
@@ -217,6 +217,10 @@ func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
 		}
 		bd.Items = append(bd.Items, *bundleItem)
 		bundleItemStart += itemBinaryLength
+	}
+	_, err = bundleData.Seek(0, 0)
+	if err != nil {
+		return nil, err
 	}
 	bd.BundleDataReader = bundleData
 	return bd, nil
