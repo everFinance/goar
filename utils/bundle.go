@@ -56,6 +56,61 @@ func NewBundle(items ...types.BundleItem) (*types.Bundle, error) {
 	}, nil
 }
 
+// it's caller's responsibility to delete tmp file after handle bundleData
+
+func NewBundleStream(items ...types.BundleItem) (*types.Bundle, error) {
+	headers := make([]byte, 0) // length is 64 * len(items)
+	headers = append(headers, LongTo32ByteArray(len(items))...)
+	dataReader, err := os.CreateTemp(".", "bundleData-")
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range items {
+		header := make([]byte, 0, 64)
+		if d.DataReader == nil {
+			return nil, errors.New("NewBundleStream method dataReader can't be null")
+		}
+		itemInfo, err := d.DataReader.Stat()
+		if err != nil {
+			return nil, err
+		}
+		header = append(header, LongTo32ByteArray(int(itemInfo.Size()))...)
+		id, err := Base64Decode(d.Id)
+		if err != nil {
+			return nil, err
+		}
+		if len(id) != 32 {
+			return nil, errors.New("item id length must 32")
+		}
+		header = append(header, id...)
+		headers = append(headers, header...)
+	}
+	_, err = io.Copy(dataReader, bytes.NewBuffer(headers))
+	if err != nil {
+		return nil, err
+	}
+	for _, d := range items {
+		_, err = d.DataReader.Seek(0, 0)
+		if err != nil {
+			return nil, err
+		}
+		_, err = io.Copy(dataReader, d.DataReader)
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err = dataReader.Seek(0, 0)
+	if err != nil {
+		return nil, err
+	}
+	b := &types.Bundle{
+		Items:            items,
+		BundleBinary:     make([]byte, 0),
+		BundleDataReader: dataReader,
+	}
+	return b, nil
+}
+
 func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 	// length must more than 32
 	if len(bundleBinary) < 32 {
@@ -95,6 +150,59 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 		bd.Items = append(bd.Items, *bundleItem)
 		bundleItemStart += itemBinaryLength
 	}
+	return bd, nil
+}
+
+// it's caller's responsibility to delete all tmp file after handle all bundle item
+
+func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
+	// length must more than 32
+	itemsNumBy := make([]byte, 32, 32)
+	n, err := bundleData.Read(itemsNumBy)
+	if n < 32 || err != nil {
+		return nil, errors.New("binary length must more than 32")
+	}
+	itemsNum := ByteArrayToLong(itemsNumBy)
+	bd := &types.Bundle{
+		Items: make([]types.BundleItem, 0),
+	}
+	bundleItemStart := 32 + itemsNum*64
+	for i := 0; i < itemsNum; i++ {
+		headerBegin := 32 + i*64
+		headerByte := make([]byte, 64, 64)
+		n, err = bundleData.ReadAt(headerByte, int64(headerBegin))
+		if n < 64 || err != nil {
+			return nil, errors.New("binary length incorrect")
+		}
+		itemBinaryLength := ByteArrayToLong(headerByte[:32])
+		id := Base64Encode(headerByte[32:64])
+		itemReader, err := os.CreateTemp(".", "bundleItem-")
+		if err != nil {
+			return nil, errors.New("CreateTempItemFile error")
+		}
+		_, err = bundleData.Seek(int64(bundleItemStart), 0)
+		if err != nil {
+			return nil, errors.New("seek bundleData failed")
+		}
+		n, err := io.CopyN(itemReader, bundleData, int64(itemBinaryLength))
+		if int(n) < itemBinaryLength || err != nil {
+			return nil, errors.New("binary length incorrect")
+		}
+		_, err = itemReader.Seek(0, 0)
+		if err != nil {
+			return nil, errors.New("seek itemData failed")
+		}
+		bundleItem, err := DecodeBundleItemStream(itemReader)
+		if err != nil {
+			return nil, err
+		}
+		if bundleItem.Id != id {
+			return nil, fmt.Errorf("bundleItem.Id != id, bundleItem.Id: %s, id: %s", bundleItem.Id, id)
+		}
+		bd.Items = append(bd.Items, *bundleItem)
+		bundleItemStart += itemBinaryLength
+	}
+	bd.BundleDataReader = bundleData
 	return bd, nil
 }
 

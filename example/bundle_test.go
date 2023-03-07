@@ -193,10 +193,10 @@ func TestDecodeBundleItemStream(t *testing.T) {
 	assert.NoError(t, err)
 	bd, err := utils.DecodeBundle(data)
 	assert.NoError(t, err)
-	item := bd.Items[0]
-	err = os.WriteFile("test.item", item.ItemBinary, 0644)
+	item := bd.Items[1]
+	err = os.WriteFile("test2.item", item.ItemBinary, 0644)
 	assert.NoError(t, err)
-	itemReader, err := os.Open("test.item")
+	itemReader, err := os.Open("test2.item")
 	defer itemReader.Close()
 	assert.NoError(t, err)
 	item2, err := utils.DecodeBundleItemStream(itemReader)
@@ -297,6 +297,44 @@ func TestVerifyItemStream(t *testing.T) {
 	assert.NoError(t, err)
 	err = utils.VerifyBundleItem(*item)
 	assert.NoError(t, err)
+}
+
+func TestNewBundleStream(t *testing.T) {
+	binary01, err := os.Open("test.item")
+	assert.NoError(t, err)
+	binary02, err := os.Open("test2.item")
+	assert.NoError(t, err)
+	item01, err := utils.DecodeBundleItemStream(binary01)
+	assert.NoError(t, err)
+	item02, err := utils.DecodeBundleItemStream(binary02)
+	bundle, err := utils.NewBundleStream(*item01, *item02)
+	assert.NoError(t, err)
+	defer os.Remove(bundle.BundleDataReader.Name())
+	bundleData, err := io.ReadAll(bundle.BundleDataReader)
+	assert.NoError(t, err)
+	bundle02, err := utils.DecodeBundle(bundleData)
+	assert.NoError(t, err)
+	assert.Equal(t, item01.Signature, bundle02.Items[0].Signature)
+}
+
+func TestDecodeBundleStream(t *testing.T) {
+	binary01, err := os.Open("test.item")
+	assert.NoError(t, err)
+	binary02, err := os.Open("test2.item")
+	assert.NoError(t, err)
+	item01, err := utils.DecodeBundleItemStream(binary01)
+	assert.NoError(t, err)
+	item02, err := utils.DecodeBundleItemStream(binary02)
+
+	bundleData, err := os.Open("bundleData")
+	assert.NoError(t, err)
+	bundle, err := utils.DecodeBundleStream(bundleData)
+	assert.NoError(t, err)
+	assert.Equal(t, item01.Signature, bundle.Items[0].Signature)
+	assert.Equal(t, item02.Signature, bundle.Items[1].Signature)
+	for _, item := range bundle.Items {
+		os.Remove(item.DataReader.Name())
+	}
 }
 
 func changeData(item types.BundleItem) error {
