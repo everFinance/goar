@@ -39,9 +39,12 @@ func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
 		return types.BundleItem{}, err
 	}
-	if err := utils.GenerateItemBinary(bundleItem); err != nil {
+	// get itemBinary
+	itemBinary, err := utils.GenerateItemBinary(bundleItem)
+	if err != nil {
 		return types.BundleItem{}, err
 	}
+	bundleItem.ItemBinary = itemBinary
 	return *bundleItem, nil
 }
 
