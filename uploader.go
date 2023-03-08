@@ -185,9 +185,9 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 		var chunk *types.GetChunk
 		var err error
 		if tt.DataReader != nil {
-			chunk, err = utils.GetChunkStream(*tt.Transaction, tt.ChunkIndex, tt.DataReader)
+			chunk, err = utils.GetChunkStream(*tt.Transaction, idx, tt.DataReader)
 		} else {
-			chunk, err = utils.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
+			chunk, err = utils.GetChunk(*tt.Transaction, idx, tt.Data)
 		}
 		if err != nil {
 			log.Error("GetChunk error", "err", err, "idx", idx)
