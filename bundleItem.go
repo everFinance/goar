@@ -71,6 +71,9 @@ func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anch
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
 		return types.BundleItem{}, err
 	}
+	if _, err := bundleItem.DataReader.Seek(0, 0); err != nil {
+		return types.BundleItem{}, err
+	}
 	return *bundleItem, nil
 }
 
