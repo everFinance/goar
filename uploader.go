@@ -415,10 +415,10 @@ func (tt *TransactionUploader) postTransaction() error {
 }
 
 func (tt *TransactionUploader) uploadTx(withBody bool) error {
-	if withBody {
-		// Post the Transaction with Data.
-		tt.Transaction.Data = utils.Base64Encode(tt.Data)
-	}
+	// if withBody {
+	// 	// Post the Transaction with Data.
+	// 	tt.Transaction.Data = utils.Base64Encode(tt.Data)
+	// }
 	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
 	if err != nil || statusCode >= 400 {
 		tt.LastResponseError = fmt.Sprintf("%v,%s", err, body)
@@ -429,22 +429,22 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 
-	if withBody {
-		tt.Transaction.Data = ""
-	}
+	// if withBody {
+	// 	tt.Transaction.Data = ""
+	// }
 
 	// tx already processed
 	if statusCode >= 200 && statusCode < 300 {
 		tt.TxPosted = true
-		if withBody {
-			// We are complete.
-			tt.ChunkIndex = types.MAX_CHUNKS_IN_BODY
-		}
+		// if withBody {
+		// 	// We are complete.
+		// 	tt.ChunkIndex = types.MAX_CHUNKS_IN_BODY
+		// }
 		return nil
 	}
 
-	if withBody {
-		tt.LastResponseError = ""
-	}
+	// if withBody {
+	// 	tt.LastResponseError = ""
+	// }
 	return nil
 }
