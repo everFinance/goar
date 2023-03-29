@@ -55,6 +55,7 @@ type BundleItem struct {
 	Tags          []Tag  `json:"tags"`
 	Data          string `json:"data"`
 	Id            string `json:"id"`
+	TagsBy        string `json:"tagsBy"` // utils.Base64Encode(TagsBytes) for retry assemble item
 
 	ItemBinary []byte   `json:"-"`
 	DataReader *os.File `json:"-"`

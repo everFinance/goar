@@ -283,6 +283,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 
 	var tagsBytesLength int
 	tags := []types.Tag{}
+	tagsBytes := make([]byte, 0)
 	if numOfTags > 0 {
 		if len(itemBinary) < tagsStart+16 {
 			return nil, errors.New("itemBinary incorrect")
@@ -291,7 +292,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 		if len(itemBinary) < tagsStart+16+tagsBytesLength || tagsStart+16+tagsBytesLength < 0 {
 			return nil, errors.New("itemBinary incorrect")
 		}
-		tagsBytes := itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
+		tagsBytes = itemBinary[tagsStart+16 : tagsStart+16+tagsBytesLength]
 		// parser tags
 		tgs, err := DeserializeTags(tagsBytes)
 		if err != nil {
@@ -311,6 +312,7 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 		Tags:          tags,
 		Data:          Base64Encode(data),
 		Id:            id,
+		TagsBy:        Base64Encode(tagsBytes),
 		ItemBinary:    itemBinary,
 	}, nil
 }
@@ -383,6 +385,7 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 
 	var tagsBytesLength int
 	tags := []types.Tag{}
+	tagsBytes := make([]byte, 0)
 	if numOfTags > 0 {
 		tagsBytesLengthBy := make([]byte, 8, 8)
 		n, err = itemBinary.Read(tagsBytesLengthBy)
@@ -390,7 +393,7 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		tagsBytesLength = ByteArrayToLong(tagsBytesLengthBy)
-		tagsBytes := make([]byte, tagsBytesLength, tagsBytesLength)
+		tagsBytes = make([]byte, tagsBytesLength, tagsBytesLength)
 		n, err = itemBinary.Read(tagsBytes)
 		if err != nil || n < tagsBytesLength {
 			return nil, errors.New("itemBinary incorrect")
@@ -425,6 +428,7 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 		Tags:          tags,
 		Data:          "",
 		Id:            id,
+		TagsBy:        Base64Encode(tagsBytes),
 		ItemBinary:    make([]byte, 0),
 		DataReader:    dataReader,
 	}, nil
@@ -457,6 +461,10 @@ func newBundleItem(owner string, signatureType int, target, anchor string, data 
 			return nil, errors.New("anchor length must be 32")
 		}
 	}
+	tagsBytes, err := SerializeTags(tags)
+	if err != nil {
+		return nil, err
+	}
 	item := &types.BundleItem{
 		SignatureType: signatureType,
 		Signature:     "",
@@ -465,6 +473,7 @@ func newBundleItem(owner string, signatureType int, target, anchor string, data 
 		Anchor:        anchor,
 		Tags:          tags,
 		Id:            "",
+		TagsBy:        Base64Encode(tagsBytes),
 		ItemBinary:    make([]byte, 0),
 	}
 	if _, ok := data.(*os.File); ok {
@@ -476,20 +485,6 @@ func newBundleItem(owner string, signatureType int, target, anchor string, data 
 }
 
 func BundleItemSignData(d types.BundleItem) ([]byte, error) {
-	var err error
-	tagsBy := make([]byte, 0)
-	if len(d.ItemBinary) > 0 { // verify logic
-		tagsBy, err = GetBundleItemTagsBytes(d.ItemBinary)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		tagsBy, err = SerializeTags(d.Tags)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// deep hash
 	dataList := make([]interface{}, 0)
 	dataList = append(dataList, Base64Encode([]byte("dataitem")))
@@ -498,7 +493,7 @@ func BundleItemSignData(d types.BundleItem) ([]byte, error) {
 	dataList = append(dataList, d.Owner)
 	dataList = append(dataList, d.Target)
 	dataList = append(dataList, d.Anchor)
-	dataList = append(dataList, Base64Encode(tagsBy))
+	dataList = append(dataList, d.TagsBy)
 	if d.DataReader != nil {
 		dataList = append(dataList, d.DataReader)
 	} else {
@@ -641,9 +636,12 @@ func generateItemMetaBinary(d *types.BundleItem) ([]byte, error) {
 			return nil, errors.New("anchorBytes length must 32")
 		}
 	}
-	tagsBytes, err := SerializeTags(d.Tags)
-	if err != nil {
-		return nil, err
+	tagsBytes := make([]byte, 0)
+	if len(d.Tags) > 0 {
+		tagsBytes, err = Base64Decode(d.TagsBy)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sigMeta, ok := types.SigConfigMap[d.SignatureType]
