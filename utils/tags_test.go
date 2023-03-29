@@ -42,3 +42,9 @@ func TestTags(t *testing.T) {
 	assert.Equal(t, tagsBase64[1].Name, tagsRes[1].Name)
 	assert.Equal(t, tagsBase64[1].Value, tagsRes[1].Value)
 }
+
+func TestSerializeTags(t *testing.T) {
+	by, err := SerializeTags([]types.Tag{})
+	assert.NoError(t, err)
+	t.Log(len(by))
+}

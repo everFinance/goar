@@ -327,6 +327,10 @@ func TestNewBundleStream(t *testing.T) {
 	bundle02, err := utils.DecodeBundle(bundleData)
 	assert.NoError(t, err)
 	assert.Equal(t, item01.Signature, bundle02.Items[0].Signature)
+	for _, item := range bundle02.Items {
+		err = utils.VerifyBundleItem(item)
+		assert.NoError(t, err)
+	}
 }
 
 func TestAAA(t *testing.T) {

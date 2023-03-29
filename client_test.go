@@ -4,6 +4,7 @@ import (
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -328,4 +329,22 @@ func TestClient_ExistTxData(t *testing.T) {
 	exist, err := c.ExistTxData(arId)
 	assert.NoError(t, err)
 	t.Log(exist)
+}
+
+func TestNewTempConn2(t *testing.T) {
+	data, err := os.Open("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
+	assert.NoError(t, err)
+	item, err := utils.DecodeBundleItemStream(data)
+	assert.NoError(t, err)
+	// 0x03641046696c654e616d6520576563686174494d4738302e6a70656718436f6e74656e742d5479706514696d6167652f6a70656700
+
+	// by, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
+	// assert.NoError(t, err)
+	// item, err := utils.DecodeBundleItem(by)
+	// assert.NoError(t, err)
+
+	t.Log(item.Tags) // [{FileName WechatIMG80.jpeg} {Content-Type image/jpeg}]
+
+	err = utils.VerifyBundleItem(*item)
+	assert.NoError(t, err)
 }
