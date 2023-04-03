@@ -50,14 +50,17 @@ func TestConcurrentDownloadStream(t *testing.T) {
 	arCli := goar.NewClient("https://arweave.net")
 
 	arId := "cqCdSEKu-A272DuwFpKPBdyEsxXHT92gxoorS3Y-sbM"
-	dataFile, data, err := arCli.ConcurrentDownloadChunkDataStream(arId, 0)
+	// arId := "3SZ_nXUzHIpOMJ5yWQhesODh13ZI4-ObgdkttYfxyy4"
+	dataFile, err := arCli.ConcurrentDownloadChunkDataStream(arId, 0)
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(data))
+	info, err := dataFile.Stat()
+	assert.NoError(t, err)
+	t.Log(info.Size(), info.Name())
 	dataFile.Close()
+	os.Remove(dataFile.Name())
 }
 
 func TestSendDataStream(t *testing.T) {
-
 	arNode := "https://arweave.net"
 	w, err := goar.NewWalletFromPath("./testKey.json", arNode) // your wallet private key
 	assert.NoError(t, err)

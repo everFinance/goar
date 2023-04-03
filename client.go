@@ -771,18 +771,18 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 
 // it's caller's responsibility to reserve or delete the tmp file created by this method
 
-func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int) (*os.File, []byte, error) {
+func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int) (dataFile *os.File, err error) {
 	offsetResponse, err := c.getTransactionOffset(id)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	startOffset := endOffset - size + 1
 
@@ -792,17 +792,29 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		i += types.MAX_CHUNK_SIZE
 	}
 
-	if len(offsetArr) <= 3 { // not need concurrent get chunks
-		data, err := c.DownloadChunkData(id)
-		return nil, data, err
-	}
-
 	log.Debug("need download chunks length", "length", len(offsetArr))
 
-	dataFile, err := os.CreateTemp(".", "concurrent-load-chunks-")
+	dataFile, err = os.CreateTemp(".", "concurrent-load-data-")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			dataFile.Close()
+			os.Remove(dataFile.Name())
+		}
+	}()
+
+	if len(offsetArr) <= 3 { // not need concurrent get chunks
+		var data []byte
+		data, err = c.DownloadChunkData(id)
+		if err != nil {
+			return nil, err
+		}
+		_, err = dataFile.Write(data)
+		return dataFile, err
+	}
+
 	type Offset struct {
 		fileOffset  int64
 		chunkOffset int64
@@ -845,20 +857,21 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 
 	for i, offset := range offsetArr[:len(offsetArr)-2] {
 		wg.Add(1)
-		if err := p.Invoke(Offset{fileOffset: offset, chunkOffset: offset + startOffset}); err != nil {
+		if err = p.Invoke(Offset{fileOffset: offset, chunkOffset: offset + startOffset}); err != nil {
 			log.Error("p.Invoke(i)", "err", err, "i", i)
-			return nil, nil, err
+			return nil, err
 		}
 	}
 	wg.Wait()
 	_, err = dataFile.Seek(0, 2)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// add latest 2 chunks
 	start := offsetArr[len(offsetArr)-3] + startOffset + types.MAX_CHUNK_SIZE
 	for i := 0; int64(i)+start < endOffset; {
-		chunkData, err := c.getChunkData(int64(i) + start)
+		var chunkData []byte
+		chunkData, err = c.getChunkData(int64(i) + start)
 		if err != nil {
 			count := 0
 			for count < 2 {
@@ -874,17 +887,19 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 			}
 		}
 		if err != nil {
-			return nil, nil, errors.New("concurrent get latest two chunks failed")
+			err = errors.New(fmt.Sprintf("concurrent get latest two chunks failed,err:%v", err))
+			return nil, err
 		}
 		n := 0
 		n, err = dataFile.Write(chunkData)
 		if err != nil || n < len(chunkData) {
-			return nil, nil, fmt.Errorf("write dataFile error writeSize:%d, expectSize:%d", n, len(chunkData))
+			err = fmt.Errorf("write dataFile error writeSize:%d, expectSize:%d", n, len(chunkData))
+			return nil, err
 		}
 		i += len(chunkData)
 	}
 
-	return dataFile, nil, nil
+	return dataFile, nil
 }
 
 func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {
