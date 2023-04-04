@@ -551,20 +551,24 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
 	_path := "chunk/" + strconv.FormatInt(offset, 10)
 	body, statusCode, err := c.httpGet(_path)
-	if statusCode == 429 {
-		return nil, ErrRequestLimit
-	}
-	if statusCode != 200 {
-		return nil, errors.New("not found chunk data")
-	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("httpGet getChunk error: %v", err)
 	}
-	txChunk := &types.TransactionChunk{}
-	if err := json.Unmarshal(body, txChunk); err != nil {
-		return nil, err
+
+	switch statusCode {
+	case 200:
+		txChunk := &types.TransactionChunk{}
+		if err := json.Unmarshal(body, txChunk); err != nil {
+			return nil, err
+		}
+		return txChunk, nil
+	case 404:
+		return nil, ErrNotFound
+	case 429:
+		return nil, ErrRequestLimit
+	default:
+		return nil, ErrBadGateway
 	}
-	return txChunk, nil
 }
 
 func (c *Client) getChunkData(offset int64) ([]byte, error) {
@@ -832,17 +836,21 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		chunkData, err := c.getChunkData(oss.chunkOffset)
 		if err != nil {
 			count := 0
-			for count < 2 {
+			for count < 5 {
 				time.Sleep(1 * time.Second)
 				chunkData, err = c.getChunkData(oss.chunkOffset)
 				if err == nil {
 					break
 				}
-				log.Error("retry getChunkData failed and try again...", "err", err, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset, "retryCount", count, "arId", id)
+				log.Warn("retry getChunkData failed and try again...", "err", err, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset, "retryCount", count, "arId", id)
 				if err != ErrRequestLimit {
 					count++
 				}
 			}
+		}
+		if err != nil {
+			log.Error("getChunkData failed", "err", err, "arId", id, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset)
+			return
 		}
 		var n int
 		lock.Lock()
@@ -874,7 +882,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		chunkData, err = c.getChunkData(int64(i) + start)
 		if err != nil {
 			count := 0
-			for count < 2 {
+			for count < 5 {
 				time.Sleep(1 * time.Second)
 				chunkData, err = c.getChunkData(int64(i) + start)
 				if err == nil {
