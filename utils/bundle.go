@@ -383,16 +383,16 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 	}
 	numOfTags := ByteArrayToLong(numOfTagsBy)
 
-	var tagsBytesLength int
+	tagsBytesLengthBy := make([]byte, 8, 8)
+	n, err = itemBinary.Read(tagsBytesLengthBy)
+	if err != nil || n < 8 {
+		return nil, errors.New("itemBinary incorrect")
+	}
+	tagsBytesLength := ByteArrayToLong(tagsBytesLengthBy)
+
 	tags := []types.Tag{}
 	tagsBytes := make([]byte, 0)
 	if numOfTags > 0 {
-		tagsBytesLengthBy := make([]byte, 8, 8)
-		n, err = itemBinary.Read(tagsBytesLengthBy)
-		if err != nil || n < 8 {
-			return nil, errors.New("itemBinary incorrect")
-		}
-		tagsBytesLength = ByteArrayToLong(tagsBytesLengthBy)
 		tagsBytes = make([]byte, tagsBytesLength, tagsBytesLength)
 		n, err = itemBinary.Read(tagsBytes)
 		if err != nil || n < tagsBytesLength {
