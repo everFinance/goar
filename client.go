@@ -1026,3 +1026,29 @@ func (c *Client) DataSyncRecord(endOffset string, intervalsNum int) ([]string, e
 	}
 	return result, nil
 }
+
+func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
+	by, err := json.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+	u, err := url.Parse(c.url)
+	if err != nil {
+		return nil, err
+	}
+
+	u.Path = path.Join(u.Path, "/gateway/sequencer/register")
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(by))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
+}

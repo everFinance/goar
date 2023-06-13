@@ -206,7 +206,7 @@ func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customT
 	}
 
 	// assemble tx tags
-	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64())
+	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64(), false)
 	if err != nil {
 		return types.Transaction{}, err
 	}

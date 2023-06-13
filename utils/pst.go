@@ -2,7 +2,7 @@ package utils
 
 import "github.com/everFinance/goar/types"
 
-func PstTransferTags(contractId string, target string, qty int64) ([]types.Tag, error) {
+func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]types.Tag, error) {
 	input := types.Input{
 		"function": "transfer",
 		"target":   target,
@@ -20,5 +20,10 @@ func PstTransferTags(contractId string, target string, qty int64) ([]types.Tag, 
 		{Name: "Contract", Value: contractId},
 		{Name: "Input", Value: inputStr},
 	}
+
+	if warp {
+		pstTags = append(pstTags, types.Tag{Name: "SDK", Value: "Warp"})
+	}
+
 	return pstTags, nil
 }
