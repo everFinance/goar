@@ -7,7 +7,7 @@ require (
 	github.com/ethereum/go-ethereum v1.10.20
 	github.com/everFinance/arseeding v1.0.3
 	github.com/everFinance/everpay-go v0.0.1
-	github.com/everFinance/goether v1.1.8
+	github.com/everFinance/goether v1.1.9
 	github.com/everFinance/gojwk v1.0.0
 	github.com/everFinance/ttcrsa v1.1.3
 	github.com/hamba/avro v1.5.6

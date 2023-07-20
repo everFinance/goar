@@ -545,7 +545,7 @@ func VerifyBundleItem(d types.BundleItem) error {
 			return err
 		}
 
-		addr, err := goether.Ecrecover(accounts.TextHash(signMsg), sign)
+		_, addr, err := goether.Ecrecover(accounts.TextHash(signMsg), sign)
 		if err != nil {
 			return err
 		}
