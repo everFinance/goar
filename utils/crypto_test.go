@@ -1,17 +1,14 @@
 package utils
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestSignAndVerify(t *testing.T) {
-	rightKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	rightKey, err := GenerateRsaKey(4096)
 	assert.NoError(t, err)
-	wrongKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	wrongKey, err := GenerateRsaKey(4096)
 	assert.NoError(t, err)
 	msg := []byte("123")
 

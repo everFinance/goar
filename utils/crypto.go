@@ -7,6 +7,10 @@ import (
 	"crypto/sha256"
 )
 
+func GenerateRsaKey(bits int) (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, bits)
+}
+
 func Sign(msg []byte, prvKey *rsa.PrivateKey) ([]byte, error) {
 	hashed := sha256.Sum256(msg)
 

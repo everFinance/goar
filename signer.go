@@ -56,6 +56,16 @@ func NewSigner(b []byte) (*Signer, error) {
 	}, nil
 }
 
+func NewSignerByPrivateKey(privateKey *rsa.PrivateKey) *Signer {
+	pub := &privateKey.PublicKey
+	addr := sha256.Sum256(pub.N.Bytes())
+	return &Signer{
+		Address: utils.Base64Encode(addr[:]),
+		PubKey:  pub,
+		PrvKey:  privateKey,
+	}
+}
+
 func (s *Signer) SignTx(tx *types.Transaction) error {
 	return utils.SignTransaction(tx, s.PrvKey)
 }
