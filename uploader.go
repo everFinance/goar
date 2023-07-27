@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/panjf2000/ants/v2"
 	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/panjf2000/ants/v2"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -423,7 +424,8 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 	if err != nil || statusCode >= 400 {
 		tt.LastResponseError = fmt.Sprintf("%v,%s", err, body)
 		tt.LastResponseStatus = statusCode
-		return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v, %s", statusCode, err, body))
+		// return errors.New(fmt.Sprintf("Unable to upload Transaction: %d, %v, %s", statusCode, err, body))
+		return fmt.Errorf("Unable to upload Transcation: %d, %v, %s", statusCode, err, body)
 	}
 
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000

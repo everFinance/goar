@@ -48,6 +48,7 @@ func (w *Wallet) Owner() string {
 }
 
 func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (types.Transaction, error) {
+	fmt.Println("local goar is run")
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, 0)
 }
 

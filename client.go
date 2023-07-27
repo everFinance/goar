@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/inconshreveable/log15"
-	"github.com/panjf2000/ants/v2"
-	"github.com/tidwall/gjson"
-	"gopkg.in/h2non/gentleman.v2"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -19,6 +15,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/inconshreveable/log15"
+	"github.com/panjf2000/ants/v2"
+	"github.com/tidwall/gjson"
+	"gopkg.in/h2non/gentleman.v2"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -376,7 +377,25 @@ func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, code i
 		return
 	}
 
+	// this is work fine with the mainnet
 	body, statusCode, err := c.httpPost("tx", by)
+
+	// req, err := http.NewRequest("POST", u.String(), bytes.NewReader(by))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// req.Header.Set("Content-Type", "application/json")
+	// req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	// req.Header.Set("Accept", "application/json")
+	// resp, err := c.client.Do(req)
+
+	// req, err :=http.NewRequest("POST", "tx", bytes.NewReader(by))
+
+	// if err != nil {
+	// 	return "req gen failed", 500, err
+	// }
+	// req.Header.Set()
+
 	status = string(body)
 	code = statusCode
 	return
@@ -527,7 +546,28 @@ func (c *Client) httpGet(_path string) (body []byte, statusCode int, err error) 
 	return
 }
 
-func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
+// this work well with the arweave mainnet
+
+// func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
+// 	u, err := url.Parse(c.url)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	u.Path = path.Join(u.Path, _path)
+
+// 	resp, err := c.client.Post(u.String(), "application/json", bytes.NewReader(payload))
+// 	if err != nil {
+// 		return
+// 	}
+// 	defer resp.Body.Close()
+
+// 	statusCode = resp.StatusCode
+// 	body, err = ioutil.ReadAll(resp.Body)
+// 	return
+// }
+
+func (c *Client) httpPost(_path string, payload []byte) (body []byte, statuscode int, err error) {
 	u, err := url.Parse(c.url)
 	if err != nil {
 		return
@@ -535,15 +575,27 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 
 	u.Path = path.Join(u.Path, _path)
 
-	resp, err := c.client.Post(u.String(), "application/json", bytes.NewReader(payload))
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(payload))
 
-	statusCode = resp.StatusCode
+	if err != nil {
+		return nil, -1, err
+	}
+
+	req.Header.Set("Content-type", "application/json")
+	req.Header.Set("X-Network", "arweave.localnet")
+	req.Header.Set("X-Internal-api-Secret", "ItIsTestApiSecretAndVeryHardToGuess")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	defer resp.Body.Close()
+	statuscode = resp.StatusCode
 	body, err = ioutil.ReadAll(resp.Body)
+
 	return
+
 }
 
 // about chunk
