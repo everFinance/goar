@@ -381,14 +381,16 @@ func TestClient_GetBundleItems2(t *testing.T) {
 	assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
 }
 
+// https://viewblock.io/zh-CN/arweave/tx/PRBVxEX00aVMN59EY8gznt83FTlGXZvESwv1WTP7ReQ  5000 items
 func TestClient_GetBundleItems3(t *testing.T) {
 	c := NewClient("https://arweave.net")
-	// UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGx not in bundle
-	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGx", "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU"}
-	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+	itemsIds := []string{"QD0ryQTy4CBr7kluWRLT1strRcXWJOgUUoIYat4lk1s", "BzsIVzo6rPfGQg0PP-5Y_HErPey51_it0d6aGIUfQnY", "fy3aOYoRf7OzCEd9_WrD-RfqbzNZ1LsJ4PKIIGUALik"}
+	items, err := c.GetBundleItems("PRBVxEX00aVMN59EY8gznt83FTlGXZvESwv1WTP7ReQ", itemsIds)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(items))
-	assert.Equal(t, "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", items[1].Id)
-	assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
+	assert.Equal(t, 3, len(items))
+	assert.Equal(t, "QD0ryQTy4CBr7kluWRLT1strRcXWJOgUUoIYat4lk1s", items[0].Id)
+	assert.Equal(t, "fy3aOYoRf7OzCEd9_WrD-RfqbzNZ1LsJ4PKIIGUALik", items[1].Id)
+	assert.Equal(t, "BzsIVzo6rPfGQg0PP-5Y_HErPey51_it0d6aGIUfQnY", items[2].Id)
+
 }
