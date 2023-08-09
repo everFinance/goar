@@ -1056,6 +1056,7 @@ func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
 
 /**
 
+ bundleBinary Data Format
 +------------------+-----------------------------+--------------------------------------------+
 | Number of Items  |      Headers (64 bytes)     |          Items' Binary Data                |
 |      32 bytes    | 32 bytes (length) + 32 bytes |                                            |
