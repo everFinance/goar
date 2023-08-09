@@ -348,3 +348,47 @@ func TestNewTempConn2(t *testing.T) {
 	err = utils.VerifyBundleItem(*item)
 	assert.NoError(t, err)
 }
+
+// https://arweave.net/tx/x-q8ibbTfXIcdDXqQ3xaPD3PuShj832G_xzNT5QrVjY/offset
+// {"size":"753","offset":"146739359163367"}
+func Test_getChunkData(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	data, err := c.getChunkData(146739359163367)
+	assert.NoError(t, err)
+
+	t.Log(string(data))
+
+}
+
+func TestClient_GetBundleItems(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw"}
+	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(items))
+	assert.Equal(t, "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", items[0].Id)
+}
+
+func TestClient_GetBundleItems2(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU"}
+	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 3, len(items))
+	assert.Equal(t, "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", items[2].Id)
+	assert.Equal(t, "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", items[1].Id)
+	assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
+}
+
+func TestClient_GetBundleItems3(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	// UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGx not in bundle
+	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGx", "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU"}
+	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(items))
+	assert.Equal(t, "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", items[1].Id)
+	assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
+}

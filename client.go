@@ -10,6 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 	"io/ioutil"
+	"math"
 	"math/big"
 	"net/http"
 	"net/url"
@@ -1051,4 +1052,92 @@ func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	return ioutil.ReadAll(resp.Body)
+}
+
+/**
+
++------------------+-----------------------------+--------------------------------------------+
+| Number of Items  |      Headers (64 bytes)     |          Items' Binary Data                |
+|      32 bytes    | 32 bytes (length) + 32 bytes |                                            |
+|                  |       (ID) for each item    |                                            |
++------------------+-----------------------------+--------------------------------------------+
+*/
+
+func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*types.BundleItem, err error) {
+	offset, err := c.getTransactionOffset(bundleInId)
+	if err != nil {
+		return nil, err
+	}
+
+	size, err := strconv.ParseInt(offset.Size, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	endOffset, err := strconv.ParseInt(offset.Offset, 10, 64)
+	startOffset := endOffset - size + 1
+
+	firstChunk, err := c.getChunkData(startOffset)
+	if err != nil {
+		return nil, err
+	}
+
+	itemsNum := utils.ByteArrayToLong(firstChunk[:32])
+
+	// get Headers endOffset
+	bundleItemStart := 32 + itemsNum*64
+	var containHeadersChunks []byte
+	if len(firstChunk) < bundleItemStart {
+		// To calculate headers, you need to pull several chunks and fetch an integer upwards
+		chunkNum := int(math.Ceil(float64(bundleItemStart) / float64(types.MAX_CHUNK_SIZE)))
+
+		for i := 0; i < chunkNum; i++ {
+			chunk, err := c.getChunkData(startOffset + int64(i*types.MAX_CHUNK_SIZE))
+			if err != nil {
+				return nil, err
+			}
+			containHeadersChunks = append(containHeadersChunks, chunk...)
+		}
+	} else {
+		containHeadersChunks = firstChunk
+	}
+
+	for i := 0; i < itemsNum; i++ {
+		headerBegin := 32 + i*64
+		end := headerBegin + 64
+
+		headerByte := containHeadersChunks[headerBegin:end]
+		itemBinaryLength := utils.ByteArrayToLong(headerByte[:32])
+		id := utils.Base64Encode(headerByte[32:64])
+
+		// if item is in itemsIds
+		if utils.ContainsInSlice(itemsIds, id) {
+
+			startChunkNum := bundleItemStart / types.MAX_CHUNK_SIZE
+			startChunkOffset := bundleItemStart % types.MAX_CHUNK_SIZE
+			data := make([]byte, 0, itemBinaryLength)
+
+			for offset := startOffset + int64(startChunkNum*types.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
+				chunk, err := c.getChunkData(offset)
+
+				if err != nil {
+					return nil, err
+				}
+				data = append(data, chunk...)
+				offset += int64(len(chunk))
+			}
+
+			itemData := data[startChunkOffset : startChunkOffset+itemBinaryLength]
+			item, err := utils.DecodeBundleItem(itemData)
+			if err != nil {
+				return nil, err
+			}
+
+			items = append(items, item)
+		}
+		// next itemBy start offset
+		bundleItemStart += itemBinaryLength
+	}
+
+	return items, nil
+
 }
