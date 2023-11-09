@@ -552,6 +552,30 @@ func VerifyBundleItem(d types.BundleItem) error {
 		if signer != addr.String() {
 			return errors.New("verify ecc sign failed")
 		}
+
+	case types.EC256SignType:
+		pubkey, err := Base64Decode(d.Owner)
+		if err != nil {
+			return err
+		}
+		res, err := EC256Verify(pubkey, signMsg, sign)
+		if err != nil {
+			return fmt.Errorf("EC256Verify error: %v", err)
+		}
+		if !res {
+			return errors.New("verify ecc sign failed")
+		}
+
+	case types.RS256SignType:
+		pubkey, err := Base64Decode(d.Owner)
+		if err != nil {
+			return err
+		}
+		err = RS256Verify(pubkey, signMsg, sign)
+		if err != nil {
+			return fmt.Errorf("RS256Verify error: %v", err)
+		}
+
 	default:
 		return errors.New("not support the signType")
 	}
@@ -754,6 +778,30 @@ func ItemSignerAddr(b types.BundleItem) (string, error) {
 		}
 		return base58.Encode(by), nil
 	case types.EthereumSignType:
+		pubkey, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		pk, err := crypto.UnmarshalPubkey(pubkey)
+		if err != nil {
+			err = fmt.Errorf("can not unmarshal pubkey: %v", err)
+			return "", err
+		}
+		return crypto.PubkeyToAddress(*pk).String(), nil
+
+	case types.EC256SignType:
+		pubkey, err := Base64Decode(b.Owner)
+		if err != nil {
+			return "", err
+		}
+		pk, err := crypto.UnmarshalPubkey(pubkey)
+		if err != nil {
+			err = fmt.Errorf("can not unmarshal pubkey: %v", err)
+			return "", err
+		}
+		return crypto.PubkeyToAddress(*pk).String(), nil
+
+	case types.RS256SignType:
 		pubkey, err := Base64Decode(b.Owner)
 		if err != nil {
 			return "", err
