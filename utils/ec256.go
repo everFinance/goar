@@ -4,22 +4,29 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/asn1"
+	"encoding/pem"
+	"fmt"
 	"math/big"
 )
 
-// ES256签名
-func SignES256(privateKey *ecdsa.PrivateKey, message []byte) ([]byte, error) {
-	// Step 1: 对消息内容进行SHA-256哈希
+type EC256Signer struct {
+	privateKey *ecdsa.PrivateKey
+}
+
+func NewEC256Signature(privateKey *ecdsa.PrivateKey) *EC256Signer {
+	return &EC256Signer{privateKey: privateKey}
+}
+
+func (e *EC256Signer) Sign(message []byte) ([]byte, error) {
 	hash := sha256.Sum256(message)
 
-	// Step 2: 使用ECDSA算法进行签名
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hash[:])
+	r, s, err := ecdsa.Sign(rand.Reader, e.privateKey, hash[:])
 	if err != nil {
 		return nil, err
 	}
 
-	// 将签名结果序列化为DER编码格式
 	signature, err := asn1.Marshal(struct {
 		R, S *big.Int
 	}{r, s})
@@ -27,9 +34,29 @@ func SignES256(privateKey *ecdsa.PrivateKey, message []byte) ([]byte, error) {
 	return signature, err
 }
 
-// 验证ES256签名
-func VerifyES256(publicKey *ecdsa.PublicKey, message, signature []byte) (bool, error) {
-	// 解析签名
+func EC256Verify(pub []byte, data, signature []byte) (bool, error) {
+
+	// Decode PEM block into DER format
+	block, _ := pem.Decode(pub)
+	if block == nil {
+		fmt.Println("Failed to decode PEM block")
+		return false, nil
+	}
+
+	// Parse DER public key
+	key, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		fmt.Println("Failed to parse public key:", err)
+		return false, err
+	}
+
+	// Type assert to ECDSA public key
+	pubKey, ok := key.(*ecdsa.PublicKey)
+	if !ok {
+		fmt.Println("Not a ECDSA public key")
+		return false, nil
+	}
+
 	sigStruct := struct {
 		R, S *big.Int
 	}{}
@@ -37,10 +64,10 @@ func VerifyES256(publicKey *ecdsa.PublicKey, message, signature []byte) (bool, e
 		return false, err
 	}
 
-	// 对消息内容进行SHA-256哈希
-	hash := sha256.Sum256(message)
+	hash := sha256.Sum256(data)
 
-	// 验证签名
-	valid := ecdsa.Verify(publicKey, hash[:], sigStruct.R, sigStruct.S)
+	valid := ecdsa.Verify(pubKey, hash[:], sigStruct.R, sigStruct.S)
 	return valid, nil
 }
+
+//
