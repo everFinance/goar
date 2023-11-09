@@ -9,6 +9,8 @@ const (
 	ED25519SignType  = 2
 	EthereumSignType = 3
 	SolanaSignType   = 4
+	EC256SignType    = 5
+	RS256SignType    = 6
 )
 
 type SigMeta struct {
@@ -37,6 +39,16 @@ var SigConfigMap = map[int]SigMeta{
 		SigLength: 64,
 		PubLength: 32,
 		SigName:   "solana",
+	},
+	EC256SignType: {
+		SigLength: 70,
+		PubLength: 32,
+		SigName:   "ec256",
+	},
+	RS256SignType: {
+		SigLength: 344,
+		PubLength: 256,
+		SigName:   "rs256",
 	},
 }
 
