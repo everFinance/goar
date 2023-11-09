@@ -120,6 +120,27 @@ func SignBundleItem(signatureType int, signer interface{}, item *types.BundleIte
 		if err != nil {
 			return err
 		}
+
+	case types.EC256SignType:
+		ecSigner, ok := signer.(*utils.EC256Signer)
+		if !ok {
+			return errors.New("signer not EC256Signer")
+		}
+		sigData, err = ecSigner.Sign(signMsg)
+		if err != nil {
+			return err
+		}
+
+	case types.RS256SignType:
+		rsSigner, ok := signer.(*utils.RS256Signer)
+		if !ok {
+			return errors.New("signer not RS256Signer")
+		}
+		sigData, err = rsSigner.Sign(signMsg)
+		if err != nil {
+			return err
+		}
+
 	default:
 		// todo come soon supprot ed25519
 		return errors.New("not supprot this signType")
