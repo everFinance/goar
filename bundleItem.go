@@ -48,6 +48,14 @@ func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string
 	return *bundleItem, nil
 }
 
+func (i *ItemSigner) CreateItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
+	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
+	if err != nil {
+		return types.BundleItem{}, err
+	}
+	return *bundleItem, nil
+}
+
 func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags []types.Tag, items ...types.BundleItem) (types.BundleItem, error) {
 	bundleTags := []types.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
@@ -72,6 +80,14 @@ func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anch
 		return types.BundleItem{}, err
 	}
 	if _, err := bundleItem.DataReader.Seek(0, 0); err != nil {
+		return types.BundleItem{}, err
+	}
+	return *bundleItem, nil
+}
+
+func (i *ItemSigner) CreateItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
+	bundleItem, err := utils.NewBundleItemStream(i.owner, i.signType, target, anchor, data, tags)
+	if err != nil {
 		return types.BundleItem{}, err
 	}
 	return *bundleItem, nil
