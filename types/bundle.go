@@ -9,6 +9,7 @@ const (
 	ED25519SignType  = 2
 	EthereumSignType = 3
 	SolanaSignType   = 4
+	FIDOPublicType   = 5
 )
 
 type SigMeta struct {
@@ -37,6 +38,11 @@ var SigConfigMap = map[int]SigMeta{
 		SigLength: 64,
 		PubLength: 32,
 		SigName:   "solana",
+	},
+	FIDOPublicType: {
+		SigLength: 1024,
+		PubLength: 1024,
+		SigName:   "fido2",
 	},
 }
 
