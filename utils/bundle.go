@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -552,6 +554,16 @@ func VerifyBundleItem(d types.BundleItem) error {
 		if signer != addr.String() {
 			return errors.New("verify ecc sign failed")
 		}
+
+	case types.FIDOPublicType:
+		cred := webauthn.Credential{}
+		// todo get public key by everpay api
+		publicBy := make([]byte, 0)
+		if err = json.Unmarshal(publicBy, &cred); err != nil {
+			return err
+		}
+		_, err = VerifyFidoAuthnSig(string(sign), hexutil.Encode(signMsg), "", "", cred)
+		return err
 	default:
 		return errors.New("not support the signType")
 	}
