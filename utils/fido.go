@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -186,4 +187,11 @@ func decodeBase64(s string) (protocol.URLEncodedBase64, error) {
 		return nil, err
 	}
 	return *bs, nil
+}
+
+func GenUserId(eid string, chainID int) string {
+	data := []byte(strings.ToLower(eid) + strconv.Itoa(chainID))
+	hash := sha256.Sum256(data)
+	userId := Base64Encode(hash[:10])
+	return userId
 }
