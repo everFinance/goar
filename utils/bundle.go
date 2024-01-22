@@ -556,13 +556,25 @@ func VerifyBundleItem(d types.BundleItem) error {
 		}
 
 	case types.FIDOPublicType:
+
+		tags := d.Tags
+		// get eid
+		eid := ""
+		for _, tag := range tags {
+			if tag.Name == "EID" {
+				eid = tag.Value
+			}
+
+		}
+		publicBy, err := Base64Decode(d.Owner)
+		if err != nil {
+			return err
+		}
 		cred := webauthn.Credential{}
-		// todo get public key by everpay api
-		publicBy := make([]byte, 0)
 		if err = json.Unmarshal(publicBy, &cred); err != nil {
 			return err
 		}
-		_, err = VerifyFidoAuthnSig(string(sign), hexutil.Encode(signMsg), "", "", cred)
+		_, err = VerifyFidoAuthnSig(string(sign), hexutil.Encode(signMsg), eid, GenUserId(eid, 5), cred)
 		return err
 	default:
 		return errors.New("not support the signType")
