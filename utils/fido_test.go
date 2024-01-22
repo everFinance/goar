@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -23,6 +24,8 @@ func TestVerifyFidoAuthnSig(t *testing.T) {
 		return
 	}
 	_, err = VerifyFidoAuthnSig(sig, hexHash, eid, GenUserId(eid, 5), cred)
+
+	assert.NoError(t, err)
 	t.Log(err)
 
 }
