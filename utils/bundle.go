@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"io"
 	"io/ioutil"
@@ -561,12 +560,28 @@ func VerifyBundleItem(d types.BundleItem) error {
 		// get eid
 		eid := ""
 		for _, tag := range tags {
-			if tag.Name == "EID" {
+			if tag.Name == "eid" {
 				eid = tag.Value
 			}
 
 		}
-		publicBy, err := Base64Decode(d.Owner)
+
+		sigAndHexHash := d.Signature
+		// remove  sigAndHexHash  A
+		sigAndHexHash = string(bytes.TrimRight([]byte(sigAndHexHash), "A"))
+		// base64 decode
+		sigAndHexHashByte, err := Base64Decode(sigAndHexHash)
+		//split  sigAndHexHashByte
+		sigAndHexHashByteArr := bytes.Split(sigAndHexHashByte, []byte(","))
+
+		fSign := sigAndHexHashByteArr[0]
+		hexHash := sigAndHexHashByteArr[1]
+
+		pubKeyFrom := d.Owner
+		// remove  pubKeyFrom A
+		pubKeyFrom = string(bytes.TrimRight([]byte(pubKeyFrom), "A"))
+
+		publicBy, err := Base64Decode(pubKeyFrom)
 		if err != nil {
 			return err
 		}
@@ -574,7 +589,8 @@ func VerifyBundleItem(d types.BundleItem) error {
 		if err = json.Unmarshal(publicBy, &cred); err != nil {
 			return err
 		}
-		_, err = VerifyFidoAuthnSig(string(sign), hexutil.Encode(signMsg), eid, GenUserId(eid, 5), cred)
+		// sign is item  d.Signature
+		_, err = VerifyFidoAuthnSig(string(fSign), string(hexHash), eid, GenUserId(eid, 5), cred)
 		return err
 	default:
 		return errors.New("not support the signType")
