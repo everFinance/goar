@@ -52,6 +52,14 @@ func Test_Client(t *testing.T) {
 
 }
 
+func Test_Arq1(t *testing.T) {
+	arNode := "https://arweave.net"
+	c := goar.NewClient(arNode)
+	dd, err := c.GetTransactionPrice(712, nil)
+	assert.NoError(t, err)
+	t.Log(dd)
+}
+
 func Test_Arq(t *testing.T) {
 	arqStr := `{
 			"op": "and",

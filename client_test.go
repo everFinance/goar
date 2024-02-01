@@ -1,10 +1,12 @@
 package goar
 
 import (
+	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 )
 
@@ -347,4 +349,77 @@ func TestNewTempConn2(t *testing.T) {
 
 	err = utils.VerifyBundleItem(*item)
 	assert.NoError(t, err)
+}
+
+func TestNewClient2(t *testing.T) {
+	arTx := "b92IF6ZX0owPFcssPcs-qOBN2nuR0d3xLYOSovh1eck"
+	c := NewClient("https://arweave.net")
+	data, err := c.GetTransactionDataByGateway(arTx)
+
+	assert.NoError(t, err)
+	// data bundle binary
+	bundle, err := utils.DecodeBundle(data)
+	assert.NoError(t, err)
+
+	bundleItems := bundle.Items
+	for _, item := range bundleItems {
+		t.Log(item.Id)
+	}
+}
+
+func TestNewWallet2(t *testing.T) {
+	c := NewClient("https://arweave.net")
+	offsetResponse, err := c.getTransactionOffset("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ")
+	assert.NoError(t, err)
+	t.Log(offsetResponse.Offset)
+	t.Log(offsetResponse.Size)
+	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
+	assert.NoError(t, err)
+	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
+	assert.NoError(t, err)
+	startOffset := endOffset - size + 1
+	firstChunk, err := c.getChunkData(startOffset)
+	assert.NoError(t, err)
+
+	// 从 firstChunk 中获取 itemNum
+	itemsNum := utils.ByteArrayToLong(firstChunk[:32])
+	t.Log(itemsNum) // 739
+
+	// 解析出 item headers 并找到headers 的 offset
+	bundleItemStart := 32 + itemsNum*64
+	if len(firstChunk) < bundleItemStart {
+		// todo 需要拉取后面的多个 chunks
+	}
+	containHeadersChunks := firstChunk // todo
+	for i := 0; i < itemsNum; i++ {
+		headerBegin := 32 + i*64
+		end := headerBegin + 64
+		headerByte := containHeadersChunks[headerBegin:end]
+		itemBinaryLength := utils.ByteArrayToLong(headerByte[:32])
+		id := utils.Base64Encode(headerByte[32:64])
+
+		// --------- 1 ----2 ------
+		if id == "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw" {
+			t.Log("found item")
+			t.Log("item start offset", "offset", bundleItemStart, "length", itemBinaryLength)
+			startChunkNum := bundleItemStart / types.MAX_CHUNK_SIZE
+			startChunkOffset := bundleItemStart % types.MAX_CHUNK_SIZE
+			data := make([]byte, 0, itemBinaryLength)
+			for offset := startOffset + int64(startChunkNum*types.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
+				chunk, err := c.getChunkData(offset)
+				assert.NoError(t, err)
+				data = append(data, chunk...)
+				offset += int64(len(chunk))
+			}
+			itemData := data[startChunkOffset : startChunkOffset+itemBinaryLength]
+			item, err := utils.DecodeBundleItem(itemData)
+			assert.NoError(t, err)
+			dd, _ := utils.Base64Decode(item.Data)
+			t.Log(string(dd))
+			t.Log(item.Id)
+			t.Log(item.SignatureType)
+		}
+
+		bundleItemStart += itemBinaryLength // next itemBy start offset
+	}
 }

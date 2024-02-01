@@ -1,6 +1,7 @@
 package example
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -50,6 +51,18 @@ func init() {
 	if err != nil {
 		return
 	}
+}
+
+func TestBundleToArweave4(t *testing.T) {
+	itemSigner01, err := goar.NewItemSigner(signer01)
+	assert.NoError(t, err)
+	data := []byte("aabbcc")
+	item01, err := itemSigner01.CreateAndSignItemStream(bytes.NewReader(data), "", "", []types.Tag{
+		{Name: "Content-Type", Value: "application/txt"},
+		{Name: "App-Version", Value: "2.0.0"},
+	})
+	assert.NoError(t, err)
+	t.Log(item01)
 }
 
 func TestBundleToArweave(t *testing.T) {
