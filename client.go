@@ -813,7 +813,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		var data []byte
 		data, err = c.DownloadChunkData(id)
 		if err != nil {
-			return nil, err
+			return
 		}
 		_, err = dataFile.Write(data)
 		return dataFile, err
@@ -867,13 +867,13 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		wg.Add(1)
 		if err = p.Invoke(Offset{fileOffset: offset, chunkOffset: offset + startOffset}); err != nil {
 			log.Error("p.Invoke(i)", "err", err, "i", i)
-			return nil, err
+			return
 		}
 	}
 	wg.Wait()
 	_, err = dataFile.Seek(0, 2)
 	if err != nil {
-		return nil, err
+		return
 	}
 	// add latest 2 chunks
 	start := offsetArr[len(offsetArr)-3] + startOffset + types.MAX_CHUNK_SIZE
@@ -896,13 +896,13 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		}
 		if err != nil {
 			err = errors.New(fmt.Sprintf("concurrent get latest two chunks failed,err:%v", err))
-			return nil, err
+			return
 		}
 		n := 0
 		n, err = dataFile.Write(chunkData)
 		if err != nil || n < len(chunkData) {
 			err = fmt.Errorf("write dataFile error writeSize:%d, expectSize:%d", n, len(chunkData))
-			return nil, err
+			return
 		}
 		i += len(chunkData)
 	}
