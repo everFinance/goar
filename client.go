@@ -1112,12 +1112,14 @@ func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*
 
 		// if item is in itemsIds
 		if utils.ContainsInSlice(itemsIds, id) {
-
 			startChunkNum := bundleItemStart / types.MAX_CHUNK_SIZE
 			startChunkOffset := bundleItemStart % types.MAX_CHUNK_SIZE
 			data := make([]byte, 0, itemBinaryLength)
 
 			for offset := startOffset + int64(startChunkNum*types.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
+				if offset >= endOffset {
+					break
+				}
 				chunk, err := c.getChunkData(offset)
 
 				if err != nil {

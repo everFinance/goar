@@ -364,11 +364,11 @@ func Test_getChunkData(t *testing.T) {
 
 func TestClient_GetBundleItems(t *testing.T) {
 	c := NewClient("https://arweave.net")
-	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw"}
-	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+	itemsIds := []string{"UQjYcsjcB3udqgSKgwm0jYeh6lyxsKbSJ8h0ekYecZ8"}
+	items, err := c.GetBundleItems("5mnFoNrXKYVESgIyk9PCVPUPYhL4y5uaxOz-ShflJQk", itemsIds)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(items))
-	assert.Equal(t, "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", items[0].Id)
+	assert.Equal(t, "UQjYcsjcB3udqgSKgwm0jYeh6lyxsKbSJ8h0ekYecZ8", items[0].Id)
 }
 
 func TestClient_GetBundleItems2(t *testing.T) {
