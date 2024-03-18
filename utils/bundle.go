@@ -485,6 +485,14 @@ func newBundleItem(owner string, signatureType int, target, anchor string, data 
 }
 
 func BundleItemSignData(d types.BundleItem) ([]byte, error) {
+	if len(d.TagsBy) == 0 && len(d.Tags) > 0 {
+		// calc tagsBy
+		tagsBy, err := SerializeTags(d.Tags)
+		if err != nil {
+			return nil, err
+		}
+		d.TagsBy = Base64Encode(tagsBy)
+	}
 	// deep hash
 	dataList := make([]interface{}, 0)
 	dataList = append(dataList, Base64Encode([]byte("dataitem")))

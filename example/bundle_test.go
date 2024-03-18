@@ -3,6 +3,7 @@ package example
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -395,4 +396,42 @@ func changeData(item types.BundleItem) error {
 		return errors.New("err")
 	}
 	return nil
+}
+
+func TestA(t *testing.T) {
+	arId := "-0ArzIK-Vfki6Kmm-HiWSBQifRho4SRcYMFkcGW9bTo"
+	cli := goar.NewClient("https://arweave.net")
+	data, err := cli.GetTransactionDataByGateway(arId)
+	assert.NoError(t, err)
+	t.Log(len(data))
+	b, err := utils.DecodeBundle(data)
+	assert.NoError(t, err)
+	item := b.Items[0]
+	t.Log(item.Id)
+	t.Log(item.TagsBy)
+
+	tagsBy, err := utils.SerializeTags(item.Tags)
+	assert.NoError(t, err)
+	t.Log(utils.Base64Encode(tagsBy))
+
+	tagsBy1, err := utils.SerializeTags1(item.Tags)
+	assert.NoError(t, err)
+	t.Log(utils.Base64Encode(tagsBy1))
+}
+
+func TestB(t *testing.T) {
+	// data := `{"mainItem":{"signatureType":1,"signature":"f1iKOgLh6LYCLWWvrzfrvB3dO1VnQ9rniy29OEI8C6bJTgBF7ybB1JjCBsiy1Cb7OaGwDYvYc50aY2wbbAw0ysIhSDUoXZQkyKlrcEVMWM7gUhzEOI6N9BjRlj3cDkN2K1esisIDwhA6OGhBoffA9RCv3RmOnL4kUa34JiDq43NX3IsKnAf7Fjy9Jnk2eDqbxmDVIysF48X13NqKvEtvjSorOS62KmbmBhEasbYnEFeHoMSQfTAHbgJx6hRwn46ujNPKI9QRM-HVpecbmy7W2tubjZkHqP1CWzpBYCo8FyJrDqV1qtmWzFhPXxcyZOirg_aQbS2mxD9jJYzDVCgonkzkbWVURgYusEuD0gH2uMkLKFOP5CHzsWYkf08pLI7wMZQvYXRnLNeX5Gxjd8SMZK5zXFY3cY6mjzvqCa0k1AMladFaQt2JqnlG4yC-nOkc_x35EDTM4ogMe3SS0AG7lgUR4bpPxPk36DxpejU0aZUBGzdXhDWJOhzuOQHXLJfOvyCgassKDLV3-4cS0pQM11he2-0GmlD-KO-qOyvJlZk_J5-crXeeXdyU_gCt9_Hcu8Zzef3F5kaWOvO_q5NO-41aDcrlxDa1r2ONMdMaR7qnbmOAyk3YzdgQ0eSBreCmqAagLjHa8qQMqRL5KEu2cvGad6G84_-tNWE25Wn2MWY","owner":"t99k0vXXnX6h4lboKxfwZd2FfUoR1yPNUk1-LyCHcHMReVvZWfUvpOW1no_3axDSlo7xRsbTp4UEUeazZiv_It9PwcqT8lC_p1CzKv0kWH_1kjCYKm-0efgx5SPc7rIT3SVohC2-SI8meEA_3YP_k-FxUNa3zwbu5sKcy_hAUia_4a6sEFymeuQaBJux5snjYnX-iVhc5tjqauAGOXTh_Nhg9LNC_VlItutKxmkF7W-lM1wtka_yK-v1Xbcr4CFExiRI03keGqTfesSxfbkPm9C7N3ihbpYhQ68nhBdZzNFPEHGWPeEVW0yA8yHTZ5ytckpAmLSqOrqnPEiMeZrh-Fsgp7beIyfvjRG4yNjfoZkZdHrOHhppBPUp2t64OTQickkPsDkHQRf_BhNAXkdco4pOwMF_N6GQS8YhCN6TUp3DAvJp4QFR2jDH4nuMWma5TcxSDXfLM8HBD478Uwzflbrfrb0FQgfyD6lfNqvaArwqbJBIiwNo70FT65i8V1g507297VZ9UmuJfahea9aDgLntZT6kbZTZnE4m4lE9U6B9in_Wvx_ZdGi3BptGd8AyB-2FWv-xOltEmN-pDRaBhjucQmVzoptZZ6UrzXwlL21fiTBCoUJPJVjOYldW0VqXevkGe24SWLiUB_EApg418JNiHplJtUsEhI2DIhHFb9M","target":"Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc","anchor":"","tags":[{"name":"Action","value":"Transfer"},{"name":"Recipient","value":"FyINHRSrHW0teUhvJzd6R33Tl50qxLnSj8LJCP5puiI"},{"name":"Quantity","value":"2000"},{"name":"Data-Protocol","value":"ao"},{"name":"Variant","value":"ao.TN.1"},{"name":"Type","value":"Message"},{"name":"SDK","value":"argo"}],"data":"MTIzNA","id":"2usO_ScavCzedD4zS6QE1fBQK35dSCoclFTueL17CsU"},"targetChainType":"aostest"}`
+	data := `{"mainItem":{"signatureType":1,"signature":"H7RKwdh8B-ZXxLgNxPN4LNYmz-Gb_vcmmsYDFDFCOg-6uHUgXfQQtqnJ_wSZUrIXucuG8rVowCJps665jZwr7V-HjznmzBPqmKjCiS-TEEdo_TGHHKEQHpxBq_3m_IKRcFHbzuVNu0lqBUI76qQsH7PgIqxSfyfRAO-0oxebq1quWQ_Q4EFeI9Bi37oty06z8UWuQsLDdTezxArFurfF5nddkSAQ0cYnMYT7UE2-Zlq_LLXArxxcBADDJTNP4QoLDjsHzGIxXNizsW9wQvVdTq9VVT_WV8qbNMPfwkt0GybxFVpEt3S9f-r-aM5MTn8QjPPFjXk4oPZBAWY2GkI3es3N_jVKISjSOkfy-vDbvGUKoBIuHWsh192vd0r0bv-kXlINktbryi_yLBQVyGkvanEeLqfOxR74KjlJBYKKr75h_95dmuKuPhGNIV8eQoPbQ6hm6HcNUWuExhFWwdU8H3EJCZNF1OQiOzU8uNgWPOqgMo1av9mxfrxkL3IwPXfTxclSVqWubxZhjtWCWq3ib-EyatSIQa5I4VGZBeXjGR3xqKljgKAhargf5xCpdtqiC3pb1BLXMzw8XRoYHBy_WW3a371t7Zsl5Ydby26uMnxV5OBWTA_cPMPTSOQ4TuX-vtVArbtjfDCAQoMUkzyHfP4D8JvAHjthto8DuOXRV9c","owner":"t99k0vXXnX6h4lboKxfwZd2FfUoR1yPNUk1-LyCHcHMReVvZWfUvpOW1no_3axDSlo7xRsbTp4UEUeazZiv_It9PwcqT8lC_p1CzKv0kWH_1kjCYKm-0efgx5SPc7rIT3SVohC2-SI8meEA_3YP_k-FxUNa3zwbu5sKcy_hAUia_4a6sEFymeuQaBJux5snjYnX-iVhc5tjqauAGOXTh_Nhg9LNC_VlItutKxmkF7W-lM1wtka_yK-v1Xbcr4CFExiRI03keGqTfesSxfbkPm9C7N3ihbpYhQ68nhBdZzNFPEHGWPeEVW0yA8yHTZ5ytckpAmLSqOrqnPEiMeZrh-Fsgp7beIyfvjRG4yNjfoZkZdHrOHhppBPUp2t64OTQickkPsDkHQRf_BhNAXkdco4pOwMF_N6GQS8YhCN6TUp3DAvJp4QFR2jDH4nuMWma5TcxSDXfLM8HBD478Uwzflbrfrb0FQgfyD6lfNqvaArwqbJBIiwNo70FT65i8V1g507297VZ9UmuJfahea9aDgLntZT6kbZTZnE4m4lE9U6B9in_Wvx_ZdGi3BptGd8AyB-2FWv-xOltEmN-pDRaBhjucQmVzoptZZ6UrzXwlL21fiTBCoUJPJVjOYldW0VqXevkGe24SWLiUB_EApg418JNiHplJtUsEhI2DIhHFb9M","target":"Sa0iBLPNyJQrwpTTG-tWLQU-1QeUAJA73DdxGGiKoJc","anchor":"","tags":[{"name":"Action","value":"Transfer"},{"name":"Recipient","value":"FyINHRSrHW0teUhvJzd6R33Tl50qxLnSj8LJCP5puiI"},{"name":"Quantity","value":"2000"},{"name":"Data-Protocol","value":"ao"},{"name":"Variant","value":"ao.TN.1"},{"name":"Type","value":"Message"},{"name":"SDK","value":"argo"}],"data":"MTIzNA","id":"UDL4bmFI_E74WLBkol69NWoHJG4dwRA_sLo78u79eAg"},"targetChainType":"aostest"}`
+	items := struct {
+		MainItem   types.BundleItem `json:"mainItem"`
+		PushedItem types.BundleItem `json:"pushedItem"`
+	}{}
+
+	err := json.Unmarshal([]byte(data), &items)
+	assert.NoError(t, err)
+	// check main Item
+	mainItem := items.MainItem
+	// verify mainItem sig
+	err = utils.VerifyBundleItem(mainItem)
+	assert.NoError(t, err)
 }
