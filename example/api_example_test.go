@@ -1,6 +1,8 @@
 package example
 
 import (
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
 	"testing"
 
 	"github.com/everFinance/goar"
@@ -138,4 +140,33 @@ func Test_SendFormatTx(t *testing.T) {
 	// t.Log(status, code)
 	// t.Log("from: ",wallet.Address)
 	// t.Log("txHash: ", tx.ID)
+}
+
+func Test_SendMsg(t *testing.T) {
+	signer02, err := goar.NewSignerFromPath("./testKey.json")
+	assert.NoError(t, err)
+	t.Log(signer02.Address)
+	itemSigner02, err := goar.NewItemSigner(signer02)
+	assert.NoError(t, err)
+
+	defaultTags := []types.Tag{
+		{Name: "Data-Protocol", Value: "ao"},
+		{Name: "Variant", Value: "ao.TN.1"},
+		{Name: "Type", Value: "Message"},
+		{Name: "SDK", Value: "argo"},
+	}
+	tags := append(defaultTags, []types.Tag{
+		{Name: "Action", Value: "Transfer"},
+		{Name: "Recipient", Value: "AVm7zHYGzw9PmUXv4CFHgiK3QtbRTpBMS2VOxJAK-F4"},
+		{Name: "Quantity", Value: "22"},
+	}...)
+	target := "7En3PZJ0BBROTuSazQ9yZmeL1ThwsVqk616gY3DMFZU"
+	data := []byte("1234")
+	item02, err := itemSigner02.CreateAndSignItem(data, target, "", tags)
+	assert.NoError(t, err)
+	muUrl := "https://mu.ao-testnet.xyz"
+	t.Log("item", "id", item02.Id)
+	resp, err := utils.SubmitItemToMU(item02, muUrl)
+	assert.NoError(t, err)
+	t.Log(string(resp))
 }
