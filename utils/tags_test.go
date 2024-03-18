@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/everFinance/goar/types"
@@ -44,7 +45,11 @@ func TestTags(t *testing.T) {
 }
 
 func TestSerializeTags(t *testing.T) {
-	by, err := SerializeTags([]types.Tag{})
+	tags := []types.Tag{{Name: "abc", Value: "123"}, {Name: "bbc", Value: "223"}}
+
+	by, err := SerializeTags(tags)
 	assert.NoError(t, err)
-	t.Log(len(by))
+	t.Log(hex.EncodeToString(by))
+	//   040661626306313233066262630632323300
+	// 03200661626306313233066262630632323300
 }
