@@ -831,3 +831,24 @@ func SubmitItemToArSeed(item types.BundleItem, currency, arseedUrl string) (*sch
 	}
 	return br, nil
 }
+
+func SubmitItemToMU(item types.BundleItem, muUrl string) ([]byte, error) {
+	itemBinary := item.ItemBinary
+	if len(itemBinary) == 0 {
+		var err error
+		itemBinary, err = GenerateItemBinary(&item)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	resp, err := http.DefaultClient.Post(muUrl, "application/octet-stream", bytes.NewBuffer(itemBinary))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	fmt.Printf("resp code:%v\n", resp.StatusCode)
+	// json unmarshal
+	body, err := ioutil.ReadAll(resp.Body)
+	return body, err
+}

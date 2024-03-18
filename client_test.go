@@ -398,7 +398,7 @@ func TestClient_GetBundleItems3(t *testing.T) {
 }
 
 func TestNewClient2(t *testing.T) {
-	arTx := "b92IF6ZX0owPFcssPcs-qOBN2nuR0d3xLYOSovh1eck"
+	arTx := "FH95DEmWitTvg07vKUejh9akIPQKgZOp7ZdPa2adnGM"
 	c := NewClient("https://arweave.net")
 	data, err := c.GetTransactionDataByGateway(arTx)
 
@@ -411,6 +411,7 @@ func TestNewClient2(t *testing.T) {
 	for _, item := range bundleItems {
 		t.Log(item.Id)
 	}
+	t.Log(len(bundleItems))
 }
 
 func TestNewWallet2(t *testing.T) {
