@@ -2,11 +2,12 @@ package goar
 
 import (
 	"encoding/base64"
+	"os"
+	"testing"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"testing"
 )
 
 var testWallet *Wallet
@@ -131,7 +132,7 @@ func TestCreateUploader(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(w.Signer.Address)
 
-	data, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/44444.mp4")
+	data, err := os.ReadFile("/Users/sandyzhou/Downloads/44444.mp4")
 	if err != nil {
 		panic(err)
 	}
@@ -147,8 +148,8 @@ func TestNewWallet(t *testing.T) {
 	cli := NewClient("https://arseed-dev.web3infra.dev")
 	data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
 	assert.NoError(t, err)
-	ioutil.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
-
+	err = os.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
+	assert.NoError(t, err)
 	// -I6guxsTtnaLazLN4HgCHtYXNXQGALcHDrpi6oz7Cbk
 	// 91s
 
@@ -170,7 +171,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	// sig item01 by ecc signer
 	itemSigner01, err := NewItemSigner(signer01)
 	assert.NoError(t, err)
-	d1, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
+	d1, err := os.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -181,7 +182,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item01", "id", item01.Id)
 
-	d2, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/2.jpeg")
+	d2, err := os.ReadFile("/Users/sandyzhou/Downloads/2.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -192,7 +193,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item02", "id", item02.Id)
 
-	d3, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/3.jpeg")
+	d3, err := os.ReadFile("/Users/sandyzhou/Downloads/3.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -203,7 +204,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item03", "id", item03.Id)
 
-	d4, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/4.jpeg")
+	d4, err := os.ReadFile("/Users/sandyzhou/Downloads/4.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -213,7 +214,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	d5, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/5.jpeg")
+	d5, err := os.ReadFile("/Users/sandyzhou/Downloads/5.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -224,7 +225,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item05", "id", item05.Id)
 
-	d6, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/6.jpeg")
+	d6, err := os.ReadFile("/Users/sandyzhou/Downloads/6.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -235,7 +236,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item06", "id", item06.Id)
 
-	d7, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/7.jpeg")
+	d7, err := os.ReadFile("/Users/sandyzhou/Downloads/7.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -246,7 +247,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item07", "id", item07.Id)
 
-	d8, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/8.jpeg")
+	d8, err := os.ReadFile("/Users/sandyzhou/Downloads/8.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -257,7 +258,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item08", "id", item08.Id)
 
-	d9, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/9.jpeg")
+	d9, err := os.ReadFile("/Users/sandyzhou/Downloads/9.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -268,7 +269,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item09", "id", item09.Id)
 
-	d10, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/10.jpeg")
+	d10, err := os.ReadFile("/Users/sandyzhou/Downloads/10.jpeg")
 	if err != nil {
 		panic(err)
 	}
@@ -279,7 +280,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("item10", "id", item10.Id)
 
-	d11, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/11.jpeg")
+	d11, err := os.ReadFile("/Users/sandyzhou/Downloads/11.jpeg")
 	if err != nil {
 		panic(err)
 	}

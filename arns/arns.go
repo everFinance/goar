@@ -3,11 +3,12 @@ package arns
 import (
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 type ArNS struct {
@@ -16,15 +17,15 @@ type ArNS struct {
 	HttpClient  *http.Client
 }
 
-func NewArNS(dreUrl string, arNSAddr string, timout time.Duration) *ArNS {
+func NewArNS(dreUrl string, arNSAddr string, timeout time.Duration) *ArNS {
 
 	// default timeout is 5s
-	if timout == 0 {
-		timout = 5 * time.Second
+	if timeout == 0 {
+		timeout = 5 * time.Second
 	}
 
 	httpClient := &http.Client{
-		Timeout: timout, // Set the timeout for HTTP requests
+		Timeout: timeout, // Set the timeout for HTTP requests
 	}
 	return &ArNS{
 		DreUrl:      dreUrl,
@@ -73,7 +74,7 @@ func (a *ArNS) QueryNameCa(domain string) (caAddress string, err error) {
 	}
 
 	// Read the response body
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}
@@ -108,7 +109,7 @@ func (a *ArNS) GetArNSTxID(caAddress string, domain string) (txId string, err er
 	}
 
 	// Read the response body
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}

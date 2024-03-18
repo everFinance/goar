@@ -1,6 +1,6 @@
 module github.com/everFinance/goar
 
-go 1.17
+go 1.18
 
 require (
 	github.com/btcsuite/btcd/btcutil v1.1.3
@@ -10,8 +10,8 @@ require (
 	github.com/everFinance/goether v1.1.9
 	github.com/everFinance/gojwk v1.0.0
 	github.com/everFinance/ttcrsa v1.1.3
-	github.com/hamba/avro v1.5.6
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
+	github.com/linkedin/goavro/v2 v2.12.0
 	github.com/panjf2000/ants/v2 v2.6.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/stretchr/testify v1.8.0
@@ -30,13 +30,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
-	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/linkedin/goavro/v2 v2.12.0 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
