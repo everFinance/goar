@@ -15,7 +15,7 @@ func TestDecodeDataItem(t *testing.T) {
 		tags := []Tag{}
 		anchor := ""
 		target := ""
-		s, err := goar.NewSignerFromPath("../data/wallet.json")
+		s, err := goar.NewSignerFromPath("../../data/wallet.json")
 		assert.NoError(t, err)
 
 		a, err := NewDataItem([]byte(data), s, target, anchor, tags)
@@ -38,7 +38,7 @@ func TestDecodeDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := goar.NewSignerFromPath("../data/wallet.json")
+		s, err := goar.NewSignerFromPath("../../data/wallet.json")
 		assert.NoError(t, err)
 
 		a, err := NewDataItem([]byte(data), s, target, anchor, tags)
@@ -53,7 +53,7 @@ func TestDecodeDataItem(t *testing.T) {
 		assert.Equal(t, dataItem.Data, base64.RawURLEncoding.EncodeToString([]byte(data)))
 	})
 	t.Run("DecodeDataItem - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("../test/stubs/1115BDataItem")
+		data, err := os.ReadFile("../../tests/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := DecodeDataItem(data)
@@ -83,7 +83,7 @@ func TestNewDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := goar.NewSignerFromPath("../data/wallet.json")
+		s, err := goar.NewSignerFromPath("../../data/wallet.json")
 		assert.NoError(t, err)
 		dataItem, err := NewDataItem([]byte(data), s, target, anchor, tags)
 		assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := goar.NewSignerFromPath("../data/wallet.json")
+		s, err := goar.NewSignerFromPath("../../data/wallet.json")
 		assert.NoError(t, err)
 
 		dataItem, err := NewDataItem([]byte(data), s, target, anchor, tags)
@@ -140,7 +140,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := goar.NewSignerFromPath("../data/wallet.json")
+		s, err := goar.NewSignerFromPath("../../data/wallet.json")
 		assert.NoError(t, err)
 
 		dataItem, err := NewDataItem([]byte(data), s, target, anchor, tags)
@@ -151,7 +151,7 @@ func TestVerifyDataItem(t *testing.T) {
 		assert.True(t, valid)
 	})
 	t.Run("VerifyDataItem - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("../test/stubs/1115BDataItem")
+		data, err := os.ReadFile("../../tests/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := DecodeDataItem(data)
