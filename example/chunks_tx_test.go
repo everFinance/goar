@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -73,7 +72,7 @@ func assemblyDataTx(bigData []byte, wallet *goar.Wallet, tags []types.Tag) (*typ
 // test upload post big size data by chunks
 func Test_PostBigDataByChunks(t *testing.T) {
 	filePath := "./testFile/2mbFile.pdf"
-	bigData, err := ioutil.ReadFile(filePath)
+	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
 
 	tags := []types.Tag{{Name: "Content-Type", Value: "application/pdf"}, {Name: "goar", Value: "testdata"}}
@@ -90,7 +89,7 @@ func Test_PostBigDataByChunks(t *testing.T) {
 // test retry upload(断点重传) post big size data by tx id
 func Test_RetryUploadDataByTxId(t *testing.T) {
 	filePath := "./testFile/3mPhoto.jpg"
-	bigData, err := ioutil.ReadFile(filePath)
+	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
 
 	tags := []types.Tag{{Name: "Content-Type", Value: "application/jpg"}, {Name: "goar", Value: "testdata"}}
@@ -131,7 +130,7 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 // test continue upload(断点续传) big size data by last time uploader
 func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	filePath := "./testFile/1.8mPhoto.jpg"
-	bigData, err := ioutil.ReadFile(filePath)
+	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
 
 	tags := []types.Tag{{Name: "Content-Type", Value: "application/jpg"}, {Name: "goar", Value: "1.8mbPhoto"}}
@@ -151,13 +150,13 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	// then store uploader object to file
 	jsonUploader, err := json.Marshal(uploader)
 	assert.NoError(t, err)
-	err = ioutil.WriteFile("./jsonUploaderFile.json", jsonUploader, 0777)
+	err = os.WriteFile("./jsonUploaderFile.json", jsonUploader, 0777)
 	assert.NoError(t, err)
 	t.Log("sleep time ...")
 	time.Sleep(5 * time.Second) // sleep 5s
 
 	// 2. read uploader object from jsonUploader.json file and continue upload by last time uploader
-	uploaderBuf, err := ioutil.ReadFile("./jsonUploaderFile.json")
+	uploaderBuf, err := os.ReadFile("./jsonUploaderFile.json")
 	assert.NoError(t, err)
 	lastUploader := &goar.TransactionUploader{}
 	err = json.Unmarshal(uploaderBuf, lastUploader)

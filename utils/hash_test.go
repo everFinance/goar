@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDeepHash(t *testing.T) {
@@ -41,7 +41,7 @@ func TestHashStream(t *testing.T) {
 	data = file
 	_, ok := data.(io.Reader)
 	assert.Equal(t, ok, true)
-	dataBy, err := ioutil.ReadAll(file)
+	dataBy, err := io.ReadAll(file)
 	assert.NoError(t, err)
 	file.Close()
 	file2, err := os.Open("bytes.go")

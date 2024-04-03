@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"os"
@@ -21,7 +20,7 @@ type Wallet struct {
 
 // proxyUrl: option
 func NewWalletFromPath(path string, clientUrl string, proxyUrl ...string) (*Wallet, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"math/big"
 	"os"
 	"testing"
@@ -225,7 +224,7 @@ func TestIOBuffer(t *testing.T) {
 	itemReader, err := os.Open("test.item")
 	assert.NoError(t, err)
 	assert.Equal(t, itemReader.Name(), "test.item")
-	itemBinary, err := ioutil.ReadFile("test.item")
+	itemBinary, err := os.ReadFile("test.item")
 	assert.NoError(t, err)
 	defer itemReader.Close()
 	item, err := utils.DecodeBundleItemStream(itemReader)
@@ -250,7 +249,7 @@ func TestIOBuffere(t *testing.T) {
 }
 
 func TestCreateBundleItemStream(t *testing.T) {
-	data0, err := ioutil.ReadFile("../go.mod")
+	data0, err := os.ReadFile("../go.mod")
 	assert.NoError(t, err)
 	data1, err := os.Open("../go.mod")
 	assert.NoError(t, err)
@@ -269,7 +268,7 @@ func TestCreateBundleItemStream(t *testing.T) {
 }
 
 func TestPointerAndValueCopy(t *testing.T) {
-	data0, err := ioutil.ReadFile("../go.mod")
+	data0, err := os.ReadFile("../go.mod")
 	assert.NoError(t, err)
 	data, err := os.Open("../go.mod")
 	assert.NoError(t, err)
@@ -294,7 +293,7 @@ func TestReader(t *testing.T) {
 	data, err := os.Open("../go.mod")
 	defer data.Close()
 	assert.NoError(t, err)
-	data2, err := ioutil.ReadFile("../go.mod")
+	data2, err := os.ReadFile("../go.mod")
 	itemSigner, err := goar.NewItemSigner(signer01)
 	assert.NoError(t, err)
 	item, err := itemSigner.CreateAndSignItemStream(data, "", "", []types.Tag{

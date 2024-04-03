@@ -1,12 +1,12 @@
 package example
 
 import (
+	"os"
+	"testing"
+
 	"github.com/everFinance/goar"
 	"github.com/everFinance/goar/types"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"testing"
 )
 
 func Test_SendData(t *testing.T) {
@@ -14,7 +14,7 @@ func Test_SendData(t *testing.T) {
 	w, err := goar.NewWalletFromPath("./wallet/account1.json", arNode) // your wallet private key
 	assert.NoError(t, err)
 
-	data, err := ioutil.ReadFile("/Users/local/Downloads/abc.jpeg") // local file path
+	data, err := os.ReadFile("/Users/local/Downloads/abc.jpeg") // local file path
 	if err != nil {
 		panic(err)
 	}
