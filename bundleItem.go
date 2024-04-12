@@ -121,8 +121,8 @@ func SignBundleItem(signatureType int, signer interface{}, item *types.BundleIte
 			return err
 		}
 	default:
-		// todo come soon supprot ed25519
-		return errors.New("not supprot this signType")
+		// todo come soon support ed25519
+		return errors.New("not support this signType")
 	}
 	id := sha256.Sum256(sigData)
 	item.Id = utils.Base64Encode(id[:])
