@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -720,9 +719,8 @@ func GenerateItemBinary(d *types.BundleItem) (by []byte, err error) {
 
 	by = append(by, metaBinary...)
 	// push data
-	data := make([]byte, 0)
 	if len(d.Data) > 0 {
-		data, err = Base64Decode(d.Data)
+		data, err := Base64Decode(d.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -798,9 +796,9 @@ func SubmitItemToBundlr(item types.BundleItem, bundlrUrl string) (*types.BundlrR
 
 	defer resp.Body.Close()
 	// json unmarshal
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+		return nil, fmt.Errorf("os.ReadAll(resp.Body) error: %v", err)
 	}
 	br := &types.BundlrResp{}
 	if err := json.Unmarshal(body, br); err != nil {
@@ -829,9 +827,9 @@ func SubmitItemToArSeed(item types.BundleItem, currency, arseedUrl string) (*sch
 
 	defer resp.Body.Close()
 	// json unmarshal
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ioutil.ReadAll(resp.Body) error: %v", err)
+		return nil, fmt.Errorf("io.ReadAll(resp.Body) error: %v", err)
 	}
 	br := &schema.RespOrder{}
 	if err := json.Unmarshal(body, br); err != nil {
@@ -857,6 +855,6 @@ func SubmitItemToMU(item types.BundleItem, muUrl string) ([]byte, error) {
 	defer resp.Body.Close()
 	fmt.Printf("resp code:%v\n", resp.StatusCode)
 	// json unmarshal
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	return body, err
 }

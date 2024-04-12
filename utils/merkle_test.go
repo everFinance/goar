@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -12,7 +11,7 @@ import (
 // 	data, _ := Base64Decode("NzcyNg")
 // 	assert.Equal(t, "z3rQGxyiqdQuOh2dxDst176oOKmW3S9MwQNTEh4DK1U", Base64Encode(GenerateChunks(data).DataRoot))
 //
-// 	data, err := ioutil.ReadFile("./testfile/1mb.bin")
+// 	data, err := os.ReadFile("./testfile/1mb.bin")
 // 	assert.NoError(t, err)
 // 	chunks := GenerateChunks(data)
 // 	assert.Equal(t, "o1tTTjbC7hIZN6KbUUYjlkQoDl2k8VXNuBDcGIs52Hc", Base64Encode(chunks.DataRoot))
@@ -31,7 +30,7 @@ func TestGenerateLeaves(t *testing.T) {
 }
 
 func TestChunkStream(t *testing.T) {
-	data, err := ioutil.ReadFile("img.jpeg")
+	data, err := os.ReadFile("img.jpeg")
 	assert.NoError(t, err)
 	dataReader, err := os.Open("img.jpeg")
 	assert.NoError(t, err)

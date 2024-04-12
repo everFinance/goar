@@ -4,7 +4,6 @@ import (
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
@@ -107,7 +106,7 @@ func TestClient_DownloadChunkData(t *testing.T) {
 	// assert.NoError(t, err)
 	//
 	// t.Log(len(data))
-	// err = ioutil.WriteFile("photo.jpg", data, 0777)
+	// err = os.WriteFile("photo.jpg", data, 0777)
 	// assert.NoError(t, err)
 }
 
@@ -317,7 +316,7 @@ func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
 	data, err := c.ConcurrentDownloadChunkData(arId, 0)
 	// data , err := c.DownloadChunkData(arId)
 	assert.NoError(t, err)
-	ioutil.WriteFile("nannan.gif", data, 0666)
+	os.WriteFile("nannan.gif", data, 0666)
 	chunks, err := utils.GenerateChunks(data)
 	assert.NoError(t, err)
 	dataRoot := utils.Base64Encode(chunks.DataRoot)
@@ -340,7 +339,7 @@ func TestNewTempConn2(t *testing.T) {
 	assert.NoError(t, err)
 	// 0x03641046696c654e616d6520576563686174494d4738302e6a70656718436f6e74656e742d5479706514696d6167652f6a70656700
 
-	// by, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
+	// by, err := os.ReadFile("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
 	// assert.NoError(t, err)
 	// item, err := utils.DecodeBundleItem(by)
 	// assert.NoError(t, err)

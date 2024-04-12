@@ -5,11 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/inconshreveable/log15"
-	"github.com/panjf2000/ants/v2"
-	"github.com/tidwall/gjson"
-	"gopkg.in/h2non/gentleman.v2"
-	"io/ioutil"
+	"io"
 	"math"
 	"math/big"
 	"net/http"
@@ -20,6 +16,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/inconshreveable/log15"
+	"github.com/panjf2000/ants/v2"
+	"github.com/tidwall/gjson"
+	"gopkg.in/h2non/gentleman.v2"
 
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
@@ -524,7 +525,7 @@ func (c *Client) httpGet(_path string) (body []byte, statusCode int, err error) 
 	defer resp.Body.Close()
 
 	statusCode = resp.StatusCode
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	return
 }
 
@@ -543,7 +544,7 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 	defer resp.Body.Close()
 
 	statusCode = resp.StatusCode
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	return
 }
 
@@ -1051,7 +1052,7 @@ func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 /**
