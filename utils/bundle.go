@@ -646,7 +646,11 @@ func generateItemMetaBinary(d *types.BundleItem) ([]byte, error) {
 	}
 	tagsBytes := make([]byte, 0)
 	if len(d.Tags) > 0 {
-		tagsBytes, err = Base64Decode(d.TagsBy)
+		if len(d.TagsBy) > 0 {
+			tagsBytes, err = Base64Decode(d.TagsBy)
+		} else {
+			tagsBytes, err = SerializeTags(d.Tags)
+		}
 		if err != nil {
 			return nil, err
 		}
