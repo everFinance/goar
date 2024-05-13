@@ -2,8 +2,6 @@ module github.com/everFinance/goar
 
 go 1.21.1
 
-toolchain go1.22.1
-
 require (
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/ethereum/go-ethereum v1.13.5
