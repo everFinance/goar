@@ -4,10 +4,11 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
+	"os"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/gojwk"
-	"io/ioutil"
 )
 
 type Signer struct {
@@ -17,7 +18,7 @@ type Signer struct {
 }
 
 func NewSignerFromPath(path string) (*Signer, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

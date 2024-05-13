@@ -3,11 +3,12 @@ package arns
 import (
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 type ArNS struct {
@@ -73,7 +74,7 @@ func (a *ArNS) QueryNameCa(domain string) (caAddress string, err error) {
 	}
 
 	// Read the response body
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}
@@ -108,7 +109,7 @@ func (a *ArNS) GetArNSTxID(caAddress string, domain string) (txId string, err er
 	}
 
 	// Read the response body
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}

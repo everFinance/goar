@@ -5,7 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/everFinance/goar/utils"
@@ -309,11 +309,11 @@ func TestCreateTcKeyPair(t *testing.T) {
 
 // GetKeyPairByLocal
 func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, err error) {
-	dd, err := ioutil.ReadFile("keyMeta.json")
+	dd, err := os.ReadFile("keyMeta.json")
 	if err != nil {
 		return nil, nil, err
 	}
-	ee, err := ioutil.ReadFile("keyShares.json")
+	ee, err := os.ReadFile("keyShares.json")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -335,7 +335,7 @@ func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, 
 // TestCreateKeyPair3 get address
 // func TestCreateKeyPair3(t *testing.T) {
 // 	keyMeta := &tcrsa.KeyMeta{}
-// 	keyMetaBy, err := ioutil.ReadFile("keyMeta.json") // replace your key
+// 	keyMetaBy, err := os.ReadFile("keyMeta.json") // replace your key
 // 	assert.NoError(t, err)
 // 	err = json.Unmarshal(keyMetaBy, keyMeta)
 // 	assert.NoError(t, err)
@@ -356,7 +356,7 @@ func TestCreateKeyPair2(t *testing.T) {
 	// t.Log("lastTx: ", anchor)
 	// // read created threshold keypair for local file; need to be generated ahead of time;
 	// keyMeta := &tcrsa.KeyMeta{}
-	// keyMetaBy, err := ioutil.ReadFile("keyMeta.json")
+	// keyMetaBy, err := os.ReadFile("keyMeta.json")
 	// assert.NoError(t, err)
 	// err = json.Unmarshal(keyMetaBy, keyMeta)
 	// assert.NoError(t, err)
@@ -386,7 +386,7 @@ func TestCreateKeyPair2(t *testing.T) {
 	//
 	// // signature
 	// keyShares := tcrsa.KeyShareList{}
-	// keySharesBy, err := ioutil.ReadFile("keyShares.json")
+	// keySharesBy, err := os.ReadFile("keyShares.json")
 	// assert.NoError(t, err)
 	// err = json.Unmarshal(keySharesBy, &keyShares)
 	// assert.NoError(t, err)
