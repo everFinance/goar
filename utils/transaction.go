@@ -58,7 +58,7 @@ func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, erro
 		DataRoot: tx.DataRoot,
 		DataSize: tx.DataSize,
 		DataPath: Base64Encode(proof.Proof),
-		Offset:   strconv.Itoa(proof.Offest),
+		Offset:   strconv.Itoa(proof.Offset),
 		Chunk:    Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
 	}, nil
 }
@@ -80,7 +80,7 @@ func GetChunkStream(tx types.Transaction, idx int, data *os.File) (*types.GetChu
 		DataRoot: tx.DataRoot,
 		DataSize: tx.DataSize,
 		DataPath: Base64Encode(proof.Proof),
-		Offset:   strconv.Itoa(proof.Offest),
+		Offset:   strconv.Itoa(proof.Offset),
 		Chunk:    Base64Encode(chunkBy),
 	}, nil
 }

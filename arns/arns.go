@@ -17,15 +17,15 @@ type ArNS struct {
 	HttpClient  *http.Client
 }
 
-func NewArNS(dreUrl string, arNSAddr string, timout time.Duration) *ArNS {
+func NewArNS(dreUrl string, arNSAddr string, timeout time.Duration) *ArNS {
 
 	// default timeout is 5s
-	if timout == 0 {
-		timout = 5 * time.Second
+	if timeout == 0 {
+		timeout = 5 * time.Second
 	}
 
 	httpClient := &http.Client{
-		Timeout: timout, // Set the timeout for HTTP requests
+		Timeout: timeout, // Set the timeout for HTTP requests
 	}
 	return &ArNS{
 		DreUrl:      dreUrl,
