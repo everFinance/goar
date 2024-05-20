@@ -116,9 +116,9 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 	return uploader, err
 }
 
-func (tt *TransactionUploader) Once() (err error) {
+func (tt *TransactionUploader) Once(ctx context.Context) (err error) {
 	for !tt.IsComplete() {
-		if err = tt.UploadChunk(); err != nil {
+		if err = tt.UploadChunk(ctx); err != nil {
 			return
 		}
 
@@ -159,7 +159,7 @@ func (tt *TransactionUploader) PctComplete() float64 {
 
 func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum int) error {
 	// post tx info
-	if err := tt.postTransaction(); err != nil {
+	if err := tt.postTransaction(ctx); err != nil {
 		return err
 	}
 
@@ -193,7 +193,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 			log.Error("GetChunk error", "err", err, "idx", idx)
 			return
 		}
-		body, statusCode, err := tt.Client.SubmitChunks(chunk) // always body is errMsg
+		body, statusCode, err := tt.Client.SubmitChunks(ctx, chunk) // always body is errMsg
 		if statusCode == 200 {
 			return
 		}
@@ -216,7 +216,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 				time.Sleep(200 * time.Millisecond)
 			}
 
-			body, statusCode, err = tt.Client.SubmitChunks(chunk)
+			body, statusCode, err = tt.Client.SubmitChunks(ctx, chunk)
 			if statusCode == 200 {
 				return
 			}
@@ -243,7 +243,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
  * itself and on any subsequent calls uploads the
  * next chunk until it completes.
  */
-func (tt *TransactionUploader) UploadChunk() error {
+func (tt *TransactionUploader) UploadChunk(ctx context.Context) error {
 	defer func() {
 		// if tt.TotalChunks() > 0 {
 		// 	log.Debug("chunks", "uploads", fmt.Sprintf("%f%% completes, %d/%d", tt.PctComplete(), tt.UploadedChunks(), tt.TotalChunks()))
@@ -278,7 +278,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	tt.LastResponseError = ""
 
 	if !tt.TxPosted {
-		return tt.postTransaction()
+		return tt.postTransaction(ctx)
 	}
 
 	var chunk *types.GetChunk
@@ -317,7 +317,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	body, statusCode, err := tt.Client.SubmitChunks(gc) // always body is errMsg
+	body, statusCode, err := tt.Client.SubmitChunks(ctx, gc) // always body is errMsg
 	tt.LastRequestTimeEnd = time.Now().UnixNano() / 1000000
 	tt.LastResponseStatus = statusCode
 	if statusCode == 200 {
@@ -409,17 +409,17 @@ func (tt *TransactionUploader) FormatSerializedUploader() *SerializedUploader {
 }
 
 // POST to /tx
-func (tt *TransactionUploader) postTransaction() error {
+func (tt *TransactionUploader) postTransaction(ctx context.Context) error {
 	var uploadInBody = tt.TotalChunks() <= types.MAX_CHUNKS_IN_BODY
-	return tt.uploadTx(uploadInBody)
+	return tt.uploadTx(ctx, uploadInBody)
 }
 
-func (tt *TransactionUploader) uploadTx(withBody bool) error {
+func (tt *TransactionUploader) uploadTx(ctx context.Context, withBody bool) error {
 	// if withBody {
 	// 	// Post the Transaction with Data.
 	// 	tt.Transaction.Data = utils.Base64Encode(tt.Data)
 	// }
-	body, statusCode, err := tt.Client.SubmitTransaction(tt.Transaction)
+	body, statusCode, err := tt.Client.SubmitTransaction(ctx, tt.Transaction)
 	if err != nil || statusCode >= 400 {
 		tt.LastResponseError = fmt.Sprintf("%v,%s", err, body)
 		tt.LastResponseStatus = statusCode

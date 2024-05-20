@@ -1,6 +1,7 @@
 package goar
 
 import (
+	"context"
 	"encoding/base64"
 	"os"
 
@@ -117,18 +118,20 @@ func Test_SendPstTransfer(t *testing.T) {
 }
 
 func TestWallet_WarpTransfer(t *testing.T) {
+	ctx := context.Background()
 	warpGateWay := "https://gateway.warp.cc"
 	w, err := NewWalletFromPath("./wallet/account1.json", warpGateWay)
 	assert.NoError(t, err)
 	contractId := "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A" // vrt
 	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
 	qty := int64(2)
-	id, err := w.WarpTransfer(contractId, target, qty)
+	id, err := w.WarpTransfer(ctx, contractId, target, qty)
 	assert.NoError(t, err)
 	t.Log(id)
 }
 
 func TestCreateUploader(t *testing.T) {
+	ctx := context.Background()
 	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
 	assert.NoError(t, err)
 	t.Log(w.Signer.Address)
@@ -140,7 +143,7 @@ func TestCreateUploader(t *testing.T) {
 	tags := []types.Tag{
 		{Name: "Content-Type", Value: "video/mpeg4"},
 	}
-	tx, err := w.SendData(data, tags)
+	tx, err := w.SendData(ctx, data, tags)
 	assert.NoError(t, err)
 	t.Log(tx.ID)
 }
