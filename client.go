@@ -2,6 +2,7 @@ package goar
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -372,38 +373,38 @@ func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	return
 }
 
-func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, code int, err error) {
+func (c *Client) SubmitTransaction(ctx context.Context, tx *types.Transaction) (status string, code int, err error) {
 	by, err := json.Marshal(tx)
 	if err != nil {
 		return
 	}
 
-	body, statusCode, err := c.httpPost("tx", by)
+	body, statusCode, err := c.httpPost(ctx, "tx", by)
 	status = string(body)
 	code = statusCode
 	return
 }
 
-func (c *Client) SubmitChunks(gc *types.GetChunk) (status string, code int, err error) {
+func (c *Client) SubmitChunks(ctx context.Context, gc *types.GetChunk) (status string, code int, err error) {
 	byteGc, err := gc.Marshal()
 	if err != nil {
 		return
 	}
 
 	var body []byte
-	body, code, err = c.httpPost("chunk", byteGc)
+	body, code, err = c.httpPost(ctx, "chunk", byteGc)
 	status = string(body)
 	return
 }
 
 // Arql is Deprecated, recommended to use GraphQL
-func (c *Client) Arql(arql string) (ids []string, err error) {
-	body, _, err := c.httpPost("arql", []byte(arql))
+func (c *Client) Arql(ctx context.Context, arql string) (ids []string, err error) {
+	body, _, err := c.httpPost(ctx, "arql", []byte(arql))
 	err = json.Unmarshal(body, &ids)
 	return
 }
 
-func (c *Client) GraphQL(query string) ([]byte, error) {
+func (c *Client) GraphQL(ctx context.Context, query string) ([]byte, error) {
 	// generate query
 	graQuery := struct {
 		Query string `json:"query"`
@@ -414,7 +415,7 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 	}
 
 	// query from http client
-	data, statusCode, err := c.httpPost("graphql", byQuery)
+	data, statusCode, err := c.httpPost(ctx, "graphql", byQuery)
 	if statusCode == 429 {
 		return nil, ErrRequestLimit
 	}
@@ -529,7 +530,7 @@ func (c *Client) httpGet(_path string) (body []byte, statusCode int, err error) 
 	return
 }
 
-func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
+func (c *Client) httpPost(ctx context.Context, _path string, payload []byte) (body []byte, statusCode int, err error) {
 	u, err := url.Parse(c.url)
 	if err != nil {
 		return
@@ -537,7 +538,12 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 
 	u.Path = path.Join(u.Path, _path)
 
-	resp, err := c.client.Post(u.String(), "application/json", bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewReader(payload))
+	if err != nil {
+		return
+	}
+
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return
 	}
@@ -1029,7 +1035,7 @@ func (c *Client) DataSyncRecord(endOffset string, intervalsNum int) ([]string, e
 	return result, nil
 }
 
-func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
+func (c *Client) SubmitToWarp(ctx context.Context, tx *types.Transaction) ([]byte, error) {
 	by, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
@@ -1040,7 +1046,7 @@ func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
 	}
 
 	u.Path = path.Join(u.Path, "/gateway/sequencer/register")
-	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(by))
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), bytes.NewReader(by))
 	if err != nil {
 		return nil, err
 	}

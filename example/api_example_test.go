@@ -1,9 +1,11 @@
 package example
 
 import (
+	"context"
+	"testing"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
-	"testing"
 
 	"github.com/everFinance/goar"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +65,7 @@ func Test_Arq1(t *testing.T) {
 }
 
 func Test_Arq(t *testing.T) {
+	ctx := context.Background()
 	arqStr := `{
 			"op": "and",
 			"expr1": {
@@ -79,7 +82,7 @@ func Test_Arq(t *testing.T) {
 	// create client
 	arNode := "https://arweave.net"
 	c := goar.NewClient(arNode)
-	ids, err := c.Arql(arqStr)
+	ids, err := c.Arql(ctx, arqStr)
 	t.Log(len(ids))
 	assert.NoError(t, err)
 	sstr := make([]string, 0)
