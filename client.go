@@ -439,6 +439,16 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 
 // Wallet
 func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err error) {
+	winstonAmt, err := c.GetWalletWinstonBalance(address)
+	if err != nil {
+		return nil, err
+	}
+
+	arAmount = utils.WinstonToAR(winstonAmt)
+	return
+}
+
+func (c *Client) GetWalletWinstonBalance(address string) (arAmount *big.Int, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
 	if code == 429 {
 		return nil, ErrRequestLimit
@@ -456,8 +466,7 @@ func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err erro
 		err = fmt.Errorf("invalid balance: %v", winstomStr)
 		return
 	}
-
-	arAmount = utils.WinstonToAR(winstom)
+	arAmount = winstom
 	return
 }
 
