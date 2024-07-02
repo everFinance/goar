@@ -2,8 +2,8 @@ package goar
 
 import (
 	"fmt"
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 	"github.com/tidwall/gjson"
 	"math/rand"
 	"strconv"

@@ -1,4 +1,4 @@
-package types
+package schema
 
 type Block struct {
 	Nonce                    string        `json:"nonce"`

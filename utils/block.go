@@ -3,8 +3,9 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/everFinance/goar/types"
 	"strings"
+
+	"github.com/everVision/goar/schema"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 	height_2_5 = int64(812970)
 )
 
-func GenerateIndepHash(b types.Block) string {
+func GenerateIndepHash(b schema.Block) string {
 	if b.Height < height_2_0 { // not support arweave v1.0
 		return b.IndepHash
 	}
@@ -30,7 +31,7 @@ func GenerateIndepHash(b types.Block) string {
 	return Base64Encode(hash[:])
 }
 
-func generateBlockDataSegment(b types.Block) []byte {
+func generateBlockDataSegment(b schema.Block) []byte {
 	bdsBase := generateBlockDataSegmentBase(b)
 
 	list := make([]interface{}, 0)
@@ -46,7 +47,7 @@ func generateBlockDataSegment(b types.Block) []byte {
 	return hash[:]
 }
 
-func generateBlockDataSegmentBase(b types.Block) []byte {
+func generateBlockDataSegmentBase(b schema.Block) []byte {
 	props := make([]interface{}, 0)
 	props = append(props, Base64Encode([]byte(fmt.Sprintf("%d", b.Height))))
 	props = append(props, b.PreviousBlock)
@@ -90,7 +91,7 @@ func generateBlockDataSegmentBase(b types.Block) []byte {
 	return hash[:]
 }
 
-func poaToList(poa types.POA) []string {
+func poaToList(poa schema.POA) []string {
 	return []string{
 		Base64Encode([]byte(poa.Option)),
 		poa.TxPath,
@@ -99,8 +100,8 @@ func poaToList(poa types.POA) []string {
 	}
 }
 
-func DecodeBlock(body string) (*types.Block, error) {
-	b := &types.Block{}
+func DecodeBlock(body string) (*schema.Block, error) {
+	b := &schema.Block{}
 	// json unmarshal exist number precision problem
 	decoder := json.NewDecoder(strings.NewReader(body))
 	decoder.UseNumber()
@@ -112,7 +113,7 @@ func DecodeBlock(body string) (*types.Block, error) {
 	return b, err
 }
 
-func formatBlockFields(b *types.Block) {
+func formatBlockFields(b *schema.Block) {
 	if _, ok := b.RewardPool.(string); !ok {
 		by, _ := json.Marshal(b.RewardPool)
 		b.RewardPool = string(by)

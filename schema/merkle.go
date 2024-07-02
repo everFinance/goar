@@ -1,4 +1,4 @@
-package types
+package schema
 
 type Chunks struct {
 	DataRoot []byte   `json:"data_root"`

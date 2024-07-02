@@ -9,10 +9,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/everFinance/goar/types"
+	"github.com/everVision/goar/schema"
 )
 
-func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error {
+func PrepareChunks(tx *schema.Transaction, data interface{}, dataSize int) error {
 	// Note: we *do not* use `this.Data`, the caller may be
 	// operating on a Transaction with an zero length Data field.
 	// This function computes the chunks for the Data passed in and
@@ -21,10 +21,10 @@ func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error 
 	if tx.Chunks == nil && dataSize > 0 {
 		chunks, err := GenerateChunks(data)
 		if err != nil {
-			tx.Chunks = &types.Chunks{
+			tx.Chunks = &schema.Chunks{
 				DataRoot: make([]byte, 0),
-				Chunks:   make([]types.Chunk, 0),
-				Proofs:   make([]*types.Proof, 0),
+				Chunks:   make([]schema.Chunk, 0),
+				Proofs:   make([]*schema.Proof, 0),
 			}
 			return err
 		}
@@ -33,10 +33,10 @@ func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error 
 	}
 
 	if tx.Chunks == nil && dataSize == 0 {
-		tx.Chunks = &types.Chunks{
+		tx.Chunks = &schema.Chunks{
 			DataRoot: make([]byte, 0),
-			Chunks:   make([]types.Chunk, 0),
-			Proofs:   make([]*types.Proof, 0),
+			Chunks:   make([]schema.Chunk, 0),
+			Proofs:   make([]*schema.Proof, 0),
 		}
 	}
 	return nil
@@ -46,7 +46,7 @@ func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error 
 // Similar to `PrepareChunks()` this does not operate `this.Data`,
 // instead using the Data passed in.
 
-func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, error) {
+func GetChunk(tx schema.Transaction, idx int, data []byte) (*schema.GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
 	}
@@ -54,7 +54,7 @@ func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, erro
 	proof := tx.Chunks.Proofs[idx]
 	chunk := tx.Chunks.Chunks[idx]
 
-	return &types.GetChunk{
+	return &schema.GetChunk{
 		DataRoot: tx.DataRoot,
 		DataSize: tx.DataSize,
 		DataPath: Base64Encode(proof.Proof),
@@ -63,7 +63,7 @@ func GetChunk(tx types.Transaction, idx int, data []byte) (*types.GetChunk, erro
 	}, nil
 }
 
-func GetChunkStream(tx types.Transaction, idx int, data *os.File) (*types.GetChunk, error) {
+func GetChunkStream(tx schema.Transaction, idx int, data *os.File) (*schema.GetChunk, error) {
 	if tx.Chunks == nil {
 		return nil, errors.New("Chunks have not been prepared")
 	}
@@ -76,7 +76,7 @@ func GetChunkStream(tx types.Transaction, idx int, data *os.File) (*types.GetChu
 	if n < dataLen || err != nil {
 		return nil, fmt.Errorf("getChunkStream failed, err: %v, readByte:%d, dataLen:%d", err, n, dataLen)
 	}
-	return &types.GetChunk{
+	return &schema.GetChunk{
 		DataRoot: tx.DataRoot,
 		DataSize: tx.DataSize,
 		DataPath: Base64Encode(proof.Proof),
@@ -85,7 +85,7 @@ func GetChunkStream(tx types.Transaction, idx int, data *os.File) (*types.GetChu
 	}, nil
 }
 
-func SignTransaction(tx *types.Transaction, prvKey *rsa.PrivateKey) error {
+func SignTransaction(tx *schema.Transaction, prvKey *rsa.PrivateKey) error {
 	signData, err := GetSignatureData(tx)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func SignTransaction(tx *types.Transaction, prvKey *rsa.PrivateKey) error {
 	return nil
 }
 
-func GetSignatureData(tx *types.Transaction) ([]byte, error) {
+func GetSignatureData(tx *schema.Transaction) ([]byte, error) {
 	switch tx.Format {
 	case 1:
 		tags := make([]byte, 0)
@@ -195,7 +195,7 @@ func GetSignatureData(tx *types.Transaction) ([]byte, error) {
 	}
 }
 
-func VerifyTransaction(tx types.Transaction) (err error) {
+func VerifyTransaction(tx schema.Transaction) (err error) {
 	sig, err := Base64Decode(tx.Signature)
 	if err != nil {
 		return

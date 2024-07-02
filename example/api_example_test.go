@@ -1,8 +1,8 @@
 package example
 
 import (
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 	"testing"
 
 	"github.com/everFinance/goar"

@@ -12,9 +12,9 @@ import (
 
 	"github.com/everFinance/everpay-go/sdk"
 	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
+	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 )
 

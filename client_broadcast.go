@@ -3,7 +3,7 @@ package goar
 import (
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/types"
+	"github.com/everVision/goar/schema"
 )
 
 func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers ...string) error {

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
+	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 )
 

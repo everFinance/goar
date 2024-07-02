@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 	"github.com/shopspring/decimal"
 )
 

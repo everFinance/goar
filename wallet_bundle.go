@@ -3,7 +3,7 @@ package goar
 import (
 	"context"
 	"errors"
-	"github.com/everFinance/goar/types"
+	"github.com/everVision/goar/schema"
 	"os"
 )
 

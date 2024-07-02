@@ -1,14 +1,15 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/everVision/goar/schema"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndepHash(t *testing.T) {
 	// height_2_0
-	b := &types.Block{}
+	b := &schema.Block{}
 
 	BH422250 := `{
     "nonce": "W3Jy4wp2LVbDFhGX_hUjRQZCkTdEbKxz45E5OVe52Lo",

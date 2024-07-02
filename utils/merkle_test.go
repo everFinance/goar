@@ -30,9 +30,9 @@ func TestGenerateLeaves(t *testing.T) {
 }
 
 func TestChunkStream(t *testing.T) {
-	data, err := os.ReadFile("img.jpeg")
+	data, err := os.ReadFile("./testfile/1mb.bin")
 	assert.NoError(t, err)
-	dataReader, err := os.Open("img.jpeg")
+	dataReader, err := os.Open("./testfile/1mb.bin")
 	assert.NoError(t, err)
 	defer dataReader.Close()
 	chunks01 := chunkData(data)

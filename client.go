@@ -22,8 +22,8 @@ import (
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 )
 
 var log = log15.New("module", "goar")

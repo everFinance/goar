@@ -1,9 +1,9 @@
 package utils
 
-import "github.com/everFinance/goar/types"
+import "github.com/everVision/goar/schema"
 
-func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]types.Tag, error) {
-	input := types.Input{
+func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]schema.Tag, error) {
+	input := schema.Input{
 		"function": "transfer",
 		"target":   target,
 		"qty":      qty,
@@ -14,7 +14,7 @@ func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]
 		return nil, err
 	}
 
-	pstTags := []types.Tag{
+	pstTags := []schema.Tag{
 		{Name: "App-Name", Value: "SmartWeaveAction"},
 		{Name: "App-Version", Value: "0.3.0"},
 		{Name: "Contract", Value: contractId},
@@ -22,7 +22,7 @@ func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]
 	}
 
 	if warp {
-		pstTags = append(pstTags, types.Tag{Name: "SDK", Value: "Warp"})
+		pstTags = append(pstTags, schema.Tag{Name: "SDK", Value: "Warp"})
 	}
 
 	return pstTags, nil

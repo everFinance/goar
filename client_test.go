@@ -1,8 +1,8 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"

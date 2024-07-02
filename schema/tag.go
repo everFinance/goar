@@ -1,4 +1,4 @@
-package types
+package schema
 
 type Tag struct {
 	Name  string `json:"name" avro:"name"`

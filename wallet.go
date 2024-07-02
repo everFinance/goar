@@ -9,8 +9,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 )
 
 type Wallet struct {

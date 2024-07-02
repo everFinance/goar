@@ -1,16 +1,15 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/hamba/avro"
+	"github.com/everVision/goar/schema"
 	"github.com/linkedin/goavro/v2"
 )
 
-func TagsEncode(tags []types.Tag) []types.Tag {
-	base64Tags := []types.Tag{}
+func TagsEncode(tags []schema.Tag) []schema.Tag {
+	base64Tags := []schema.Tag{}
 
 	for _, tag := range tags {
-		base64Tags = append(base64Tags, types.Tag{
+		base64Tags = append(base64Tags, schema.Tag{
 			Name:  Base64Encode([]byte(tag.Name)),
 			Value: Base64Encode([]byte(tag.Value)),
 		})
@@ -19,8 +18,8 @@ func TagsEncode(tags []types.Tag) []types.Tag {
 	return base64Tags
 }
 
-func TagsDecode(base64Tags []types.Tag) ([]types.Tag, error) {
-	tags := []types.Tag{}
+func TagsDecode(base64Tags []schema.Tag) ([]schema.Tag, error) {
+	tags := []schema.Tag{}
 
 	for _, bt := range base64Tags {
 		bName, err := Base64Decode(bt.Name)
@@ -33,7 +32,7 @@ func TagsDecode(base64Tags []types.Tag) ([]types.Tag, error) {
 			return nil, err
 		}
 
-		tags = append(tags, types.Tag{
+		tags = append(tags, schema.Tag{
 			Name:  string(bName),
 			Value: string(bValue),
 		})
@@ -43,29 +42,6 @@ func TagsDecode(base64Tags []types.Tag) ([]types.Tag, error) {
 }
 
 // using bundle tx, avro serialize
-func SerializeTags1(tags []types.Tag) ([]byte, error) {
-	if len(tags) == 0 {
-		return make([]byte, 0), nil
-	}
-
-	tagsParser, err := avro.Parse(`{"type": "array", "items": {"type": "record", "name": "Tag", "fields": [{"name": "name", "type": "string"}, {"name": "value", "type": "string"}]}}`)
-	if err != nil {
-		return nil, err
-	}
-
-	return avro.Marshal(tagsParser, tags)
-}
-
-func DeserializeTags1(data []byte) ([]types.Tag, error) {
-	tagsParser, err := avro.Parse(`{"type": "array", "items": {"type": "record", "name": "Tag", "fields": [{"name": "name", "type": "string"}, {"name": "value", "type": "string"}]}}`)
-	if err != nil {
-		return nil, err
-	}
-	tags := make([]types.Tag, 0)
-	err = avro.Unmarshal(tagsParser, data, &tags)
-	return tags, err
-}
-
 const avroTagSchema = `{
 	"type": "array",
 	"items": {
@@ -78,7 +54,7 @@ const avroTagSchema = `{
 	}
 }`
 
-func SerializeTags(tags []types.Tag) ([]byte, error) {
+func SerializeTags(tags []schema.Tag) ([]byte, error) {
 	if len(tags) == 0 {
 		return make([]byte, 0), nil
 	}
@@ -101,7 +77,7 @@ func SerializeTags(tags []types.Tag) ([]byte, error) {
 	return data, err
 }
 
-func DeserializeTags(data []byte) ([]types.Tag, error) {
+func DeserializeTags(data []byte) ([]schema.Tag, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -112,11 +88,11 @@ func DeserializeTags(data []byte) ([]types.Tag, error) {
 		return nil, err
 	}
 
-	tags := []types.Tag{}
+	tags := []schema.Tag{}
 
 	for _, v := range avroTags.([]interface{}) {
 		tag := v.(map[string]interface{})
-		tags = append(tags, types.Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
+		tags = append(tags, schema.Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
 	}
 	return tags, err
 }

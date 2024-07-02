@@ -16,7 +16,7 @@ package main
 import (
 	"fmt"
 	"math/big"
-	"github.com/everFinance/goar/types"
+	"github.com/everVision/goar/schema"
 	"github.com/everFinance/goar"
 )
 

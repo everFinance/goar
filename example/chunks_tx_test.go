@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/everFinance/goar"
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
+	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 )
 

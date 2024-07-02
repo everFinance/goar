@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
+	"github.com/everVision/goar/schema"
 )
 
 type ItemSigner struct {

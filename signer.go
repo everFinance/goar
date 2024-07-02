@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/gojwk"
+	"github.com/everVision/goar/schema"
 )
 
 type Signer struct {
