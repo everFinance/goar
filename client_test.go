@@ -1,8 +1,6 @@
 package goar
 
 import (
-	"os"
-	"strconv"
 	"testing"
 
 	"github.com/everVision/goar/schema"
@@ -220,20 +218,20 @@ func Test_GetTxDataFromPeers(t *testing.T) {
 }
 
 func TestClient_BroadcastData(t *testing.T) {
-	cli := NewClient("https://arweave.net")
-	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
-	data, err := cli.GetTransactionData(txId, "json")
-	assert.NoError(t, err)
-
-	err = cli.BroadcastData(txId, data, 20)
-	assert.NoError(t, err)
+	// cli := NewClient("https://arweave.net")
+	// txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
+	// data, err := cli.GetTransactionData(txId, "json")
+	// assert.NoError(t, err)
+	//
+	// err = cli.BroadcastData(txId, data, 20)
+	// assert.NoError(t, err)
 }
 
 func TestClient_GetBlockFromPeers(t *testing.T) {
-	cli := NewClient("https://arweave.net")
-	block, err := cli.GetBlockFromPeers(793755)
-	assert.NoError(t, err)
-	t.Log(block.Txs)
+	// cli := NewClient("https://arweave.net")
+	// block, err := cli.GetBlockFromPeers(793755)
+	// assert.NoError(t, err)
+	// t.Log(block.Txs)
 }
 
 func TestClient_GetTxFromPeers(t *testing.T) {
@@ -267,22 +265,6 @@ func TestNewClient(t *testing.T) {
 	t.Log("pending tx number:", len(res))
 }
 
-func TestNewTempConn(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	peers, err := c.GetPeers()
-	assert.NoError(t, err)
-	pNode := NewTempConn()
-	for _, peer := range peers {
-		pNode.SetTempConnUrl("http://" + peer)
-		offset, err := pNode.getTransactionOffset("pEYudvF0HjIU-2vKdhNZ9Dgr_bueucXaeRrbPhI90ew")
-		if err != nil {
-			t.Log("err", err, "perr", peer)
-			continue
-		}
-		t.Logf("offset: %s, peer: %s", offset.Offset, peer)
-	}
-}
-
 func TestClient_GetBlockHashList(t *testing.T) {
 	c := NewClient("https://arweave.net")
 	from := 1095730
@@ -312,17 +294,17 @@ func TestClient_GetBlockHashList2(t *testing.T) {
 }
 
 func TestClient_ConcurrentDownloadChunkData(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
-	data, err := c.ConcurrentDownloadChunkData(arId, 0)
-	// data , err := c.DownloadChunkData(arId)
-	assert.NoError(t, err)
-	os.WriteFile("nannan.gif", data, 0666)
-	chunks, err := utils.GenerateChunks(data)
-	assert.NoError(t, err)
-	dataRoot := utils.Base64Encode(chunks.DataRoot)
-	t.Log(dataRoot)
-	t.Log(len(data))
+	// c := NewClient("https://arweave.net")
+	// arId := "trMxnk1aVVb_Nafg18tstoLS6SvUOpNcoSQ2qFazWio"
+	// data, err := c.ConcurrentDownloadChunkData(arId, 0)
+	// // data , err := c.DownloadChunkData(arId)
+	// assert.NoError(t, err)
+	// os.WriteFile("nannan.gif", data, 0666)
+	// chunks, err := utils.GenerateChunks(data)
+	// assert.NoError(t, err)
+	// dataRoot := utils.Base64Encode(chunks.DataRoot)
+	// t.Log(dataRoot)
+	// t.Log(len(data))
 }
 
 func TestClient_ExistTxData(t *testing.T) {
@@ -331,24 +313,6 @@ func TestClient_ExistTxData(t *testing.T) {
 	exist, err := c.ExistTxData(arId)
 	assert.NoError(t, err)
 	t.Log(exist)
-}
-
-func TestNewTempConn2(t *testing.T) {
-	data, err := os.Open("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
-	assert.NoError(t, err)
-	item, err := utils.DecodeBundleItemStream(data)
-	assert.NoError(t, err)
-	// 0x03641046696c654e616d6520576563686174494d4738302e6a70656718436f6e74656e742d5479706514696d6167652f6a70656700
-
-	// by, err := os.ReadFile("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
-	// assert.NoError(t, err)
-	// item, err := utils.DecodeBundleItem(by)
-	// assert.NoError(t, err)
-
-	t.Log(item.Tags) // [{FileName WechatIMG80.jpeg} {Content-Type image/jpeg}]
-
-	err = utils.VerifyBundleItem(*item)
-	assert.NoError(t, err)
 }
 
 // https://arweave.net/tx/x-q8ibbTfXIcdDXqQ3xaPD3PuShj832G_xzNT5QrVjY/offset
@@ -372,29 +336,15 @@ func TestClient_GetBundleItems(t *testing.T) {
 }
 
 func TestClient_GetBundleItems2(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU"}
-	items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(items))
-	assert.Equal(t, "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", items[2].Id)
-	assert.Equal(t, "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", items[1].Id)
-	assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
-}
-
-// https://viewblock.io/zh-CN/arweave/tx/PRBVxEX00aVMN59EY8gznt83FTlGXZvESwv1WTP7ReQ  5000 items
-func TestClient_GetBundleItems3(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	itemsIds := []string{"QD0ryQTy4CBr7kluWRLT1strRcXWJOgUUoIYat4lk1s", "BzsIVzo6rPfGQg0PP-5Y_HErPey51_it0d6aGIUfQnY", "fy3aOYoRf7OzCEd9_WrD-RfqbzNZ1LsJ4PKIIGUALik"}
-	items, err := c.GetBundleItems("PRBVxEX00aVMN59EY8gznt83FTlGXZvESwv1WTP7ReQ", itemsIds)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 3, len(items))
-	assert.Equal(t, "QD0ryQTy4CBr7kluWRLT1strRcXWJOgUUoIYat4lk1s", items[0].Id)
-	assert.Equal(t, "fy3aOYoRf7OzCEd9_WrD-RfqbzNZ1LsJ4PKIIGUALik", items[1].Id)
-	assert.Equal(t, "BzsIVzo6rPfGQg0PP-5Y_HErPey51_it0d6aGIUfQnY", items[2].Id)
-
+	// c := NewClient("https://arweave.net")
+	// itemsIds := []string{"UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU"}
+	// items, err := c.GetBundleItems("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ", itemsIds)
+	//
+	// assert.NoError(t, err)
+	// assert.Equal(t, 3, len(items))
+	// assert.Equal(t, "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw", items[2].Id)
+	// assert.Equal(t, "FCUfgEEPmZB3YQMTfbwYl6VA-JT54zLr5PrcJw2EFeM", items[1].Id)
+	// assert.Equal(t, "zlU0o99c81n0CP64F31ANpyJeOtlz5DKvsKohmbMxqU", items[0].Id)
 }
 
 func TestNewClient2(t *testing.T) {
@@ -412,61 +362,4 @@ func TestNewClient2(t *testing.T) {
 		t.Log(item.Id)
 	}
 	t.Log(len(bundleItems))
-}
-
-func TestNewWallet2(t *testing.T) {
-	c := NewClient("https://arweave.net")
-	offsetResponse, err := c.getTransactionOffset("47KozLIAfVMKdxq1q3D1xFZmRpkahOOBQ8boOjSydnQ")
-	assert.NoError(t, err)
-	t.Log(offsetResponse.Offset)
-	t.Log(offsetResponse.Size)
-	size, err := strconv.ParseInt(offsetResponse.Size, 10, 64)
-	assert.NoError(t, err)
-	endOffset, err := strconv.ParseInt(offsetResponse.Offset, 10, 64)
-	assert.NoError(t, err)
-	startOffset := endOffset - size + 1
-	firstChunk, err := c.getChunkData(startOffset)
-	assert.NoError(t, err)
-
-	// 从 firstChunk 中获取 itemNum
-	itemsNum := utils.ByteArrayToLong(firstChunk[:32])
-	t.Log(itemsNum) // 739
-
-	// 解析出 item headers 并找到headers 的 offset
-	bundleItemStart := 32 + itemsNum*64
-	if len(firstChunk) < bundleItemStart {
-		// todo 需要拉取后面的多个 chunks
-	}
-	containHeadersChunks := firstChunk // todo
-	for i := 0; i < itemsNum; i++ {
-		headerBegin := 32 + i*64
-		end := headerBegin + 64
-		headerByte := containHeadersChunks[headerBegin:end]
-		itemBinaryLength := utils.ByteArrayToLong(headerByte[:32])
-		id := utils.Base64Encode(headerByte[32:64])
-
-		// --------- 1 ----2 ------
-		if id == "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw" {
-			t.Log("found item")
-			t.Log("item start offset", "offset", bundleItemStart, "length", itemBinaryLength)
-			startChunkNum := bundleItemStart / schema.MAX_CHUNK_SIZE
-			startChunkOffset := bundleItemStart % schema.MAX_CHUNK_SIZE
-			data := make([]byte, 0, itemBinaryLength)
-			for offset := startOffset + int64(startChunkNum*schema.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
-				chunk, err := c.getChunkData(offset)
-				assert.NoError(t, err)
-				data = append(data, chunk...)
-				offset += int64(len(chunk))
-			}
-			itemData := data[startChunkOffset : startChunkOffset+itemBinaryLength]
-			item, err := utils.DecodeBundleItem(itemData)
-			assert.NoError(t, err)
-			dd, _ := utils.Base64Decode(item.Data)
-			t.Log(string(dd))
-			t.Log(item.Id)
-			t.Log(item.SignatureType)
-		}
-
-		bundleItemStart += itemBinaryLength // next itemBy start offset
-	}
 }

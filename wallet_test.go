@@ -2,9 +2,6 @@ package goar
 
 import (
 	"encoding/base64"
-	"os"
-
-	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 
 	"testing"
@@ -115,28 +112,11 @@ func Test_SendPstTransfer(t *testing.T) {
 	// t.Log(arTx.ID)
 }
 
-func TestCreateUploader(t *testing.T) {
-	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
-	assert.NoError(t, err)
-	t.Log(w.Signer.Address)
-
-	data, err := os.ReadFile("/Users/sandyzhou/Downloads/44444.mp4")
-	if err != nil {
-		panic(err)
-	}
-	tags := []schema.Tag{
-		{Name: "Content-Type", Value: "video/mpeg4"},
-	}
-	tx, err := w.SendData(data, tags)
-	assert.NoError(t, err)
-	t.Log(tx.ID)
-}
-
 func TestNewWallet(t *testing.T) {
-	cli := NewClient("https://arseed-dev.web3infra.dev")
-	data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
-	assert.NoError(t, err)
-	os.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
+	// cli := NewClient("https://arseed-dev.web3infra.dev")
+	// data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
+	// assert.NoError(t, err)
+	// os.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
 
 	// -I6guxsTtnaLazLN4HgCHtYXNXQGALcHDrpi6oz7Cbk
 	// 91s

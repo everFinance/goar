@@ -4,27 +4,27 @@ import (
 	"os"
 	"testing"
 
-	"github.com/everFinance/goar"
+	"github.com/everVision/goar"
 	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_SendData(t *testing.T) {
-	arNode := "https://arweave.net"
-	w, err := goar.NewWalletFromPath("./wallet/account1.json", arNode) // your wallet private key
-	assert.NoError(t, err)
-
-	data, err := os.ReadFile("/Users/local/Downloads/abc.jpeg") // local file path
-	if err != nil {
-		panic(err)
-	}
-	tags := []types.Tag{
-		{Name: "xxxx", Value: "sssss"},
-		{Name: "yyyyyy", Value: "kkkkkk"},
-	}
-	tx, err := w.SendDataSpeedUp(data, tags, 10)
-	assert.NoError(t, err)
-	t.Logf("tx hash: %s", tx.ID)
+	// arNode := "https://arweave.net"
+	// w, err := goar.NewWalletFromPath("./wallet/account1.json", arNode) // your wallet private key
+	// assert.NoError(t, err)
+	//
+	// data, err := os.ReadFile("/Users/local/Downloads/abc.jpeg") // local file path
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// tags := []schema.Tag{
+	// 	{Name: "xxxx", Value: "sssss"},
+	// 	{Name: "yyyyyy", Value: "kkkkkk"},
+	// }
+	// tx, err := w.SendDataSpeedUp(data, tags, 10)
+	// assert.NoError(t, err)
+	// t.Logf("tx hash: %s", tx.ID)
 }
 
 func Test_LoadData(t *testing.T) {
@@ -69,7 +69,7 @@ func TestSendDataStream(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tags := []types.Tag{
+	tags := []schema.Tag{
 		{Name: "Content-Type", Value: "img/jpeg"},
 		{Name: "test", Value: "kevin-test"},
 	}

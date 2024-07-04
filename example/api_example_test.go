@@ -3,9 +3,6 @@ package example
 import (
 	"testing"
 
-	"github.com/everVision/goar/schema"
-	"github.com/everVision/goar/utils"
-
 	"github.com/everVision/goar"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,27 +14,24 @@ func Test_Client(t *testing.T) {
 	txId := "hKMMPNh_emBf8v_at1tFzNYACisyMQNcKzeeE1QE9p8"
 
 	// 1. getInfo
-	nodeInfo, err := c.GetInfo()
+	_, err := c.GetInfo()
 	assert.NoError(t, err)
-	t.Logf("%v", nodeInfo)
 
 	// 2. full transaction via Id
-	tx, err := c.GetTransactionByID(txId)
+	_, err = c.GetTransactionByID(txId)
 	assert.NoError(t, err)
-	t.Log(tx)
 
 	// 3. get transaction field by id
-	f, err := c.GetTransactionField(txId, "signature")
+	_, err = c.GetTransactionField(txId, "signature")
 	assert.NoError(t, err)
-	t.Log(f)
 
 	// 4. get transaction data
 	data, err := c.GetTransactionData(txId)
 	assert.NoError(t, err)
-	t.Log(string(data))
+	t.Log(len(data))
 	data, err = c.GetTransactionData(txId, "html")
 	assert.NoError(t, err)
-	t.Log(string(data))
+	t.Log(len(data))
 
 	// 5. get tx send current time reward
 	reward, err := c.GetTransactionPrice(len(data), nil)
@@ -141,33 +135,4 @@ func Test_SendFormatTx(t *testing.T) {
 	// t.Log(status, code)
 	// t.Log("from: ",wallet.Address)
 	// t.Log("txHash: ", tx.ID)
-}
-
-func Test_SendMsg(t *testing.T) {
-	signer02, err := goar.NewSignerFromPath("./testKey.json")
-	assert.NoError(t, err)
-	t.Log(signer02.Address)
-	itemSigner02, err := goar.NewItemSigner(signer02)
-	assert.NoError(t, err)
-
-	defaultTags := []schema.Tag{
-		{Name: "Data-Protocol", Value: "ao"},
-		{Name: "Variant", Value: "ao.TN.1"},
-		{Name: "Type", Value: "Message"},
-		{Name: "SDK", Value: "argo"},
-	}
-	tags := append(defaultTags, []schema.Tag{
-		{Name: "Action", Value: "Transfer"},
-		{Name: "Recipient", Value: "AVm7zHYGzw9PmUXv4CFHgiK3QtbRTpBMS2VOxJAK-F4"},
-		{Name: "Quantity", Value: "22"},
-	}...)
-	target := "7En3PZJ0BBROTuSazQ9yZmeL1ThwsVqk616gY3DMFZU"
-	data := []byte("1234")
-	item02, err := itemSigner02.CreateAndSignItem(data, target, "", tags)
-	assert.NoError(t, err)
-	muUrl := "https://mu.ao-testnet.xyz"
-	t.Log("item", "id", item02.Id)
-	resp, err := utils.SubmitItemToMU(item02, muUrl)
-	assert.NoError(t, err)
-	t.Log(string(resp))
 }
