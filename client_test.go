@@ -1,12 +1,13 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/utils"
-	"github.com/everVision/goar/schema"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // func TestGetTransactionByID(t *testing.T) {
@@ -37,7 +38,7 @@ import (
 // func TestSubmitTransaction(t *testing.T) {
 // 	client := NewClient("https://arweave.net")
 // 	fmt.Println(
-// 		client.SubmitTransaction(&types.Transaction{
+// 		client.SubmitTransaction(&schema.Transaction{
 // 			ID: "n1iKT3trKn6Uvd1d8XyOqKBy8r-8SSBtGA62m3puK5k",
 // 		}),
 // 	)
@@ -147,10 +148,10 @@ func TestGetTransaction(t *testing.T) {
 	// not exist tx
 	txId = "KPlEyCrcs2rDHBFn2f0UUn2NZQKfawGb_EnBfip8ayA"
 	txStatus, err = cli.GetTransactionStatus(txId)
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, schema.ErrNotFound, err)
 	assert.Nil(t, txStatus)
 	tx, err = cli.GetTransactionByID(txId)
-	assert.Equal(t, ErrNotFound, err)
+	assert.Equal(t, schema.ErrNotFound, err)
 	assert.Nil(t, tx)
 
 	// // pending tx
@@ -448,10 +449,10 @@ func TestNewWallet2(t *testing.T) {
 		if id == "UCTEOaljmuutGJId-ktPY_q_Gbal8tyJuLfyR6BeaGw" {
 			t.Log("found item")
 			t.Log("item start offset", "offset", bundleItemStart, "length", itemBinaryLength)
-			startChunkNum := bundleItemStart / types.MAX_CHUNK_SIZE
-			startChunkOffset := bundleItemStart % types.MAX_CHUNK_SIZE
+			startChunkNum := bundleItemStart / schema.MAX_CHUNK_SIZE
+			startChunkOffset := bundleItemStart % schema.MAX_CHUNK_SIZE
 			data := make([]byte, 0, itemBinaryLength)
-			for offset := startOffset + int64(startChunkNum*types.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
+			for offset := startOffset + int64(startChunkNum*schema.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
 				chunk, err := c.getChunkData(offset)
 				assert.NoError(t, err)
 				data = append(data, chunk...)

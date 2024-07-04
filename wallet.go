@@ -9,8 +9,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/everFinance/goar/utils"
 	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
 )
 
 type Wallet struct {
@@ -46,25 +46,25 @@ func (w *Wallet) Owner() string {
 	return w.Signer.Owner()
 }
 
-func (w *Wallet) SendAR(amount *big.Float, target string, tags []types.Tag) (types.Transaction, error) {
+func (w *Wallet) SendAR(amount *big.Float, target string, tags []schema.Tag) (schema.Transaction, error) {
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, 0)
 }
 
-func (w *Wallet) SendARSpeedUp(amount *big.Float, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendARSpeedUp(amount *big.Float, target string, tags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	return w.SendWinstonSpeedUp(utils.ARToWinston(amount), target, tags, speedFactor)
 }
 
-func (w *Wallet) SendWinston(amount *big.Int, target string, tags []types.Tag) (types.Transaction, error) {
+func (w *Wallet) SendWinston(amount *big.Int, target string, tags []schema.Tag) (schema.Transaction, error) {
 	return w.SendWinstonSpeedUp(amount, target, tags, 0)
 }
 
-func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	reward, err := w.Client.GetTransactionPrice(0, &target)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
+	tx := &schema.Transaction{
 		Format:   2,
 		Target:   target,
 		Quantity: amount.String(),
@@ -77,23 +77,23 @@ func (w *Wallet) SendWinstonSpeedUp(amount *big.Int, target string, tags []types
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (types.Transaction, error) {
+func (w *Wallet) SendData(data []byte, tags []schema.Tag) (schema.Transaction, error) {
 	return w.SendDataSpeedUp(data, tags, 0)
 }
 
-func (w *Wallet) SendDataStream(data *os.File, tags []types.Tag) (types.Transaction, error) {
+func (w *Wallet) SendDataStream(data *os.File, tags []schema.Tag) (schema.Transaction, error) {
 	return w.SendDataStreamSpeedUp(data, tags, 0)
 }
 
 // SendDataSpeedUp set speedFactor for speed up
 // eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendDataSpeedUp(data []byte, tags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	reward, err := w.Client.GetTransactionPrice(len(data), nil)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
+	tx := &schema.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
@@ -106,17 +106,17 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int6
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendDataStreamSpeedUp(data *os.File, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendDataStreamSpeedUp(data *os.File, tags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	fileInfo, err := data.Stat()
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 	reward, err := w.Client.GetTransactionPrice(int(fileInfo.Size()), nil)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
+	tx := &schema.Transaction{
 		Format:     2,
 		Target:     "",
 		Quantity:   "0",
@@ -130,7 +130,7 @@ func (w *Wallet) SendDataStreamSpeedUp(data *os.File, tags []types.Tag, speedFac
 	return w.SendTransaction(tx)
 }
 
-func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data interface{}, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum int, data interface{}, tags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	var reward int64
 	var dataLen int
 	isByteArr := true
@@ -139,16 +139,16 @@ func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum in
 	} else {
 		fileInfo, err := data.(*os.File).Stat()
 		if err != nil {
-			return types.Transaction{}, err
+			return schema.Transaction{}, err
 		}
 		dataLen = int(fileInfo.Size())
 	}
 	reward, err := w.Client.GetTransactionPrice(dataLen, nil)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 
-	tx := &types.Transaction{
+	tx := &schema.Transaction{
 		Format:   2,
 		Target:   "",
 		Quantity: "0",
@@ -167,25 +167,25 @@ func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum in
 }
 
 // SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(tx *types.Transaction) (types.Transaction, error) {
+func (w *Wallet) SendTransaction(tx *schema.Transaction) (schema.Transaction, error) {
 	uploader, err := w.getUploader(tx)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 	err = uploader.Once()
 	return *tx, err
 }
 
-func (w *Wallet) SendTransactionConcurrent(ctx context.Context, concurrentNum int, tx *types.Transaction) (types.Transaction, error) {
+func (w *Wallet) SendTransactionConcurrent(ctx context.Context, concurrentNum int, tx *schema.Transaction) (schema.Transaction, error) {
 	uploader, err := w.getUploader(tx)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 	err = uploader.ConcurrentOnce(ctx, concurrentNum)
 	return *tx, err
 }
 
-func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error) {
+func (w *Wallet) getUploader(tx *schema.Transaction) (*TransactionUploader, error) {
 	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return nil, err
@@ -198,16 +198,16 @@ func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error
 	return CreateUploader(w.Client, tx, nil)
 }
 
-func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {
+func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []schema.Tag, speedFactor int64) (schema.Transaction, error) {
 	maxQty := big.NewInt(9007199254740991) // swc support max js integer
 	if qty.Cmp(maxQty) > 0 {
-		return types.Transaction{}, fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
+		return schema.Transaction{}, fmt.Errorf("qty:%s can not more than max integer:%s", qty.String(), maxQty.String())
 	}
 
 	// assemble tx tags
 	swcTags, err := utils.PstTransferTags(contractId, target, qty.Int64(), false)
 	if err != nil {
-		return types.Transaction{}, err
+		return schema.Transaction{}, err
 	}
 
 	if len(customTags) > 0 {
@@ -220,7 +220,7 @@ func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customT
 		}
 		for _, tag := range customTags {
 			if _, ok := mmap[tag.Name]; ok {
-				return types.Transaction{}, errors.New("custom tags can not include smartweave tags")
+				return schema.Transaction{}, errors.New("custom tags can not include smartweave tags")
 			}
 		}
 		swcTags = append(swcTags, customTags...)

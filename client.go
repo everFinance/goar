@@ -22,8 +22,8 @@ import (
 	"github.com/tidwall/gjson"
 	"gopkg.in/h2non/gentleman.v2"
 
-	"github.com/everFinance/goar/utils"
 	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
 )
 
 var log = log15.New("module", "goar")
@@ -66,19 +66,19 @@ func (c *Client) SetTimeout(timeout time.Duration) {
 	c.client.Timeout = timeout
 }
 
-func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
+func (c *Client) GetInfo() (info *schema.NetworkInfo, err error) {
 	body, code, err := c.httpGet("info")
 	if code == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if err != nil {
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 	if code != 200 {
 		return nil, fmt.Errorf("get info error: %s", string(body))
 	}
 
-	info = &types.NetworkInfo{}
+	info = &schema.NetworkInfo{}
 	err = json.Unmarshal(body, info)
 	return
 }
@@ -86,10 +86,10 @@ func (c *Client) GetInfo() (info *types.NetworkInfo, err error) {
 func (c *Client) GetPeers() ([]string, error) {
 	body, code, err := c.httpGet("peers")
 	if code == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if err != nil {
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 	if code != 200 {
 		return nil, fmt.Errorf("get peers error: %s", string(body))
@@ -114,84 +114,84 @@ func (c *Client) GetPeers() ([]string, error) {
 }
 
 // GetTransactionByID status: Pending/Invalid hash/overspend
-func (c *Client) GetTransactionByID(id string) (tx *types.Transaction, err error) {
+func (c *Client) GetTransactionByID(id string) (tx *schema.Transaction, err error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%s", id))
 	if err != nil {
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 
 	switch statusCode {
 	case 200:
 		// json unmarshal
-		tx = &types.Transaction{}
+		tx = &schema.Transaction{}
 		err = json.Unmarshal(body, tx)
 		return
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 400:
-		return nil, ErrInvalidId
+		return nil, schema.ErrInvalidId
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
 // GetTransactionStatus
-func (c *Client) GetTransactionStatus(id string) (*types.TxStatus, error) {
+func (c *Client) GetTransactionStatus(id string) (*schema.TxStatus, error) {
 	body, code, err := c.httpGet(fmt.Sprintf("tx/%s/status", id))
 	if err != nil {
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 
 	switch code {
 	case 200:
 		// json unmarshal
-		txStatus := &types.TxStatus{}
+		txStatus := &schema.TxStatus{}
 		err = json.Unmarshal(body, txStatus)
 		return txStatus, err
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
 func (c *Client) GetTransactionField(id string, field string) (string, error) {
 	body, statusCode, err := c.httpGet(fmt.Sprintf("tx/%v/%v", id, field))
 	if err != nil {
-		return "", ErrBadGateway
+		return "", schema.ErrBadGateway
 	}
 
 	switch statusCode {
 	case 200:
 		return string(body), nil
 	case 202:
-		return "", ErrPendingTx
+		return "", schema.ErrPendingTx
 	case 400:
-		return "", ErrInvalidId
+		return "", schema.ErrInvalidId
 	case 404:
-		return "", ErrNotFound
+		return "", schema.ErrNotFound
 	case 429:
-		return "", ErrRequestLimit
+		return "", schema.ErrRequestLimit
 	default:
-		return "", ErrBadGateway
+		return "", schema.ErrBadGateway
 	}
 }
 
-func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
+func (c *Client) GetTransactionTags(id string) ([]schema.Tag, error) {
 	jsTags, err := c.GetTransactionField(id, "tags")
 	if err != nil {
 		return nil, err
 	}
 
-	tags := make([]types.Tag, 0)
+	tags := make([]schema.Tag, 0)
 	if err := json.Unmarshal([]byte(jsTags), &tags); err != nil {
 		return nil, err
 	}
@@ -222,13 +222,13 @@ func (c *Client) GetTransactionData(id string, extension ...string) ([]byte, err
 	case 400:
 		return c.DownloadChunkData(id)
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
@@ -257,13 +257,13 @@ func (c *Client) GetTransactionDataStream(id string, extension ...string) (*os.F
 	case 400:
 		return c.DownloadChunkDataStream(id)
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
@@ -283,15 +283,15 @@ func (c *Client) GetTransactionDataByGateway(id string) (body []byte, err error)
 	case 400:
 		return c.DownloadChunkData(id)
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 410:
-		return nil, ErrInvalidId
+		return nil, schema.ErrInvalidId
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
@@ -315,15 +315,15 @@ func (c *Client) GetTransactionDataStreamByGateway(id string) (*os.File, error) 
 	case 400:
 		return c.DownloadChunkDataStream(id)
 	case 202:
-		return nil, ErrPendingTx
+		return nil, schema.ErrPendingTx
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 410:
-		return nil, ErrInvalidId
+		return nil, schema.ErrInvalidId
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
@@ -335,7 +335,7 @@ func (c *Client) GetTransactionPrice(dataSize int, target *string) (reward int64
 
 	body, code, err := c.httpGet(url)
 	if code == 429 {
-		return 0, ErrRequestLimit
+		return 0, schema.ErrRequestLimit
 	}
 	if err != nil {
 		return
@@ -359,7 +359,7 @@ func (c *Client) GetTransactionPrice(dataSize int, target *string) (reward int64
 func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	body, code, err := c.httpGet("tx_anchor")
 	if code == 429 {
-		return "", ErrRequestLimit
+		return "", schema.ErrRequestLimit
 	}
 	if err != nil {
 		return
@@ -372,7 +372,7 @@ func (c *Client) GetTransactionAnchor() (anchor string, err error) {
 	return
 }
 
-func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, code int, err error) {
+func (c *Client) SubmitTransaction(tx *schema.Transaction) (status string, code int, err error) {
 	by, err := json.Marshal(tx)
 	if err != nil {
 		return
@@ -384,7 +384,7 @@ func (c *Client) SubmitTransaction(tx *types.Transaction) (status string, code i
 	return
 }
 
-func (c *Client) SubmitChunks(gc *types.GetChunk) (status string, code int, err error) {
+func (c *Client) SubmitChunks(gc *schema.GetChunk) (status string, code int, err error) {
 	byteGc, err := gc.Marshal()
 	if err != nil {
 		return
@@ -416,7 +416,7 @@ func (c *Client) GraphQL(query string) ([]byte, error) {
 	// query from http client
 	data, statusCode, err := c.httpPost("graphql", byQuery)
 	if statusCode == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if err != nil {
 		return nil, err
@@ -451,7 +451,7 @@ func (c *Client) GetWalletBalance(address string) (arAmount *big.Float, err erro
 func (c *Client) GetWalletWinstonBalance(address string) (arAmount *big.Int, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/balance", address))
 	if code == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if err != nil {
 		return
@@ -473,7 +473,7 @@ func (c *Client) GetWalletWinstonBalance(address string) (arAmount *big.Int, err
 func (c *Client) GetLastTransactionID(address string) (id string, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("wallet/%s/last_tx", address))
 	if code == 429 {
-		return "", ErrRequestLimit
+		return "", schema.ErrRequestLimit
 	}
 	if err != nil {
 		return
@@ -487,13 +487,13 @@ func (c *Client) GetLastTransactionID(address string) (id string, err error) {
 }
 
 // Block
-func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
+func (c *Client) GetBlockByID(id string) (block *schema.Block, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("block/hash/%s", id))
 	if err != nil {
 		return
 	}
 	if code == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 
 	if code != 200 {
@@ -503,13 +503,13 @@ func (c *Client) GetBlockByID(id string) (block *types.Block, err error) {
 	return
 }
 
-func (c *Client) GetBlockByHeight(height int64) (block *types.Block, err error) {
+func (c *Client) GetBlockByHeight(height int64) (block *schema.Block, err error) {
 	body, code, err := c.httpGet(fmt.Sprintf("block/height/%d", height))
 	if err != nil {
 		return
 	}
 	if code == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 
 	if code != 200 {
@@ -559,7 +559,7 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 
 // about chunk
 
-func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
+func (c *Client) getChunk(offset int64) (*schema.TransactionChunk, error) {
 	_path := "chunk/" + strconv.FormatInt(offset, 10)
 	body, statusCode, err := c.httpGet(_path)
 	if err != nil {
@@ -568,17 +568,17 @@ func (c *Client) getChunk(offset int64) (*types.TransactionChunk, error) {
 
 	switch statusCode {
 	case 200:
-		txChunk := &types.TransactionChunk{}
+		txChunk := &schema.TransactionChunk{}
 		if err := json.Unmarshal(body, txChunk); err != nil {
 			return nil, err
 		}
 		return txChunk, nil
 	case 404:
-		return nil, ErrNotFound
+		return nil, schema.ErrNotFound
 	case 429:
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	default:
-		return nil, ErrBadGateway
+		return nil, schema.ErrBadGateway
 	}
 }
 
@@ -590,11 +590,11 @@ func (c *Client) getChunkData(offset int64) ([]byte, error) {
 	return utils.Base64Decode(chunk.Chunk)
 }
 
-func (c *Client) getTransactionOffset(id string) (*types.TransactionOffset, error) {
+func (c *Client) getTransactionOffset(id string) (*schema.TransactionOffset, error) {
 	_path := fmt.Sprintf("tx/%s/offset", id)
 	body, statusCode, err := c.httpGet(_path)
 	if statusCode == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if statusCode != 200 {
 		return nil, errors.New("not found tx offset")
@@ -602,7 +602,7 @@ func (c *Client) getTransactionOffset(id string) (*types.TransactionOffset, erro
 	if err != nil {
 		return nil, err
 	}
-	txOffset := &types.TransactionOffset{}
+	txOffset := &schema.TransactionOffset{}
 	if err := json.Unmarshal(body, txOffset); err != nil {
 		return nil, err
 	}
@@ -692,7 +692,7 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 	offsetArr := make([]int64, 0, 5)
 	for i := 0; int64(i)+startOffset < endOffset; {
 		offsetArr = append(offsetArr, int64(i)+startOffset)
-		i += types.MAX_CHUNK_SIZE
+		i += schema.MAX_CHUNK_SIZE
 	}
 
 	if len(offsetArr) <= 3 { // not need concurrent get chunks
@@ -712,7 +712,7 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 		wg   sync.WaitGroup
 	)
 	if concurrentNum <= 0 {
-		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+		concurrentNum = schema.DEFAULT_CHUNK_CONCURRENT_NUM
 	}
 	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
 		defer wg.Done()
@@ -727,7 +727,7 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 					break
 				}
 				log.Error("retry getChunkData failed and try again...", "err", err, "idx", oss.Idx, "offset", oss.Offset, "retryCount", count, "arId", id)
-				if err != ErrRequestLimit {
+				if err != schema.ErrRequestLimit {
 					count++
 				}
 			}
@@ -749,7 +749,7 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 	wg.Wait()
 
 	// add latest 2 chunks
-	start := offsetArr[len(offsetArr)-3] + types.MAX_CHUNK_SIZE
+	start := offsetArr[len(offsetArr)-3] + schema.MAX_CHUNK_SIZE
 	for i := 0; int64(i)+start < endOffset; {
 		chunkData, err := c.getChunkData(int64(i) + start)
 		if err != nil {
@@ -761,7 +761,7 @@ func (c *Client) ConcurrentDownloadChunkData(id string, concurrentNum int) ([]by
 					break
 				}
 				log.Error("latest two chunks retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
-				if err != ErrRequestLimit {
+				if err != schema.ErrRequestLimit {
 					count++
 				}
 			}
@@ -804,7 +804,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 	offsetArr := make([]int64, 0, 5)
 	for i := 0; int64(i)+startOffset < endOffset; {
 		offsetArr = append(offsetArr, int64(i))
-		i += types.MAX_CHUNK_SIZE
+		i += schema.MAX_CHUNK_SIZE
 	}
 
 	log.Debug("need download chunks length", "length", len(offsetArr))
@@ -839,7 +839,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		wg   sync.WaitGroup
 	)
 	if concurrentNum <= 0 {
-		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+		concurrentNum = schema.DEFAULT_CHUNK_CONCURRENT_NUM
 	}
 	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
 		defer wg.Done()
@@ -853,14 +853,14 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 				if err == nil {
 					break
 				}
-				log.Warn("retry getChunkData failed and try again...", "err", err, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset, "retryCount", count, "arId", id)
-				if err != ErrRequestLimit {
+				log.Warn("retry getChunkData failed and try again...", "err", err, "idx", oss.fileOffset/schema.MAX_CHUNK_SIZE, "offset", oss.chunkOffset, "retryCount", count, "arId", id)
+				if err != schema.ErrRequestLimit {
 					count++
 				}
 			}
 		}
 		if err != nil {
-			log.Error("getChunkData failed", "err", err, "arId", id, "idx", oss.fileOffset/types.MAX_CHUNK_SIZE, "offset", oss.chunkOffset)
+			log.Error("getChunkData failed", "err", err, "arId", id, "idx", oss.fileOffset/schema.MAX_CHUNK_SIZE, "offset", oss.chunkOffset)
 			return
 		}
 		var n int
@@ -887,7 +887,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 		return
 	}
 	// add latest 2 chunks
-	start := offsetArr[len(offsetArr)-3] + startOffset + types.MAX_CHUNK_SIZE
+	start := offsetArr[len(offsetArr)-3] + startOffset + schema.MAX_CHUNK_SIZE
 	for i := 0; int64(i)+start < endOffset; {
 		var chunkData []byte
 		chunkData, err = c.getChunkData(int64(i) + start)
@@ -900,7 +900,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 					break
 				}
 				log.Error("latest two chunks retry getChunkData failed and try again...", "err", err, "offset", int64(i)+start, "retryCount", count, "arId", id)
-				if err != ErrRequestLimit {
+				if err != schema.ErrRequestLimit {
 					count++
 				}
 			}
@@ -921,7 +921,7 @@ func (c *Client) ConcurrentDownloadChunkDataStream(id string, concurrentNum int)
 	return dataFile, nil
 }
 
-func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {
+func (c *Client) GetUnconfirmedTx(arId string) (*schema.Transaction, error) {
 	_path := fmt.Sprintf("unconfirmed_tx/%s", arId)
 	body, statusCode, err := c.httpGet(_path)
 	if statusCode != 200 {
@@ -930,7 +930,7 @@ func (c *Client) GetUnconfirmedTx(arId string) (*types.Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx := &types.Transaction{}
+	tx := &schema.Transaction{}
 	if err := json.Unmarshal(body, tx); err != nil {
 		return nil, err
 	}
@@ -1024,7 +1024,7 @@ func (c *Client) DataSyncRecord(endOffset string, intervalsNum int) ([]string, e
 		return nil, err
 	}
 	if resp.StatusCode == 429 {
-		return nil, ErrRequestLimit
+		return nil, schema.ErrRequestLimit
 	}
 	if !resp.Ok {
 		return nil, errors.New("resp ok is false")
@@ -1038,7 +1038,7 @@ func (c *Client) DataSyncRecord(endOffset string, intervalsNum int) ([]string, e
 	return result, nil
 }
 
-func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
+func (c *Client) SubmitToWarp(tx *schema.Transaction) ([]byte, error) {
 	by, err := json.Marshal(tx)
 	if err != nil {
 		return nil, err
@@ -1074,7 +1074,7 @@ func (c *Client) SubmitToWarp(tx *types.Transaction) ([]byte, error) {
 +------------------+-----------------------------+--------------------------------------------+
 */
 
-func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*types.BundleItem, err error) {
+func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*schema.BundleItem, err error) {
 	offset, err := c.getTransactionOffset(bundleInId)
 	if err != nil {
 		return nil, err
@@ -1099,10 +1099,10 @@ func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*
 	var containHeadersChunks []byte
 	if len(firstChunk) < bundleItemStart {
 		// To calculate headers, you need to pull several chunks and fetch an integer upwards
-		chunkNum := int(math.Ceil(float64(bundleItemStart) / float64(types.MAX_CHUNK_SIZE)))
+		chunkNum := int(math.Ceil(float64(bundleItemStart) / float64(schema.MAX_CHUNK_SIZE)))
 
 		for i := 0; i < chunkNum; i++ {
-			chunk, err := c.getChunkData(startOffset + int64(i*types.MAX_CHUNK_SIZE))
+			chunk, err := c.getChunkData(startOffset + int64(i*schema.MAX_CHUNK_SIZE))
 			if err != nil {
 				return nil, err
 			}
@@ -1122,11 +1122,11 @@ func (c *Client) GetBundleItems(bundleInId string, itemsIds []string) (items []*
 
 		// if item is in itemsIds
 		if utils.ContainsInSlice(itemsIds, id) {
-			startChunkNum := bundleItemStart / types.MAX_CHUNK_SIZE
-			startChunkOffset := bundleItemStart % types.MAX_CHUNK_SIZE
+			startChunkNum := bundleItemStart / schema.MAX_CHUNK_SIZE
+			startChunkOffset := bundleItemStart % schema.MAX_CHUNK_SIZE
 			data := make([]byte, 0, itemBinaryLength)
 
-			for offset := startOffset + int64(startChunkNum*types.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
+			for offset := startOffset + int64(startChunkNum*schema.MAX_CHUNK_SIZE); offset <= startOffset+int64(bundleItemStart+itemBinaryLength); {
 				if offset >= endOffset {
 					break
 				}

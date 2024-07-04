@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"os"
 
-	"github.com/everFinance/goar/utils"
 	"github.com/everVision/goar/schema"
 	"github.com/stretchr/testify/assert"
 
@@ -57,7 +56,7 @@ func TestWallet_SendAR(t *testing.T) {
 	//
 	// target := "cSYOy8-p1QFenktkDBFyRM3cwZSTrQ_J4EsELLho_UE"
 	// amount := big.NewFloat(0.001)
-	// tags := []types.Tag{
+	// tags := []schema.Tag{
 	// 	{Name: "GOAR", Value: "sendAR"},
 	// }
 	// tx,  err := w.SendAR(amount, target, tags)
@@ -76,7 +75,7 @@ func TestWallet_SendDataSpeedUp01(t *testing.T) {
 	// for i := 0; i < len(data); i++ {
 	// 	data[i] = byte('b' + i)
 	// }
-	// tags := []types.Tag{
+	// tags := []schema.Tag{
 	// 	{Name: "GOAR", Value: "SMDT"},
 	// }
 	// tx, err := w.SendDataSpeedUp(data, tags, 50)
@@ -95,7 +94,7 @@ func TestWallet_SendDataSpeedUp02(t *testing.T) {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	// tags := []types.Tag{
+	// tags := []schema.Tag{
 	// 	{Name: "Sender", Value: "Jie"},
 	// 	{Name: "Data-Introduce", Value: "Happy anniversary, my google and dearest! I‘m so grateful to have you in my life. I love you to infinity and beyond! (⁎⁍̴̛ᴗ⁍̴̛⁎)"},
 	// }
@@ -116,18 +115,6 @@ func Test_SendPstTransfer(t *testing.T) {
 	// t.Log(arTx.ID)
 }
 
-func TestWallet_WarpTransfer(t *testing.T) {
-	warpGateWay := "https://gateway.warp.cc"
-	w, err := NewWalletFromPath("./wallet/account1.json", warpGateWay)
-	assert.NoError(t, err)
-	contractId := "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A" // vrt
-	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
-	qty := int64(2)
-	id, err := w.WarpTransfer(contractId, target, qty)
-	assert.NoError(t, err)
-	t.Log(id)
-}
-
 func TestCreateUploader(t *testing.T) {
 	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
 	assert.NoError(t, err)
@@ -137,7 +124,7 @@ func TestCreateUploader(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tags := []types.Tag{
+	tags := []schema.Tag{
 		{Name: "Content-Type", Value: "video/mpeg4"},
 	}
 	tx, err := w.SendData(data, tags)
@@ -164,151 +151,151 @@ func TestNewWallet(t *testing.T) {
 	// 24s
 }
 
-func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
-	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
-	assert.NoError(t, err)
-	t.Log(w.Signer.Address)
-	signer01 := w.Signer
-	// sig item01 by ecc signer
-	itemSigner01, err := NewItemSigner(signer01)
-	assert.NoError(t, err)
-	d1, err := os.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item01, err := itemSigner01.CreateAndSignItem(d1, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item01", "id", item01.Id)
+// func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
+// 	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
+// 	assert.NoError(t, err)
+// 	t.Log(w.Signer.Address)
+// 	signer01 := w.Signer
+// 	// sig item01 by ecc signer
+// 	itemSigner01, err := NewItemSigner(signer01)
+// 	assert.NoError(t, err)
+// 	d1, err := os.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item01, err := itemSigner01.CreateAndSignItem(d1, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item01", "id", item01.Id)
 
-	d2, err := os.ReadFile("/Users/sandyzhou/Downloads/2.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item02, err := itemSigner01.CreateAndSignItem(d2, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item02", "id", item02.Id)
+// 	d2, err := os.ReadFile("/Users/sandyzhou/Downloads/2.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item02, err := itemSigner01.CreateAndSignItem(d2, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item02", "id", item02.Id)
 
-	d3, err := os.ReadFile("/Users/sandyzhou/Downloads/3.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item03, err := itemSigner01.CreateAndSignItem(d3, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item03", "id", item03.Id)
+// 	d3, err := os.ReadFile("/Users/sandyzhou/Downloads/3.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item03, err := itemSigner01.CreateAndSignItem(d3, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item03", "id", item03.Id)
 
-	d4, err := os.ReadFile("/Users/sandyzhou/Downloads/4.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item04, err := itemSigner01.CreateAndSignItem(d4, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
+// 	d4, err := os.ReadFile("/Users/sandyzhou/Downloads/4.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item04, err := itemSigner01.CreateAndSignItem(d4, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
 
-	d5, err := os.ReadFile("/Users/sandyzhou/Downloads/5.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item05, err := itemSigner01.CreateAndSignItem(d5, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item05", "id", item05.Id)
+// 	d5, err := os.ReadFile("/Users/sandyzhou/Downloads/5.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item05, err := itemSigner01.CreateAndSignItem(d5, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item05", "id", item05.Id)
 
-	d6, err := os.ReadFile("/Users/sandyzhou/Downloads/6.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item06, err := itemSigner01.CreateAndSignItem(d6, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item06", "id", item06.Id)
+// 	d6, err := os.ReadFile("/Users/sandyzhou/Downloads/6.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item06, err := itemSigner01.CreateAndSignItem(d6, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item06", "id", item06.Id)
 
-	d7, err := os.ReadFile("/Users/sandyzhou/Downloads/7.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item07, err := itemSigner01.CreateAndSignItem(d7, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item07", "id", item07.Id)
+// 	d7, err := os.ReadFile("/Users/sandyzhou/Downloads/7.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item07, err := itemSigner01.CreateAndSignItem(d7, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item07", "id", item07.Id)
 
-	d8, err := os.ReadFile("/Users/sandyzhou/Downloads/8.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item08, err := itemSigner01.CreateAndSignItem(d8, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item08", "id", item08.Id)
+// 	d8, err := os.ReadFile("/Users/sandyzhou/Downloads/8.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item08, err := itemSigner01.CreateAndSignItem(d8, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item08", "id", item08.Id)
 
-	d9, err := os.ReadFile("/Users/sandyzhou/Downloads/9.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item09, err := itemSigner01.CreateAndSignItem(d9, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item09", "id", item09.Id)
+// 	d9, err := os.ReadFile("/Users/sandyzhou/Downloads/9.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item09, err := itemSigner01.CreateAndSignItem(d9, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item09", "id", item09.Id)
 
-	d10, err := os.ReadFile("/Users/sandyzhou/Downloads/10.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item10, err := itemSigner01.CreateAndSignItem(d10, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item10", "id", item10.Id)
+// 	d10, err := os.ReadFile("/Users/sandyzhou/Downloads/10.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item10, err := itemSigner01.CreateAndSignItem(d10, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item10", "id", item10.Id)
 
-	d11, err := os.ReadFile("/Users/sandyzhou/Downloads/11.jpeg")
-	if err != nil {
-		panic(err)
-	}
-	item11, err := itemSigner01.CreateAndSignItem(d11, "", "", []types.Tag{
-		{Name: "Content-Type", Value: "image/jpeg"},
-		{Name: "Owner", Value: "Vv"},
-	})
-	assert.NoError(t, err)
-	t.Log("item11", "id", item11.Id)
+// 	d11, err := os.ReadFile("/Users/sandyzhou/Downloads/11.jpeg")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	item11, err := itemSigner01.CreateAndSignItem(d11, "", "", []schema.Tag{
+// 		{Name: "Content-Type", Value: "image/jpeg"},
+// 		{Name: "Owner", Value: "Vv"},
+// 	})
+// 	assert.NoError(t, err)
+// 	t.Log("item11", "id", item11.Id)
 
-	// assemble bundle
-	bundle, err := utils.NewBundle(item01, item02, item03, item04, item05, item06, item07, item08, item09, item10, item11)
-	assert.NoError(t, err)
+// 	// assemble bundle
+// 	bundle, err := utils.NewBundle(item01, item02, item03, item04, item05, item06, item07, item08, item09, item10, item11)
+// 	assert.NoError(t, err)
 
-	t.Log(len(bundle.BundleBinary))
-	// send to arweave
-	// ctx ,cancel := context.WithTimeout(context.Background(),100*time.Millisecond)
-	// defer cancel()
-	// tx, err := w.SendBundleTx(ctx, 0,bundle.BundleBinary, []types.Tag{
-	// 	{Name: "APP", Value: "Goar"},
-	// 	{Name: "Protocol-Name", Value: "BAR"},
-	// 	{Name: "Action", Value: "Burn"},
-	// 	{Name: "App-Name", Value: "SmartWeaveAction"},
-	// 	{Name: "App-Version", Value: "0.3.0"},
-	// 	{Name: "Input", Value: `{"function":"mint"}`},
-	// 	{Name: "Contract", Value: "VFr3Bk-uM-motpNNkkFg4lNW1BMmSfzqsVO551Ho4hA"},
-	// })
-	// assert.NoError(t, err)
-	// t.Log(tx.ID)
-}
+// 	t.Log(len(bundle.BundleBinary))
+// 	// send to arweave
+// 	// ctx ,cancel := context.WithTimeout(context.Background(),100*time.Millisecond)
+// 	// defer cancel()
+// 	// tx, err := w.SendBundleTx(ctx, 0,bundle.BundleBinary, []schema.Tag{
+// 	// 	{Name: "APP", Value: "Goar"},
+// 	// 	{Name: "Protocol-Name", Value: "BAR"},
+// 	// 	{Name: "Action", Value: "Burn"},
+// 	// 	{Name: "App-Name", Value: "SmartWeaveAction"},
+// 	// 	{Name: "App-Version", Value: "0.3.0"},
+// 	// 	{Name: "Input", Value: `{"function":"mint"}`},
+// 	// 	{Name: "Contract", Value: "VFr3Bk-uM-motpNNkkFg4lNW1BMmSfzqsVO551Ho4hA"},
+// 	// })
+// 	// assert.NoError(t, err)
+// 	// t.Log(tx.ID)
+// }

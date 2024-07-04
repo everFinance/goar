@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/gojwk"
 	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
 )
 
 type Signer struct {
@@ -67,7 +67,7 @@ func NewSignerByPrivateKey(privateKey *rsa.PrivateKey) *Signer {
 	}
 }
 
-func (s *Signer) SignTx(tx *types.Transaction) error {
+func (s *Signer) SignTx(tx *schema.Transaction) error {
 	return utils.SignTransaction(tx, s.PrvKey)
 }
 

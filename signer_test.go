@@ -1,19 +1,20 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/utils"
-	"github.com/everVision/goar/schema"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSigner(t *testing.T) {
 	signer, err := NewSignerFromPath("./example/testKey.json")
 	assert.NoError(t, err)
-	tags := []types.Tag{
+	tags := []schema.Tag{
 		{Name: "GOAR", Value: "sendAR"},
 	}
-	tx := &types.Transaction{
+	tx := &schema.Transaction{
 		Format:    2,
 		ID:        "EyPNVxI-zv1WGjiMmeb20VimIGjfvnkFQtgVnlSMX1o",
 		LastTx:    "0cJJGyXdeIJ-azX3I-jJ3XJEIYti-_qjHZhaRsXQxi1D3wXQVv6Px5WQhj_j1W8O",

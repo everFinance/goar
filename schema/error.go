@@ -1,4 +1,4 @@
-package goar
+package schema
 
 import "errors"
 

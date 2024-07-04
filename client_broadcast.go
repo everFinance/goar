@@ -3,6 +3,7 @@ package goar
 import (
 	"errors"
 	"fmt"
+
 	"github.com/everVision/goar/schema"
 )
 
@@ -59,7 +60,7 @@ func (c *Client) GetTxDataFromPeers(txId string, peers ...string) ([]byte, error
 	return nil, errors.New("get tx data from peers failed")
 }
 
-func (c *Client) GetBlockFromPeers(height int64, peers ...string) (*types.Block, error) {
+func (c *Client) GetBlockFromPeers(height int64, peers ...string) (*schema.Block, error) {
 	var err error
 	if len(peers) == 0 {
 		peers, err = c.GetPeers()
@@ -82,7 +83,7 @@ func (c *Client) GetBlockFromPeers(height int64, peers ...string) (*types.Block,
 	return nil, errors.New("get block from peers failed")
 }
 
-func (c *Client) GetTxFromPeers(arId string, peers ...string) (*types.Transaction, error) {
+func (c *Client) GetTxFromPeers(arId string, peers ...string) (*schema.Transaction, error) {
 	var err error
 	if len(peers) == 0 {
 		peers, err = c.GetPeers()
@@ -105,7 +106,7 @@ func (c *Client) GetTxFromPeers(arId string, peers ...string) (*types.Transactio
 	return nil, fmt.Errorf("get tx failed; arId: %s", arId)
 }
 
-func (c *Client) GetUnconfirmedTxFromPeers(arId string, peers ...string) (*types.Transaction, error) {
+func (c *Client) GetUnconfirmedTxFromPeers(arId string, peers ...string) (*schema.Transaction, error) {
 	var err error
 	if len(peers) == 0 {
 		peers, err = c.GetPeers()

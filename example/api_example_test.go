@@ -1,11 +1,12 @@
 package example
 
 import (
-	"github.com/everFinance/goar/utils"
-	"github.com/everVision/goar/schema"
 	"testing"
 
-	"github.com/everFinance/goar"
+	"github.com/everVision/goar/schema"
+	"github.com/everVision/goar/utils"
+
+	"github.com/everVision/goar"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,13 +114,13 @@ func Test_SendFormatTx(t *testing.T) {
 	// assert.NoError(t, err)
 	//
 	// amount := big.NewInt(140000) // transfer amount
-	// tags := []types.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
-	// tx := &types.Transaction{
+	// tags := [] schema.Tag{{Name: "Content-Type", Value: "application/json"}, {Name: "tcrsa", Value: "sandyTest"}}
+	// tx := & schema.Transaction{
 	// 	Format:    1,
 	// 	ID:        "",
 	// 	LastTx:    anchor,
 	// 	Owner:     owner,
-	// 	Tags:      types.TagsEncode(tags),
+	// 	Tags:       schema.TagsEncode(tags),
 	// 	Target:    target,
 	// 	Quantity:  amount.String(),
 	// 	Data:      "",
@@ -129,7 +130,7 @@ func Test_SendFormatTx(t *testing.T) {
 	// 	Signature: "",
 	// 	Chunks:    nil,
 	// }
-	// signData, err := types.GetSignatureData(tx)
+	// signData, err :=  schema.GetSignatureData(tx)
 	//
 	// sig, err := utils.sign(signData, wallet.PrvKey)
 	// assert.NoError(t, err)
@@ -149,13 +150,13 @@ func Test_SendMsg(t *testing.T) {
 	itemSigner02, err := goar.NewItemSigner(signer02)
 	assert.NoError(t, err)
 
-	defaultTags := []types.Tag{
+	defaultTags := []schema.Tag{
 		{Name: "Data-Protocol", Value: "ao"},
 		{Name: "Variant", Value: "ao.TN.1"},
 		{Name: "Type", Value: "Message"},
 		{Name: "SDK", Value: "argo"},
 	}
-	tags := append(defaultTags, []types.Tag{
+	tags := append(defaultTags, []schema.Tag{
 		{Name: "Action", Value: "Transfer"},
 		{Name: "Recipient", Value: "AVm7zHYGzw9PmUXv4CFHgiK3QtbRTpBMS2VOxJAK-F4"},
 		{Name: "Quantity", Value: "22"},
