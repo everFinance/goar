@@ -220,7 +220,7 @@ func resolveBranchProofs(node *types.Node, proof []byte, depth int) (proofs []*t
 
 	if node.Type == types.LeafNodeType {
 		p := &types.Proof{
-			Offest: node.MaxByteRange - 1,
+			Offset: node.MaxByteRange - 1,
 			Proof: ConcatBuffer(
 				proof,
 				node.DataHash,

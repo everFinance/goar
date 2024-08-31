@@ -448,7 +448,7 @@ func newBundleItem(owner string, signatureType int, target, anchor string, data 
 			return nil, err
 		}
 		if len(targetBy) != 32 {
-			return nil, errors.New("taget length must be 32")
+			return nil, errors.New("target length must be 32")
 		}
 	}
 	if anchor != "" {
