@@ -1,5 +1,7 @@
 # goar
 
+**Goar has been migrated to PermaDAO for maintenance. Please check the latest version at: [goar](https://github.com/permadao/goar)**
+
 ### Install
 
 ```
