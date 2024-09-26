@@ -1,15 +1,17 @@
 package goar
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
+
 	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/tidwall/gjson"
-	"math/rand"
-	"strconv"
 )
 
-func (w *Wallet) WarpTransfer(contractId, target string, qty int64) (id string, err error) {
+func (w *Wallet) WarpTransfer(ctx context.Context, contractId, target string, qty int64) (id string, err error) {
 	tags, err := utils.PstTransferTags(contractId, target, qty, true)
 	if err != nil {
 		return
@@ -34,7 +36,7 @@ func (w *Wallet) WarpTransfer(contractId, target string, qty int64) (id string, 
 		return
 	}
 	// send to wrap gateway
-	result, err := w.Client.SubmitToWarp(tx) // {"id":"BQQyqbsULPNpyKgwVSSn8z0-3Km_y1GPMiLU1-eR_lc"}
+	result, err := w.Client.SubmitToWarp(ctx, tx) // {"id":"BQQyqbsULPNpyKgwVSSn8z0-3Km_y1GPMiLU1-eR_lc"}
 	if err != nil {
 		return
 	}

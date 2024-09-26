@@ -1,6 +1,7 @@
 package example
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 )
 
 func Test_SendData(t *testing.T) {
+	ctx := context.Background()
 	arNode := "https://arweave.net"
 	w, err := goar.NewWalletFromPath("./wallet/account1.json", arNode) // your wallet private key
 	assert.NoError(t, err)
@@ -22,7 +24,7 @@ func Test_SendData(t *testing.T) {
 		{Name: "xxxx", Value: "sssss"},
 		{Name: "yyyyyy", Value: "kkkkkk"},
 	}
-	tx, err := w.SendDataSpeedUp(data, tags, 10)
+	tx, err := w.SendDataSpeedUp(ctx, data, tags, 10)
 	assert.NoError(t, err)
 	t.Logf("tx hash: %s", tx.ID)
 }
@@ -61,6 +63,7 @@ func TestConcurrentDownloadStream(t *testing.T) {
 }
 
 func TestSendDataStream(t *testing.T) {
+	ctx := context.Background()
 	arNode := "https://arweave.net"
 	w, err := goar.NewWalletFromPath("./testKey.json", arNode) // your wallet private key
 	assert.NoError(t, err)
@@ -73,7 +76,7 @@ func TestSendDataStream(t *testing.T) {
 		{Name: "Content-Type", Value: "img/jpeg"},
 		{Name: "test", Value: "kevin-test"},
 	}
-	tx, err := w.SendDataStreamSpeedUp(data, tags, 10)
+	tx, err := w.SendDataStreamSpeedUp(ctx, data, tags, 10)
 	assert.NoError(t, err)
 	t.Log(tx.ID)
 	// test arId: k5IgHLTag_3bB6Sp5tTUhrFrPPvU5MjevV468dfxNKk

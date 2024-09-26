@@ -10,21 +10,21 @@ import (
 
 func TestTags(t *testing.T) {
 	tagsBase64 := []types.Tag{
-		types.Tag{
+		{
 			Name:  "QXBwLU5hbWU",
 			Value: "U21hcnRXZWF2ZUFjdGlvbg",
 		},
-		types.Tag{
+		{
 			Name:  "SW5wdXQ",
 			Value: "eyJmdW5jdGlvbiI6InRyYW5zZmVyIiwicXR5Ijo1MDAsInRhcmdldCI6Ilp5aGhBTHdxazhuMnVyV1Y0RTNqSEJjNzd3YWE1RnItcUhscl9jdGlIQk0ifQ",
 		},
 	}
 	tags := []types.Tag{
-		types.Tag{
+		{
 			Name:  "App-Name",
 			Value: "SmartWeaveAction",
 		},
-		types.Tag{
+		{
 			Name:  "Input",
 			Value: `{"function":"transfer","qty":500,"target":"ZyhhALwqk8n2urWV4E3jHBc77waa5Fr-qHlr_ctiHBM"}`,
 		},

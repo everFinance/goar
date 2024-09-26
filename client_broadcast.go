@@ -1,12 +1,14 @@
 package goar
 
 import (
+	"context"
 	"errors"
 	"fmt"
+
 	"github.com/everFinance/goar/types"
 )
 
-func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers ...string) error {
+func (c *Client) BroadcastData(ctx context.Context, txId string, data []byte, numOfNodes int64, peers ...string) error {
 	var err error
 	if len(peers) == 0 {
 		peers, err = c.GetPeers()
@@ -24,7 +26,7 @@ func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers
 			continue
 		}
 
-		if err = uploader.Once(); err != nil {
+		if err = uploader.Once(ctx); err != nil {
 			continue
 		}
 

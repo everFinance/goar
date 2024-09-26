@@ -1,6 +1,7 @@
 package example
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -71,6 +72,7 @@ func assemblyDataTx(bigData []byte, wallet *goar.Wallet, tags []types.Tag) (*typ
 
 // test upload post big size data by chunks
 func Test_PostBigDataByChunks(t *testing.T) {
+	ctx := context.Background()
 	filePath := "./testFile/2mbFile.pdf"
 	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
@@ -83,11 +85,12 @@ func Test_PostBigDataByChunks(t *testing.T) {
 	// uploader Transaction
 	uploader, err := goar.CreateUploader(wallet.Client, tx, nil)
 	assert.NoError(t, err)
-	assert.NoError(t, uploader.Once())
+	assert.NoError(t, uploader.Once(ctx))
 }
 
 // test retry upload(断点重传) post big size data by tx id
 func Test_RetryUploadDataByTxId(t *testing.T) {
+	ctx := context.Background()
 	filePath := "./testFile/3mPhoto.jpg"
 	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
@@ -100,7 +103,7 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 
 	// 1. post this tx without data
 	tx.Data = ""
-	body, status, err := wallet.Client.SubmitTransaction(tx)
+	body, status, err := wallet.Client.SubmitTransaction(ctx, tx)
 	assert.NoError(t, err)
 	t.Logf("post tx without data; body: %s, status: %d", string(body), status)
 
@@ -124,11 +127,12 @@ func Test_RetryUploadDataByTxId(t *testing.T) {
 	// get uploader by txId and post big data by chunks
 	uploader, err := goar.CreateUploader(wallet.Client, tx.ID, bigData)
 	assert.NoError(t, err)
-	assert.NoError(t, uploader.Once())
+	assert.NoError(t, uploader.Once(ctx))
 }
 
 // test continue upload(断点续传) big size data by last time uploader
 func Test_ContinueUploadDataByLastUploader(t *testing.T) {
+	ctx := context.Background()
 	filePath := "./testFile/1.8mPhoto.jpg"
 	bigData, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
@@ -143,7 +147,7 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	assert.NoError(t, err)
 	// only upload 2 chunks to ar chain
 	for !uploader.IsComplete() && uploader.ChunkIndex <= 2 {
-		err := uploader.UploadChunk()
+		err := uploader.UploadChunk(ctx)
 		assert.NoError(t, err)
 	}
 
@@ -165,7 +169,7 @@ func Test_ContinueUploadDataByLastUploader(t *testing.T) {
 	// new uploader object by last time uploader
 	newUploader, err := goar.CreateUploader(wallet.Client, lastUploader.FormatSerializedUploader(), bigData)
 	assert.NoError(t, err)
-	assert.NoError(t, newUploader.Once())
+	assert.NoError(t, newUploader.Once(ctx))
 
 	// end remove jsonUploaderFile.json file
 	_ = os.Remove("./jsonUploaderFile.json")

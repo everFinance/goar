@@ -35,5 +35,5 @@ type BundlrResp struct {
 	N                   string   `json:"n"`
 	Public              string   `json:"public"`
 	Block               int64    `json:"block"`
-	ValidatorSignatures []string `json:"validatorSignatures"` 
+	ValidatorSignatures []string `json:"validatorSignatures"`
 }
