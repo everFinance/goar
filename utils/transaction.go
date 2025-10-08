@@ -177,7 +177,9 @@ func GetSignatureData(tx *types.Transaction) ([]byte, error) {
 
 		dataList := []interface{}{}
 		dataList = append(dataList, Base64Encode([]byte(fmt.Sprintf("%d", tx.Format))))
-		dataList = append(dataList, tx.Owner)
+		if tx.Owner != "" {
+			dataList = append(dataList, tx.Owner)
+		}
 		dataList = append(dataList, tx.Target)
 		dataList = append(dataList, Base64Encode([]byte(tx.Quantity)))
 		dataList = append(dataList, Base64Encode([]byte(tx.Reward)))
