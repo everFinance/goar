@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestCreateKeyPair Secret key creation and threshold signature
+// TestCreateTcKeyPair Secret key creation and threshold signature
 func TestCreateTcKeyPair(t *testing.T) {
 	exampleData := []byte("aaabbbcccddd112233")
 	signHashed := sha256.Sum256(exampleData)
@@ -307,7 +307,7 @@ func TestCreateTcKeyPair(t *testing.T) {
 
 }
 
-// GetKeyPairByLocal
+// GetKeyPairFormLocalFile
 func GetKeyPairFormLocalFile() (shares tcrsa.KeyShareList, meta *tcrsa.KeyMeta, err error) {
 	dd, err := os.ReadFile("keyMeta.json")
 	if err != nil {
