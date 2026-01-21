@@ -11,7 +11,7 @@ func TestNewArNS(t *testing.T) {
 	type args struct {
 		dreUrl   string
 		arNSAddr string
-		timout   time.Duration
+		timeout   time.Duration
 	}
 	tests := []struct {
 		name string
@@ -23,7 +23,7 @@ func TestNewArNS(t *testing.T) {
 			args: args{
 				dreUrl:   "https://dre-3.warp.cc",
 				arNSAddr: "bLAgYxAdX2Ry-nt6aH2ixgvJXbpsEYm28NgJgyqfs-U",
-				timout:   3 * time.Second,
+				timeout:   3 * time.Second,
 			},
 			want: &ArNS{
 				DreUrl:      "https://dre-3.warp.cc",
@@ -37,7 +37,7 @@ func TestNewArNS(t *testing.T) {
 			args: args{
 				dreUrl:   "https://dre-3.warp.cc",
 				arNSAddr: "bLAgYxAdX2Ry-nt6aH2ixgvJXbpsEYm28NgJgyqfs-U",
-				timout:   0,
+				timeout:   0,
 			},
 			want: &ArNS{
 				DreUrl:      "https://dre-3.warp.cc",
@@ -48,7 +48,7 @@ func TestNewArNS(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewArNS(tt.args.dreUrl, tt.args.arNSAddr, tt.args.timout)
+			got := NewArNS(tt.args.dreUrl, tt.args.arNSAddr, tt.args.timeout)
 			if got.DreUrl != tt.want.DreUrl {
 				t.Errorf("NewArNS() = %v, want %v", got.DreUrl, tt.want.DreUrl)
 			}

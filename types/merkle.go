@@ -25,6 +25,6 @@ type Node struct {
 }
 
 type Proof struct {
-	Offest int
+	Offset int
 	Proof  []byte
 }
