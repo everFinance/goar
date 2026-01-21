@@ -37,14 +37,14 @@ const (
 
 // Errors from /chunk we should never try and continue on.
 var FATAL_CHUNK_UPLOAD_ERRORS = map[string]struct{}{
-	"{\"error\":\"disk_full\"}":                        struct{}{},
-	"{\"error\":\"invalid_json\"}":                     struct{}{},
-	"{\"error\":\"chunk_too_big\"}":                    struct{}{},
-	"{\"error\":\"data_path_too_big\"}":                struct{}{},
-	"{\"error\":\"offset_too_big\"}":                   struct{}{},
-	"{\"error\":\"data_size_too_big\"}":                struct{}{},
-	"{\"error\":\"chunk_proof_ratio_not_attractive\"}": struct{}{},
-	"{\"error\":\"invalid_proof\"}":                    struct{}{},
+	"{\"error\":\"disk_full\"}":                        {},
+	"{\"error\":\"invalid_json\"}":                     {},
+	"{\"error\":\"chunk_too_big\"}":                    {},
+	"{\"error\":\"data_path_too_big\"}":                {},
+	"{\"error\":\"offset_too_big\"}":                   {},
+	"{\"error\":\"data_size_too_big\"}":                {},
+	"{\"error\":\"chunk_proof_ratio_not_attractive\"}": {},
+	"{\"error\":\"invalid_proof\"}":                    {},
 }
 
 // about bundle

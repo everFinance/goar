@@ -1,12 +1,14 @@
 package goar
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
+	"context"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/everFinance/goar/types"
+	"github.com/everFinance/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // func TestGetTransactionByID(t *testing.T) {
@@ -219,12 +221,13 @@ func Test_GetTxDataFromPeers(t *testing.T) {
 }
 
 func TestClient_BroadcastData(t *testing.T) {
+	ctx := context.Background()
 	cli := NewClient("https://arweave.net")
 	txId := "J5FY1Ovd6JJ49WFHfCf-1wDM1TbaPSdKnGIB_8ePErE"
 	data, err := cli.GetTransactionData(txId, "json")
 	assert.NoError(t, err)
 
-	err = cli.BroadcastData(txId, data, 20)
+	err = cli.BroadcastData(ctx, txId, data, 20)
 	assert.NoError(t, err)
 }
 
