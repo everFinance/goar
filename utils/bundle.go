@@ -129,6 +129,15 @@ func DecodeBundle(bundleBinary []byte) (*types.Bundle, error) {
 		return nil, errors.New("binary length must more than 32")
 	}
 	itemsNum := ByteArrayToLong(bundleBinary[:32])
+	// itemsNum comes from 32 untrusted bytes read into a plain int, so a crafted
+	// value can overflow to a negative number. Without this guard a negative
+	// itemsNum makes `32+itemsNum*64` negative (length check passes) and the
+	// `i < itemsNum` loop never runs, so a malformed bundle is silently accepted
+	// as an empty one instead of being rejected. (The inner itemBinaryLength is
+	// already guarded the same way below.)
+	if itemsNum < 0 {
+		return nil, errors.New("invalid items number")
+	}
 
 	if len(bundleBinary) < 32+itemsNum*64 {
 		return nil, errors.New("binary length incorrect")
@@ -175,6 +184,12 @@ func DecodeBundleStream(bundleData *os.File) (*types.Bundle, error) {
 		return nil, errors.New("binary length must more than 32")
 	}
 	itemsNum := ByteArrayToLong(itemsNumBy)
+	// See DecodeBundle: itemsNum is read from untrusted bytes into a plain int
+	// and can overflow negative, which would be silently treated as an empty
+	// bundle instead of rejected.
+	if itemsNum < 0 {
+		return nil, errors.New("invalid items number")
+	}
 	bd := &types.Bundle{
 		Items: make([]types.BundleItem, 0),
 	}
