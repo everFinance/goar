@@ -318,8 +318,8 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 
 func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 	sigTypeBy := make([]byte, 2, 2)
-	n, err := itemBinary.Read(sigTypeBy)
-	if err != nil || n < 2 {
+	_, err := io.ReadFull(itemBinary, sigTypeBy)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	sigType := ByteArrayToLong(sigTypeBy)
@@ -329,8 +329,8 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 	}
 	sigLength := sigMeta.SigLength
 	sigBy := make([]byte, sigLength, sigLength)
-	n, err = itemBinary.Read(sigBy)
-	if err != nil || n < sigLength {
+	_, err = io.ReadFull(itemBinary, sigBy)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	signature := Base64Encode(sigBy)
@@ -339,8 +339,8 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 
 	ownerLength := sigMeta.PubLength
 	ownerBy := make([]byte, ownerLength, ownerLength)
-	n, err = itemBinary.Read(ownerBy)
-	if err != nil || n < ownerLength {
+	_, err = io.ReadFull(itemBinary, ownerBy)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	owner := Base64Encode(ownerBy)
@@ -348,53 +348,59 @@ func DecodeBundleItemStream(itemBinary io.Reader) (*types.BundleItem, error) {
 	anchor := ""
 
 	targetPresentByte := make([]byte, 1, 1)
-	n, err = itemBinary.Read(targetPresentByte)
-	if err != nil || n < 1 {
+	_, err = io.ReadFull(itemBinary, targetPresentByte)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	if targetPresentByte[0] == 1 {
 		targetBy := make([]byte, 32, 32)
-		n, err = itemBinary.Read(targetBy)
-		if err != nil || n < 32 {
+		_, err = io.ReadFull(itemBinary, targetBy)
+		if err != nil {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		target = Base64Encode(targetBy)
 	}
 
 	anchorPresentByte := make([]byte, 1, 1)
-	n, err = itemBinary.Read(anchorPresentByte)
-	if err != nil || n < 1 {
+	_, err = io.ReadFull(itemBinary, anchorPresentByte)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	if anchorPresentByte[0] == 1 {
 		anchorBy := make([]byte, 32, 32)
-		n, err = itemBinary.Read(anchorBy)
-		if err != nil || n < 32 {
+		_, err = io.ReadFull(itemBinary, anchorBy)
+		if err != nil {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		anchor = Base64Encode(anchorBy)
 	}
 
 	numOfTagsBy := make([]byte, 8, 8)
-	n, err = itemBinary.Read(numOfTagsBy)
-	if err != nil || n < 8 {
+	_, err = io.ReadFull(itemBinary, numOfTagsBy)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	numOfTags := ByteArrayToLong(numOfTagsBy)
 
 	tagsBytesLengthBy := make([]byte, 8, 8)
-	n, err = itemBinary.Read(tagsBytesLengthBy)
-	if err != nil || n < 8 {
+	_, err = io.ReadFull(itemBinary, tagsBytesLengthBy)
+	if err != nil {
 		return nil, errors.New("itemBinary incorrect")
 	}
 	tagsBytesLength := ByteArrayToLong(tagsBytesLengthBy)
+	// numOfTags/tagsBytesLength are read from untrusted bytes into a plain int and
+	// can overflow negative. Without these guards a negative tagsBytesLength makes
+	// `make([]byte, tagsBytesLength)` below panic with "makeslice: len out of range".
+	if numOfTags < 0 || tagsBytesLength < 0 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 
 	tags := []types.Tag{}
 	tagsBytes := make([]byte, 0)
 	if numOfTags > 0 {
 		tagsBytes = make([]byte, tagsBytesLength, tagsBytesLength)
-		n, err = itemBinary.Read(tagsBytes)
-		if err != nil || n < tagsBytesLength {
+		_, err = io.ReadFull(itemBinary, tagsBytes)
+		if err != nil {
 			return nil, errors.New("itemBinary incorrect")
 		}
 		// parser tags
