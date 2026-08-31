@@ -278,6 +278,13 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 		anchor = Base64Encode(itemBinary[anchorPresentByte+1 : anchorPresentByte+1+32])
 	}
 
+	// The presence-flag handling above only guarantees bytes up to tagsStart.
+	// Reading the 8-byte tag count needs tagsStart+8 bytes; without this guard a
+	// truncated item panics with a slice-out-of-range here. (GetBundleItemTagsBytes
+	// already performs the same check.)
+	if len(itemBinary) < tagsStart+8 {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	numOfTags := ByteArrayToLong(itemBinary[tagsStart : tagsStart+8])
 
 	var tagsBytesLength int
@@ -300,6 +307,13 @@ func DecodeBundleItem(itemBinary []byte) (*types.BundleItem, error) {
 		tags = tgs
 	}
 
+	// The data begins after the 16-byte tags header (count + byte-length) and
+	// the tags bytes. When numOfTags == 0 the branch above is skipped, so the
+	// tagsStart+16 bound was never checked; guard the slice unconditionally so a
+	// truncated item returns an error instead of panicking.
+	if len(itemBinary) < tagsStart+16+tagsBytesLength {
+		return nil, errors.New("itemBinary incorrect")
+	}
 	data := itemBinary[tagsStart+16+tagsBytesLength:]
 
 	return &types.BundleItem{
